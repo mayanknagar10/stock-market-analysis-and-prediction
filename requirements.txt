@@ -157,5 +157,5 @@ widgetsnbextension==3.5.2
 wrapt==1.13.3
 yahoo-fin==0.8.9.1
 yarg==0.1.9
-yfinance==0.1.69
+yfinance==0.2.38
 zipp==3.7.0
