@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pandas_datareader as data
-import yfinance as yahooFin  
 import cufflinks as cf
 from sklearn.preprocessing import MinMaxScaler
 from keras.layers import Dense, Dropout, LSTM
@@ -174,7 +173,7 @@ df = yf.download(user_input,period=time,interval='1d')
 df.head()
 
 
-information = yahooFin.Ticker(user_input)  
+information = yf.Ticker(user_input)  
 
 string_logo = '<img src=%s>' % information.info['logo_url']
 st.markdown(string_logo, unsafe_allow_html=True)
