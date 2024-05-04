@@ -176,14 +176,14 @@ df.head()
 
 information = yahooFin.Ticker(user_input)  
 
-# string_logo = '<img src=%s>' % information.info['logo_url']
-# st.markdown(string_logo, unsafe_allow_html=True)
+string_logo = '<img src=%s>' % information.info['logo_url']
+st.markdown(string_logo, unsafe_allow_html=True)
 
-# string_name = information.info['longName']
-# st.header('**%s**' % string_name)
+string_name = information.info['longName']
+st.header('**%s**' % string_name)
 
-# string_summary = information.info['longBusinessSummary']
-# st.info(string_summary)
+string_summary = information.info['longBusinessSummary']
+st.info(string_summary)
 
 
 
