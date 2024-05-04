@@ -411,4 +411,3 @@ st.pyplot(fig)
 price = round(float(*final_graph[len(final_graph)-1]),2)
 st.write("Next 30D price : ", price)
 
-
