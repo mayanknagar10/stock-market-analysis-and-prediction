@@ -1,4 +1,4 @@
-# stock_market_analysis_and_prediction
+# Stock Market Analysis and Prediction
 
 ![project1](https://github.com/mayanknagar10/stock-market-analysis-and-prediction/assets/86146916/1f18e82c-8608-4118-a709-bd20219fe1ec)
 
