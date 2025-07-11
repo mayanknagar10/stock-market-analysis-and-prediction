@@ -265,23 +265,24 @@ try:
     # Fetch ticker info
     information = get_ticker_info(user_input)
     
-    # Handle logo display with st.image
+    # Handle logo display with st.image and fallback
+    placeholder_logo = "https://via.placeholder.com/150?text=No+Logo"  # Placeholder image
     if "logo_url" in information and information["logo_url"]:
         logo_url = information["logo_url"]
         logging.info(f"Logo URL for {user_input}: {logo_url}")
         try:
-            # Verify URL accessibility
-            response = requests.head(logo_url, timeout=5)
-            if response.status_code == 200:
+            # Fetch image content to verify it's an image
+            response = requests.get(logo_url, timeout=5)
+            if response.status_code == 200 and 'image' in response.headers.get('Content-Type', ''):
                 st.image(logo_url, width=150, caption=f"{user_input} Logo")
             else:
-                st.write(f"No logo available for {user_input} (invalid URL: {response.status_code})")
-                logging.warning(f"Invalid logo URL status code: {response.status_code}")
+                st.image(placeholder_logo, width=150, caption=f"No logo available for {user_input} (invalid URL: {response.status_code})")
+                logging.warning(f"Invalid logo URL for {user_input}: status={response.status_code}, content-type={response.headers.get('Content-Type')}")
         except Exception as e:
-            st.write(f"No logo available for {user_input} (error accessing URL: {str(e)})")
-            logging.warning(f"Error accessing logo URL: {str(e)}")
+            st.image(placeholder_logo, width=150, caption=f"No logo available for {user_input} (error: {str(e)})")
+            logging.warning(f"Error accessing logo URL for {user_input}: {str(e)}")
     else:
-        st.write(f"No logo available for {user_input}")
+        st.image(placeholder_logo, width=150, caption=f"No logo available for {user_input}")
         logging.info(f"No logo_url found in info for {user_input}")
 
     string_name = information.get('longName', 'Unknown Company')
@@ -437,6 +438,7 @@ try:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    # Model prediction with compatibility fix
     train_size = int(len(ds_scaled) * 0.70)
     test_size = len(ds_scaled) - train_size
     ds_train, ds_test = ds_scaled[0:train_size, :], ds_scaled[train_size:len(ds_scaled), :1]
@@ -456,70 +458,75 @@ try:
     X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
     X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
 
-    model = load_model('keras_model.h5')
-    train_predict = model.predict(X_train)
-    test_predict = model.predict(X_test)
+    try:
+        model = load_model('keras_model.h5', custom_objects={'LSTM': LSTM})
+        train_predict = model.predict(X_train)
+        test_predict = model.predict(X_test)
 
-    train_predict = normalizer.inverse_transform(train_predict)
-    test_predict = normalizer.inverse_transform(test_predict)
+        train_predict = normalizer.inverse_transform(train_predict)
+        test_predict = normalizer.inverse_transform(test_predict)
 
-    test = np.vstack((train_predict, test_predict))
+        test = np.vstack((train_predict, test_predict))
 
-    fut_inp = ds_test[(len(ds_test) - 100):]
-    fut_inp = fut_inp.reshape(1, -1)
-    tmp_inp = list(fut_inp)
-    tmp_inp = tmp_inp[0].tolist()
+        fut_inp = ds_test[(len(ds_test) - 100):]
+        fut_inp = fut_inp.reshape(1, -1)
+        tmp_inp = list(fut_inp)
+        tmp_inp = tmp_inp[0].tolist()
 
-    lst_output = []
-    n_steps = 100
-    i = 0
-    while i < 30:
-        if len(tmp_inp) > 100:
-            fut_inp = np.array(tmp_inp[1:])
-            fut_inp = fut_inp.reshape(1, -1)
-            fut_inp = fut_inp.reshape((1, n_steps, 1))
-            yhat = model.predict(fut_inp, verbose=0)
-            tmp_inp.extend(yhat[0].tolist())
-            tmp_inp = tmp_inp[1:]
-            lst_output.extend(yhat.tolist())
-            i += 1
-        else:
-            fut_inp = fut_inp.reshape((1, n_steps, 1))
-            yhat = model.predict(fut_inp, verbose=0)
-            tmp_inp.extend(yhat[0].tolist())
-            lst_output.extend(yhat.tolist())
-            i += 1
+        lst_output = []
+        n_steps = 100
+        i = 0
+        while i < 30:
+            if len(tmp_inp) > 100:
+                fut_inp = np.array(tmp_inp[1:])
+                fut_inp = fut_inp.reshape(1, -1)
+                fut_inp = fut_inp.reshape((1, n_steps, 1))
+                yhat = model.predict(fut_inp, verbose=0)
+                tmp_inp.extend(yhat[0].tolist())
+                tmp_inp = tmp_inp[1:]
+                lst_output.extend(yhat.tolist())
+                i += 1
+            else:
+                fut_inp = fut_inp.reshape((1, n_steps, 1))
+                yhat = model.predict(fut_inp, verbose=0)
+                tmp_inp.extend(yhat[0].tolist())
+                lst_output.extend(yhat.tolist())
+                i += 1
 
-    st.write('Result')
-    plot_new = np.arange(1, 101)
-    plot_pred = np.arange(101, 131)
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=plot_new, y=normalizer.inverse_transform(ds_scaled[(len(ds_scaled) - 100):]).flatten(), name='Historical'))
-    fig.add_trace(go.Scatter(x=plot_pred, y=normalizer.inverse_transform(lst_output).flatten(), name='Predicted'))
-    fig.update_layout(
-        title=f"{user_input} Prediction for Next 30 Days",
-        xaxis=dict(title=dict(text="Time", font=dict(family="Arial", size=12, color="black"))),
-        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        st.write('Result')
+        plot_new = np.arange(1, 101)
+        plot_pred = np.arange(101, 131)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=plot_new, y=normalizer.inverse_transform(ds_scaled[(len(ds_scaled) - 100):]).flatten(), name='Historical'))
+        fig.add_trace(go.Scatter(x=plot_pred, y=normalizer.inverse_transform(lst_output).flatten(), name='Predicted'))
+        fig.update_layout(
+            title=f"{user_input} Prediction for Next 30 Days",
+            xaxis=dict(title=dict(text="Time", font=dict(family="Arial", size=12, color="black"))),
+            yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-    ds_new = ds_scaled.tolist()
-    ds_new.extend(lst_output)
-    final_graph = normalizer.inverse_transform(ds_new).tolist()
+        ds_new = ds_scaled.tolist()
+        ds_new.extend(lst_output)
+        final_graph = normalizer.inverse_transform(ds_new).tolist()
 
-    st.write('Prediction')
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(y=final_graph, name='Price'))
-    fig.add_hline(y=final_graph[-1], line_dash="dot", line_color="red", annotation_text=f"NEXT 30D: {round(float(final_graph[-1]), 2)}")
-    fig.update_layout(
-        title=f"{user_input} Prediction of Next Month Close",
-        xaxis=dict(title=dict(text="Time", font=dict(family="Arial", size=12, color="black"))),
-        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        st.write('Prediction')
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(y=final_graph, name='Price'))
+        fig.add_hline(y=final_graph[-1], line_dash="dot", line_color="red", annotation_text=f"NEXT 30D: {round(float(final_graph[-1]), 2)}")
+        fig.update_layout(
+            title=f"{user_input} Prediction of Next Month Close",
+            xaxis=dict(title=dict(text="Time", font=dict(family="Arial", size=12, color="black"))),
+            yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-    price = round(float(final_graph[-1]), 2)
-    st.write("Next 30D price: ", price)
+        price = round(float(final_graph[-1]), 2)
+        st.write("Next 30D price: ", price)
+
+    except Exception as e:
+        st.error(f"Error loading or predicting with Keras model: {str(e)}. Skipping prediction section.")
+        logging.error(f"Keras model error: {str(e)}")
 
 except Exception as e:
     st.error(f"Error fetching or processing data for ticker {user_input}: {str(e)}")
