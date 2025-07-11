@@ -174,8 +174,14 @@ df.head()
 
 
 information = yf.Ticker(user_input)  
+# Check if logo_url exists, otherwise use a placeholder or skip
+string_logo = ""
+if "logo_url" in information.info and information.info["logo_url"]:
+    string_logo = '<img src=%s>' % information.info['logo_url']
+else:
+    string_logo = '<p>No logo available</p>'  # Fallback message
 
-string_logo = '<img src=%s>' % information.info['logo_url']
+st.markdown(string_logo, unsafe_allow_html=True)
 st.markdown(string_logo, unsafe_allow_html=True)
 
 string_name = information.info['longName']
