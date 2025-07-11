@@ -21,7 +21,7 @@ from io import StringIO
 import requests
 
 # Suppress TensorFlow warnings
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 0=All, 1=Info, 2=Warning, 3=Error
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # Configure logging for debugging
 logging.basicConfig(level=logging.INFO)
@@ -29,8 +29,8 @@ logging.basicConfig(level=logging.INFO)
 # Custom LSTM to handle deprecated parameters
 class CustomLSTM(LSTM):
     def __init__(self, *args, **kwargs):
-        kwargs.pop('time_major', None)  # Ignore time_major
-        kwargs.pop('input_shape', None)  # Ignore input_shape
+        kwargs.pop('time_major', None)
+        kwargs.pop('input_shape', None)
         super(CustomLSTM, self).__init__(*args, **kwargs)
 
 # Functions for calculating SMA, EMA, MACD, RSI
@@ -269,15 +269,22 @@ try:
 
     # Handle MultiIndex if present
     if isinstance(df.columns, pd.MultiIndex):
-        df.columns = [col[0] for col in df.columns]  # Flatten MultiIndex to single level
+        df.columns = [col[0] for col in df.columns]
     logging.info(f"Columns in df: {df.columns.tolist()}")
 
     # Fetch ticker info
     information = get_ticker_info(user_input)
     
-    # Handle logo display with local fallback
+    # Handle logo display with robust fallback
     placeholder_logo = "https://via.placeholder.com/150?text=No+Logo"
-    local_logo = f"logos/{user_input}.png"
+    # Ticker-to-logo mapping for key tickers
+    logo_mapping = {
+        'NVDA': 'logos/NVDA.png',
+        'GOOGL': 'logos/GOOGL.png',
+        'AAPL': 'logos/AAPL.png',
+        'SUDARSCHEM.NS': 'logos/SUDARSCHEM.NS.png'
+    }
+    local_logo = logo_mapping.get(user_input, f"logos/{user_input}.png")
     if os.path.exists(local_logo):
         st.image(local_logo, width=150, caption=f"{user_input} Logo")
         logging.info(f"Using local logo for {user_input}: {local_logo}")
@@ -336,7 +343,6 @@ try:
 
     st.subheader('Fundamentals')
     try:
-        # Use yfinance for fundamentals as primary source
         ticker = yf.Ticker(user_input)
         info = ticker.info
         st.write("52 Week Range: ", f"{info.get('fiftyTwoWeekLow', 'N/A')} - {info.get('fiftyTwoWeekHigh', 'N/A')}")
@@ -350,7 +356,6 @@ try:
     except Exception as e:
         st.warning(f"Error fetching fundamentals from yfinance: {str(e)}. Trying yahoo-fin as fallback.")
         try:
-            # Fallback to yahoo-fin
             data1 = si.get_quote_table(user_input)
             st.write("52 Week Range: ", data1.get("52 Week Range", "N/A"))
             st.write("Day's Range: ", data1.get("Day's Range", "N/A"))
@@ -397,7 +402,7 @@ try:
     df['SMA_50'] = SMA(df, 50)
     df['SMA_200'] = SMA(df, 200)
     df['EMA'] = EMA(df)
-    df['Date'] = df.index  # Ensure 'Date' column exists for get_stock_price_fig
+    df['Date'] = df.index
     fig = get_stock_price_fig(df.tail(time_period), indicators, returns)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -496,23 +501,27 @@ try:
                 fut_inp = fut_inp.reshape(1, -1)
                 fut_inp = fut_inp.reshape((1, n_steps, 1))
                 yhat = model.predict(fut_inp, verbose=0)
-                tmp_inp.extend(yhat[0].tolist())
+                tmp_inp.extend(yhat.flatten().tolist())
                 tmp_inp = tmp_inp[1:]
-                lst_output.extend(yhat.tolist())
+                lst_output.extend(yhat.flatten().tolist())
                 i += 1
             else:
                 fut_inp = fut_inp.reshape((1, n_steps, 1))
                 yhat = model.predict(fut_inp, verbose=0)
-                tmp_inp.extend(yhat[0].tolist())
-                lst_output.extend(yhat.tolist())
+                tmp_inp.extend(yhat.flatten().tolist())
+                lst_output.extend(yhat.flatten().tolist())
                 i += 1
+
+        # Ensure lst_output is 1D
+        lst_output = np.array(lst_output).flatten()
+        logging.info(f"lst_output shape: {lst_output.shape}, values: {lst_output[:5]}")
 
         st.write('Result')
         plot_new = np.arange(1, 101)
         plot_pred = np.arange(101, 131)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=plot_new, y=normalizer.inverse_transform(ds_scaled[(len(ds_scaled) - 100):]).flatten(), name='Historical'))
-        fig.add_trace(go.Scatter(x=plot_pred, y=normalizer.inverse_transform(lst_output).flatten(), name='Predicted'))
+        fig.add_trace(go.Scatter(x=plot_pred, y=normalizer.inverse_transform(lst_output.reshape(-1, 1)).flatten(), name='Predicted'))
         fig.update_layout(
             title=f"{user_input} Prediction for Next 30 Days",
             xaxis=dict(title=dict(text="Time", font=dict(family="Arial", size=12, color="black"))),
@@ -521,8 +530,8 @@ try:
         st.plotly_chart(fig, use_container_width=True)
 
         ds_new = ds_scaled.tolist()
-        ds_new.extend(lst_output)
-        final_graph = normalizer.inverse_transform(ds_new).tolist()
+        ds_new.extend(lst_output.tolist())
+        final_graph = normalizer.inverse_transform(np.array(ds_new).reshape(-1, 1)).flatten().tolist()
 
         st.write('Prediction')
         fig = go.Figure()
