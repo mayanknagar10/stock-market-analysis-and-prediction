@@ -259,36 +259,23 @@ st.sidebar.write('For other Ticker or Company refer a yahoo finance website: htt
 indicators = st.sidebar.radio("Indicators", ('SMA', 'EMA', 'MACD', 'RSI', 'Bollinger Bands'))
 returns = st.sidebar.radio("Returns", ('Daily Returns', 'Cumulative Returns'))
 
-try:
-    # Fetch stock data with auto_adjust=False to include Adj Close
-    with st.spinner("Fetching data..."):
-        df = fetch_stock_data(user_input, time)
-    if df.empty:
-        st.error(f"No data found for ticker {user_input}. Please check the ticker symbol.")
-        st.stop()
-
-    # Handle MultiIndex if present
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = [col[0] for col in df.columns]
-    logging.info(f"Columns in df: {df.columns.tolist()}")
-
-    # Fetch ticker info
+# Handle logo display with robust fallback
+placeholder_logo = "https://via.placeholder.com/150?text=No+Logo"
+logo_mapping = {
+    'NVDA': 'logos/NVDA.png',
+    'GOOGL': 'logos/GOOGL.png',
+    'AAPL': 'logos/AAPL.png',
+    'SUDARSCHEM.NS': 'logos/SUDARSCHEM.NS.png',
+    'MSFT': 'logos/MSFT.png',
+    'AMZN': 'logos/AMZN.png'
+}
+local_logo = logo_mapping.get(user_input, f"logos/{user_input}.png")
+if os.path.exists(local_logo):
+    st.image(local_logo, width=150, caption=f"{user_input} Logo")
+    logging.info(f"Using local logo for {user_input}: {local_logo}")
+else:
     information = get_ticker_info(user_input)
-    
-    # Handle logo display with robust fallback
-    placeholder_logo = "https://via.placeholder.com/150?text=No+Logo"
-    # Ticker-to-logo mapping for key tickers
-    logo_mapping = {
-        'NVDA': 'logos/NVDA.png',
-        'GOOGL': 'logos/GOOGL.png',
-        'AAPL': 'logos/AAPL.png',
-        'SUDARSCHEM.NS': 'logos/SUDARSCHEM.NS.png'
-    }
-    local_logo = logo_mapping.get(user_input, f"logos/{user_input}.png")
-    if os.path.exists(local_logo):
-        st.image(local_logo, width=150, caption=f"{user_input} Logo")
-        logging.info(f"Using local logo for {user_input}: {local_logo}")
-    elif "logo_url" in information and information["logo_url"]:
+    if "logo_url" in information and information["logo_url"]:
         logo_url = information["logo_url"]
         logging.info(f"Logo URL for {user_input}: {logo_url}")
         try:
@@ -305,6 +292,19 @@ try:
     else:
         st.image(placeholder_logo, width=150, caption=f"No logo available for {user_input}")
         logging.info(f"No logo_url found in info for {user_input}")
+
+try:
+    # Fetch stock data with auto_adjust=False to include Adj Close
+    with st.spinner("Fetching data..."):
+        df = fetch_stock_data(user_input, time)
+    if df.empty:
+        st.error(f"No data found for ticker {user_input}. Please check the ticker symbol.")
+        st.stop()
+
+    # Handle MultiIndex if present
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [col[0] for col in df.columns]
+    logging.info(f"Columns in df: {df.columns.tolist()}")
 
     string_name = information.get('longName', 'Unknown Company')
     st.header('**%s**' % string_name)
@@ -461,7 +461,7 @@ try:
     try:
         train_size = int(len(ds_scaled) * 0.70)
         test_size = len(ds_scaled) - train_size
-        ds_train, ds_test = ds_scaled[0:train_size, :], ds_scaled[train_size:len(ds_scaled), :1]
+        ds_train, ds_test = ds_scaled[0:train_size, :], ds_scaled[train_size:len(ds_scaled), :]
 
         def create_ds(dataset, step):
             Xtrain, Ytrain = [], []
@@ -479,6 +479,7 @@ try:
         X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
 
         model = load_model('keras_model.h5', custom_objects={'LSTM': CustomLSTM})
+        logging.info(f"Model loaded successfully. Input shape: {model.input_shape}")
         train_predict = model.predict(X_train)
         test_predict = model.predict(X_test)
 
@@ -487,40 +488,32 @@ try:
 
         test = np.vstack((train_predict, test_predict))
 
-        fut_inp = ds_test[(len(ds_test) - 100):]
+        fut_inp = ds_test[-100:]
         fut_inp = fut_inp.reshape(1, -1)
-        tmp_inp = list(fut_inp)
-        tmp_inp = tmp_inp[0].tolist()
+        tmp_inp = fut_inp[0].tolist()
 
         lst_output = []
         n_steps = 100
         i = 0
         while i < 30:
-            if len(tmp_inp) > 100:
-                fut_inp = np.array(tmp_inp[1:])
-                fut_inp = fut_inp.reshape(1, -1)
-                fut_inp = fut_inp.reshape((1, n_steps, 1))
-                yhat = model.predict(fut_inp, verbose=0)
-                tmp_inp.extend(yhat.flatten().tolist())
-                tmp_inp = tmp_inp[1:]
-                lst_output.extend(yhat.flatten().tolist())
-                i += 1
-            else:
-                fut_inp = fut_inp.reshape((1, n_steps, 1))
-                yhat = model.predict(fut_inp, verbose=0)
-                tmp_inp.extend(yhat.flatten().tolist())
-                lst_output.extend(yhat.flatten().tolist())
-                i += 1
+            fut_inp = np.array(tmp_inp).reshape(1, n_steps, 1)
+            yhat = model.predict(fut_inp, verbose=0)
+            logging.info(f"Iteration {i}: yhat shape: {yhat.shape}, yhat: {yhat.flatten()[:5]}")
+            yhat = yhat.flatten()[0]  # Extract scalar
+            tmp_inp.append(yhat)
+            tmp_inp = tmp_inp[1:]
+            lst_output.append(yhat)
+            i += 1
 
         # Ensure lst_output is 1D
-        lst_output = np.array(lst_output).flatten()
+        lst_output = np.array(lst_output, dtype=float)
         logging.info(f"lst_output shape: {lst_output.shape}, values: {lst_output[:5]}")
 
         st.write('Result')
         plot_new = np.arange(1, 101)
         plot_pred = np.arange(101, 131)
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=plot_new, y=normalizer.inverse_transform(ds_scaled[(len(ds_scaled) - 100):]).flatten(), name='Historical'))
+        fig.add_trace(go.Scatter(x=plot_new, y=normalizer.inverse_transform(ds_scaled[-100:]).flatten(), name='Historical'))
         fig.add_trace(go.Scatter(x=plot_pred, y=normalizer.inverse_transform(lst_output.reshape(-1, 1)).flatten(), name='Predicted'))
         fig.update_layout(
             title=f"{user_input} Prediction for Next 30 Days",
@@ -529,14 +522,16 @@ try:
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        ds_new = ds_scaled.tolist()
+        ds_new = ds_scaled.flatten().tolist()
         ds_new.extend(lst_output.tolist())
-        final_graph = normalizer.inverse_transform(np.array(ds_new).reshape(-1, 1)).flatten().tolist()
+        ds_new = np.array(ds_new, dtype=float)
+        logging.info(f"ds_new shape: {ds_new.shape}, values: {ds_new[-5:]}")
+        final_graph = normalizer.inverse_transform(ds_new.reshape(-1, 1)).flatten().tolist()
 
         st.write('Prediction')
         fig = go.Figure()
         fig.add_trace(go.Scatter(y=final_graph, name='Price'))
-        fig.add_hline(y=final_graph[-1], line_dash="dot", line_color="red", annotation_text=f"NEXT 30D: {round(float(final_graph[-1]), 2)}")
+        fig.add_hline(y=final_graph[-1], line_dash="dot", line_color="red", annotation_text=f"NEXT 30D: {round(final_graph[-1], 2)}")
         fig.update_layout(
             title=f"{user_input} Prediction of Next Month Close",
             xaxis=dict(title=dict(text="Time", font=dict(family="Arial", size=12, color="black"))),
