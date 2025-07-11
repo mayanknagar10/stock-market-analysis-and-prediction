@@ -176,9 +176,20 @@ def get_stock_price_fig(df, v2, v3):
         plot_bgcolor='#ebf3ff',
         width=500,
         height=600,
-        xaxis=dict(showticklabels=True, showgrid=False),
-        xaxis3=dict(showgrid=False),
-        xaxis4=dict(showticklabels=False, showgrid=False)
+        xaxis=dict(
+            showticklabels=True,
+            showgrid=False,
+            title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))
+        ),
+        xaxis3=dict(
+            showgrid=False,
+            title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))
+        ),
+        xaxis4=dict(
+            showticklabels=False,
+            showgrid=False,
+            title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))
+        )
     )
     return fig
 
@@ -287,26 +298,32 @@ try:
 
     st.subheader('Fundamentals')
     try:
-        data1 = si.get_quote_table(user_input)
-        FiftyTwo_week_range = data1.get("52 Week Range", "N/A")
-        day_range = data1.get("Day's Range", "N/A")
-        avg_volume = data1.get("Avg. Volume", "N/A")
-        eps = data1.get("EPS (TTM)", "N/A")
-        marketcap = data1.get("Market Cap", "N/A")
-        pe = data1.get("PE Ratio (TTM)", "N/A")
-        volume = data1.get("Volume", "N/A")
-        quote_price = data1.get("Quote Price", "N/A")
-
-        st.write("52 Week Range: ", FiftyTwo_week_range)
-        st.write("Day's Range: ", day_range)
-        st.write("Average Volume: ", avg_volume)
-        st.write("EPS: ", eps)
-        st.write("Market Cap: ", marketcap)
-        st.write("PE Ratio: ", pe)
-        st.write("Volume: ", volume)
-        st.write("Quote Price: ", quote_price)
+        # Try yfinance for fundamentals as primary source
+        ticker = yf.Ticker(user_input)
+        info = ticker.info
+        st.write("52 Week Range: ", f"{info.get('fiftyTwoWeekLow', 'N/A')} - {info.get('fiftyTwoWeekHigh', 'N/A')}")
+        st.write("Day's Range: ", f"{info.get('dayLow', 'N/A')} - {info.get('dayHigh', 'N/A')}")
+        st.write("Average Volume: ", info.get('averageVolume', 'N/A'))
+        st.write("EPS: ", info.get('trailingEps', 'N/A'))
+        st.write("Market Cap: ", info.get('marketCap', 'N/A'))
+        st.write("PE Ratio: ", info.get('trailingPE', 'N/A'))
+        st.write("Volume: ", info.get('volume', 'N/A'))
+        st.write("Quote Price: ", info.get('regularMarketPrice', info.get('previousClose', 'N/A')))
     except Exception as e:
-        st.warning(f"Error fetching fundamentals: {str(e)}. Continuing without fundamentals.")
+        st.warning(f"Error fetching fundamentals from yfinance: {str(e)}. Trying yahoo-fin as fallback.")
+        try:
+            # Fallback to yahoo-fin
+            data1 = si.get_quote_table(user_input)
+            st.write("52 Week Range: ", data1.get("52 Week Range", "N/A"))
+            st.write("Day's Range: ", data1.get("Day's Range", "N/A"))
+            st.write("Average Volume: ", data1.get("Avg. Volume", "N/A"))
+            st.write("EPS: ", data1.get("EPS (TTM)", "N/A"))
+            st.write("Market Cap: ", data1.get("Market Cap", "N/A"))
+            st.write("PE Ratio: ", data1.get("PE Ratio (TTM)", "N/A"))
+            st.write("Volume: ", data1.get("Volume", "N/A"))
+            st.write("Quote Price: ", data1.get("Quote Price", "N/A"))
+        except Exception as e2:
+            st.warning(f"Error fetching fundamentals from yahoo-fin: {str(e2)}. Continuing without fundamentals.")
 
     company = yf.Ticker(user_input)
     st.write("Major Holders: ", company.major_holders if company.major_holders is not None else "N/A")
@@ -350,6 +367,12 @@ try:
     qf = cf.QuantFig(df, title='First Quant Figure', legend='top', name=user_input)
     qf.add_bollinger_bands()
     fig = qf.iplot(asFigure=True)
+    # Ensure correct title.font for cufflinks figure
+    fig.update_layout(
+        title=dict(text='First Quant Figure', font=dict(family="Arial", size=12, color="black")),
+        xaxis=dict(title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader('Result and Prediction')
