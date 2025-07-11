@@ -189,6 +189,18 @@ def get_stock_price_fig(df, v2, v3):
             showticklabels=False,
             showgrid=False,
             title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))
+        ),
+        yaxis=dict(
+            title=dict(text="Price", font=dict(family="Arial", size=12, color="black"))
+        ),
+        yaxis2=dict(
+            title=dict(text="Volume", font=dict(family="Arial", size=12, color="black"))
+        ),
+        yaxis3=dict(
+            title=dict(text=v2, font=dict(family="Arial", size=12, color="black"))
+        ),
+        yaxis4=dict(
+            title=dict(text=v3 + " %", font=dict(family="Arial", size=12, color="black"))
         )
     )
     return fig
@@ -298,7 +310,7 @@ try:
 
     st.subheader('Fundamentals')
     try:
-        # Try yfinance for fundamentals as primary source
+        # Use yfinance for fundamentals as primary source
         ticker = yf.Ticker(user_input)
         info = ticker.info
         st.write("52 Week Range: ", f"{info.get('fiftyTwoWeekLow', 'N/A')} - {info.get('fiftyTwoWeekHigh', 'N/A')}")
@@ -364,10 +376,18 @@ try:
     st.plotly_chart(fig, use_container_width=True)
 
     st.write("First Quant Figure")
-    qf = cf.QuantFig(df, title='First Quant Figure', legend='top', name=user_input)
-    qf.add_bollinger_bands()
-    fig = qf.iplot(asFigure=True)
-    # Ensure correct title.font for cufflinks figure
+    # Replace cufflinks with native Plotly to avoid titlefont issues
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='rgb(31, 119, 180)')))
+    fig.add_trace(go.Scatter(x=df.index, y=df['BOLU'], name='Upper Bollinger Band', line=dict(width=0.5, color='#89BCFD')))
+    fig.add_trace(go.Scatter(
+        x=df.index,
+        y=df['BOLD'],
+        name='Lower Bollinger Band',
+        line=dict(width=0.5, color='#89BCFD'),
+        fill='tonexty',
+        fillcolor='rgba(56, 224, 56, 0.5)'
+    ))
     fig.update_layout(
         title=dict(text='First Quant Figure', font=dict(family="Arial", size=12, color="black")),
         xaxis=dict(title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
