@@ -171,18 +171,16 @@ def get_stock_price_fig(df, v2, v3):
             col=1
         )
 
-    fig.update(layout_xaxis_rangeslider_visible=False)
     fig.update_layout(
         margin=dict(b=0, t=0, l=0, r=0),
         plot_bgcolor='#ebf3ff',
         width=500,
         height=600,
-        xaxis_showticklabels=True,
-        xaxis4_showticklabels=False,
-        xaxis3_showgrid=False,
-        xaxis4_showgrid=False
+        xaxis=dict(showticklabels=True, showgrid=False),
+        xaxis4=dict(showticklabels=False, showgrid=False),
+        xaxis3=dict(showgrid=False),
+        xaxis4=dict(showgrid=False)
     )
-    fig.layout.xaxis.showgrid = False
     return fig
 
 # Cache data fetching
@@ -277,7 +275,11 @@ try:
         close=df['Close']
     )
     fig = go.Figure(data=[candlestick])
-    fig.update_layout(title=f"{user_input} Candlestick Chart", xaxis_title="Date", yaxis_title="Price")
+    fig.update_layout(
+        title=f"{user_input} Candlestick Chart",
+        xaxis=dict(title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader('Data')
@@ -317,13 +319,21 @@ try:
     fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close Price', line=dict(color='green')))
     fig.add_trace(go.Scatter(x=df.index, y=df['High'], name='High Price', line=dict(color='red')))
     fig.add_trace(go.Scatter(x=df.index, y=df['Low'], name='Low Price', line=dict(color='purple')))
-    fig.update_layout(title=f"{user_input} Stock Prices", xaxis_title="Date", yaxis_title="Stock Price")
+    fig.update_layout(
+        title=f"{user_input} Stock Prices",
+        xaxis=dict(title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Stock Price", font=dict(family="Arial", size=12, color="black")))
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Volume Traded Chart")
     fig = go.Figure()
     fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='Volume', opacity=0.5))
-    fig.update_layout(title=f"{user_input} Volume Traded", xaxis_title="Date", yaxis_title="Volume")
+    fig.update_layout(
+        title=f"{user_input} Volume Traded",
+        xaxis=dict(title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Volume", font=dict(family="Arial", size=12, color="black")))
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader('Indicators and Returns')
@@ -354,7 +364,11 @@ try:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.index, y=ma100, name='100MA', line=dict(color='red')))
     fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='blue')))
-    fig.update_layout(title=f"{user_input} Closing Price with 100MA", xaxis_title="Date", yaxis_title="Price")
+    fig.update_layout(
+        title=f"{user_input} Closing Price with 100MA",
+        xaxis=dict(title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     st.write('Closing Price vs Time chart with 100MA & 200MA')
@@ -364,7 +378,11 @@ try:
     fig.add_trace(go.Scatter(x=df.index, y=ma100, name='100MA', line=dict(color='red')))
     fig.add_trace(go.Scatter(x=df.index, y=ma200, name='200MA', line=dict(color='green')))
     fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='blue')))
-    fig.update_layout(title=f"{user_input} Closing Price with 100MA & 200MA", xaxis_title="Date", yaxis_title="Price")
+    fig.update_layout(
+        title=f"{user_input} Closing Price with 100MA & 200MA",
+        xaxis=dict(title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     train_size = int(len(ds_scaled) * 0.70)
@@ -426,7 +444,11 @@ try:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=plot_new, y=normalizer.inverse_transform(ds_scaled[(len(ds_scaled) - 100):]).flatten(), name='Historical'))
     fig.add_trace(go.Scatter(x=plot_pred, y=normalizer.inverse_transform(lst_output).flatten(), name='Predicted'))
-    fig.update_layout(title=f"{user_input} Prediction for Next 30 Days", xaxis_title="Time", yaxis_title="Price")
+    fig.update_layout(
+        title=f"{user_input} Prediction for Next 30 Days",
+        xaxis=dict(title=dict(text="Time", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     ds_new = ds_scaled.tolist()
@@ -437,7 +459,11 @@ try:
     fig = go.Figure()
     fig.add_trace(go.Scatter(y=final_graph, name='Price'))
     fig.add_hline(y=final_graph[-1], line_dash="dot", line_color="red", annotation_text=f"NEXT 30D: {round(float(final_graph[-1]), 2)}")
-    fig.update_layout(title=f"{user_input} Prediction of Next Month Close", xaxis_title="Time", yaxis_title="Price")
+    fig.update_layout(
+        title=f"{user_input} Prediction of Next Month Close",
+        xaxis=dict(title=dict(text="Time", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black")))
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     price = round(float(final_graph[-1]), 2)
