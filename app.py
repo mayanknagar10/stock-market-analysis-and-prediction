@@ -18,6 +18,7 @@ from arch import arch_model
 import yfinance as yf
 import os.path
 import logging
+from io import StringIO
 
 # Configure logging for debugging
 logging.basicConfig(level=logging.INFO)
@@ -187,7 +188,7 @@ def get_stock_price_fig(df, v2, v3):
 # Cache data fetching
 @st.cache_data
 def fetch_stock_data(ticker, period, interval='1d'):
-    return yf.download(ticker, period=period, interval=interval)
+    return yf.download(ticker, period=period, interval=interval, auto_adjust=False)
 
 @st.cache_data
 def get_ticker_info(ticker):
@@ -229,11 +230,17 @@ indicators = st.sidebar.radio("Indicators", ('SMA', 'EMA', 'MACD', 'RSI', 'Bolli
 returns = st.sidebar.radio("Returns", ('Daily Returns', 'Cumulative Returns'))
 
 try:
-    # Fetch stock data
-    df = fetch_stock_data(user_input, time)
+    # Fetch stock data with auto_adjust=False to include Adj Close
+    with st.spinner("Fetching data..."):
+        df = fetch_stock_data(user_input, time)
     if df.empty:
         st.error(f"No data found for ticker {user_input}. Please check the ticker symbol.")
         st.stop()
+
+    # Handle MultiIndex if present
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [col[0] for col in df.columns]  # Flatten MultiIndex to single level
+    logging.info(f"Columns in df: {df.columns.tolist()}")
 
     # Fetch ticker info
     information = get_ticker_info(user_input)
@@ -257,9 +264,9 @@ try:
     logging.info(f"Columns in df1: {df1.columns.tolist()}")
     columns_to_drop = [col for col in ['Date', 'Adj Close'] if col in df1.columns]
     if columns_to_drop:
-        df1 = df1.drop(columns_to_drop, axis=1)
+        df1 = df1.drop(columns=columns_to_drop, axis=1)
     else:
-        st.warning("Expected columns 'Date' or 'Adj Close' not found in data.")
+        st.warning("Expected columns 'Date' or 'Adj Close' not found in data. Continuing with available columns.")
 
     st.subheader('Candlestick chart')
     candlestick = go.Candlestick(
@@ -278,28 +285,31 @@ try:
     st.write(df.tail(2))
 
     st.subheader('Fundamentals')
-    data1 = si.get_quote_table(user_input)
-    FiftyTwo_week_range = data1.get("52 Week Range", "N/A")
-    day_range = data1.get("Day's Range", "N/A")
-    avg_volume = data1.get("Avg. Volume", "N/A")
-    eps = data1.get("EPS (TTM)", "N/A")
-    marketcap = data1.get("Market Cap", "N/A")
-    pe = data1.get("PE Ratio (TTM)", "N/A")
-    volume = data1.get("Volume", "N/A")
-    quote_price = data1.get("Quote Price", "N/A")
+    try:
+        data1 = si.get_quote_table(user_input)
+        FiftyTwo_week_range = data1.get("52 Week Range", "N/A")
+        day_range = data1.get("Day's Range", "N/A")
+        avg_volume = data1.get("Avg. Volume", "N/A")
+        eps = data1.get("EPS (TTM)", "N/A")
+        marketcap = data1.get("Market Cap", "N/A")
+        pe = data1.get("PE Ratio (TTM)", "N/A")
+        volume = data1.get("Volume", "N/A")
+        quote_price = data1.get("Quote Price", "N/A")
 
-    st.write("52 Week Range: ", FiftyTwo_week_range)
-    st.write("Day's Range: ", day_range)
-    st.write("Average Volume: ", avg_volume)
-    st.write("EPS: ", eps)
-    st.write("Market Cap: ", marketcap)
-    st.write("PE Ratio: ", pe)
-    st.write("Volume: ", volume)
-    st.write("Quote Price: ", quote_price)
+        st.write("52 Week Range: ", FiftyTwo_week_range)
+        st.write("Day's Range: ", day_range)
+        st.write("Average Volume: ", avg_volume)
+        st.write("EPS: ", eps)
+        st.write("Market Cap: ", marketcap)
+        st.write("PE Ratio: ", pe)
+        st.write("Volume: ", volume)
+        st.write("Quote Price: ", quote_price)
+    except Exception as e:
+        st.warning(f"Error fetching fundamentals: {str(e)}. Continuing without fundamentals.")
 
     company = yf.Ticker(user_input)
-    st.write("Major Holders: ", company.major_holders)
-    st.write("Institutional Holders: ", company.institutional_holders)
+    st.write("Major Holders: ", company.major_holders if company.major_holders is not None else "N/A")
+    st.write("Institutional Holders: ", company.institutional_holders if company.institutional_holders is not None else "N/A")
 
     st.subheader("Stock Price Chart")
     fig = go.Figure()
@@ -323,6 +333,7 @@ try:
     df['SMA_50'] = SMA(df, 50)
     df['SMA_200'] = SMA(df, 200)
     df['EMA'] = EMA(df)
+    df['Date'] = df.index  # Ensure 'Date' column exists for get_stock_price_fig
     fig = get_stock_price_fig(df.tail(time_period), indicators, returns)
     st.plotly_chart(fig, use_container_width=True)
 
