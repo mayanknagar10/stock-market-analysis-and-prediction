@@ -15,13 +15,23 @@ import streamlit as st
 from datetime import date, timedelta, datetime
 from arch import arch_model
 import yfinance as yf
-import os.path
+import os
 import logging
 from io import StringIO
 import requests
 
+# Suppress TensorFlow warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 0=All, 1=Info, 2=Warning, 3=Error
+
 # Configure logging for debugging
 logging.basicConfig(level=logging.INFO)
+
+# Custom LSTM to handle deprecated parameters
+class CustomLSTM(LSTM):
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('time_major', None)  # Ignore time_major
+        kwargs.pop('input_shape', None)  # Ignore input_shape
+        super(CustomLSTM, self).__init__(*args, **kwargs)
 
 # Functions for calculating SMA, EMA, MACD, RSI
 def SMA(data, period=100, column='Close'):
@@ -265,14 +275,18 @@ try:
     # Fetch ticker info
     information = get_ticker_info(user_input)
     
-    # Handle logo display with st.image and fallback
-    placeholder_logo = "https://via.placeholder.com/150?text=No+Logo"  # Placeholder image
-    if "logo_url" in information and information["logo_url"]:
+    # Handle logo display with local fallback
+    placeholder_logo = "https://via.placeholder.com/150?text=No+Logo"
+    local_logo = f"logos/{user_input}.png"
+    if os.path.exists(local_logo):
+        st.image(local_logo, width=150, caption=f"{user_input} Logo")
+        logging.info(f"Using local logo for {user_input}: {local_logo}")
+    elif "logo_url" in information and information["logo_url"]:
         logo_url = information["logo_url"]
         logging.info(f"Logo URL for {user_input}: {logo_url}")
         try:
-            # Fetch image content to verify it's an image
-            response = requests.get(logo_url, timeout=5)
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+            response = requests.get(logo_url, headers=headers, timeout=5)
             if response.status_code == 200 and 'image' in response.headers.get('Content-Type', ''):
                 st.image(logo_url, width=150, caption=f"{user_input} Logo")
             else:
@@ -439,27 +453,27 @@ try:
     st.plotly_chart(fig, use_container_width=True)
 
     # Model prediction with compatibility fix
-    train_size = int(len(ds_scaled) * 0.70)
-    test_size = len(ds_scaled) - train_size
-    ds_train, ds_test = ds_scaled[0:train_size, :], ds_scaled[train_size:len(ds_scaled), :1]
-
-    def create_ds(dataset, step):
-        Xtrain, Ytrain = [], []
-        for i in range(len(dataset) - step - 1):
-            a = dataset[i:(i + step), 0]
-            Xtrain.append(a)
-            Ytrain.append(dataset[i + step, 0])
-        return np.array(Xtrain), np.array(Ytrain)
-
-    time_stamp = 100
-    X_train, y_train = create_ds(ds_train, time_stamp)
-    X_test, y_test = create_ds(ds_test, time_stamp)
-
-    X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
-    X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
-
     try:
-        model = load_model('keras_model.h5', custom_objects={'LSTM': LSTM})
+        train_size = int(len(ds_scaled) * 0.70)
+        test_size = len(ds_scaled) - train_size
+        ds_train, ds_test = ds_scaled[0:train_size, :], ds_scaled[train_size:len(ds_scaled), :1]
+
+        def create_ds(dataset, step):
+            Xtrain, Ytrain = [], []
+            for i in range(len(dataset) - step - 1):
+                a = dataset[i:(i + step), 0]
+                Xtrain.append(a)
+                Ytrain.append(dataset[i + step, 0])
+            return np.array(Xtrain), np.array(Ytrain)
+
+        time_stamp = 100
+        X_train, y_train = create_ds(ds_train, time_stamp)
+        X_test, y_test = create_ds(ds_test, time_stamp)
+
+        X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+        X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
+
+        model = load_model('keras_model.h5', custom_objects={'LSTM': CustomLSTM})
         train_predict = model.predict(X_train)
         test_predict = model.predict(X_test)
 
