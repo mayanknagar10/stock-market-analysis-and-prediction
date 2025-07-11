@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pandas_datareader as data
-import cufflinks as cf
 from sklearn.preprocessing import MinMaxScaler
 from keras.layers import Dense, Dropout, LSTM
 from keras.models import Sequential
@@ -19,6 +18,7 @@ import yfinance as yf
 import os.path
 import logging
 from io import StringIO
+import requests
 
 # Configure logging for debugging
 logging.basicConfig(level=logging.INFO)
@@ -265,13 +265,24 @@ try:
     # Fetch ticker info
     information = get_ticker_info(user_input)
     
-    # Handle logo display
-    string_logo = ""
+    # Handle logo display with st.image
     if "logo_url" in information and information["logo_url"]:
-        string_logo = '<img src=%s>' % information['logo_url']
+        logo_url = information["logo_url"]
+        logging.info(f"Logo URL for {user_input}: {logo_url}")
+        try:
+            # Verify URL accessibility
+            response = requests.head(logo_url, timeout=5)
+            if response.status_code == 200:
+                st.image(logo_url, width=150, caption=f"{user_input} Logo")
+            else:
+                st.write(f"No logo available for {user_input} (invalid URL: {response.status_code})")
+                logging.warning(f"Invalid logo URL status code: {response.status_code}")
+        except Exception as e:
+            st.write(f"No logo available for {user_input} (error accessing URL: {str(e)})")
+            logging.warning(f"Error accessing logo URL: {str(e)}")
     else:
-        string_logo = '<p>No logo available</p>'
-    st.markdown(string_logo, unsafe_allow_html=True)
+        st.write(f"No logo available for {user_input}")
+        logging.info(f"No logo_url found in info for {user_input}")
 
     string_name = information.get('longName', 'Unknown Company')
     st.header('**%s**' % string_name)
@@ -376,7 +387,6 @@ try:
     st.plotly_chart(fig, use_container_width=True)
 
     st.write("First Quant Figure")
-    # Replace cufflinks with native Plotly to avoid titlefont issues
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='rgb(31, 119, 180)')))
     fig.add_trace(go.Scatter(x=df.index, y=df['BOLU'], name='Upper Bollinger Band', line=dict(width=0.5, color='#89BCFD')))
