@@ -177,9 +177,8 @@ def get_stock_price_fig(df, v2, v3):
         width=500,
         height=600,
         xaxis=dict(showticklabels=True, showgrid=False),
-        xaxis4=dict(showticklabels=False, showgrid=False),
         xaxis3=dict(showgrid=False),
-        xaxis4=dict(showgrid=False)
+        xaxis4=dict(showticklabels=False, showgrid=False)  # Consolidated xaxis4
     )
     return fig
 
