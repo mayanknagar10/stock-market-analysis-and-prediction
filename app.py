@@ -209,7 +209,11 @@ def fetch_stock_data(ticker, period, interval='1d'):
     return yf.download(ticker, period=period, interval=interval, auto_adjust=False)
 @st.cache_data
 def get_ticker_info(ticker):
-    return yf.Ticker(ticker).info
+    try:
+        return yf.Ticker(ticker).info or {}
+    except Exception as e:
+        logging.warning(f"Error fetching ticker info for {ticker}: {e}")
+        return {}
 @st.cache_data
 def load_csv(url):
     return pd.read_csv(url)
@@ -314,7 +318,7 @@ try:
     st.subheader('Fundamentals')
     try:
         ticker = yf.Ticker(user_input)
-        info = ticker.info
+        info = ticker.info or {}
         st.write("52 Week Range: ", f"{info.get('fiftyTwoWeekLow', 'N/A')} - {info.get('fiftyTwoWeekHigh', 'N/A')}")
         st.write("Day's Range: ", f"{info.get('dayLow', 'N/A')} - {info.get('dayHigh', 'N/A')}")
         st.write("Average Volume: ", info.get('averageVolume', 'N/A'))
