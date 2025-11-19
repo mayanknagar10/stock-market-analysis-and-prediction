@@ -206,7 +206,11 @@ def get_stock_price_fig(df, v2, v3):
 # Cache data fetching
 @st.cache_data
 def fetch_stock_data(ticker, period, interval='1d'):
-    return yf.download(ticker, period=period, interval=interval, auto_adjust=False)
+    try:
+        return yf.download(ticker, period=period, interval=interval, auto_adjust=False)
+    except Exception as e:
+        logging.error(f"Error in fetch_stock_data for {ticker}: {e}")
+        return pd.DataFrame()
 @st.cache_data
 def get_ticker_info(ticker):
     try:
@@ -341,9 +345,14 @@ try:
             st.write("Quote Price: ", data1.get("Quote Price", "N/A"))
         except Exception as e2:
             st.warning(f"Error fetching fundamentals from yahoo-fin: {str(e2)}. Continuing without fundamentals.")
-    company = yf.Ticker(user_input)
-    st.write("Major Holders: ", company.major_holders if company.major_holders is not None else "N/A")
-    st.write("Institutional Holders: ", company.institutional_holders if company.institutional_holders is not None else "N/A")
+    try:
+        company = yf.Ticker(user_input)
+        st.write("Major Holders: ", company.major_holders if hasattr(company, 'major_holders') and company.major_holders is not None else "N/A")
+        st.write("Institutional Holders: ", company.institutional_holders if hasattr(company, 'institutional_holders') and company.institutional_holders is not None else "N/A")
+    except Exception as e:
+        st.write("Major Holders: N/A")
+        st.write("Institutional Holders: N/A")
+        logging.warning(f"Error fetching holders: {e}")
     st.subheader("Stock Price Chart")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.index, y=df['Open'], name='Open Price', line=dict(color='blue')))
