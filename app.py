@@ -19,18 +19,19 @@ import os
 import logging
 from io import StringIO
 import requests
-from curl_cffi import requests
+import functools
 import yfinance as yf
+from curl_cffi import requests
 
 # === FIXED SESSION FOR STREAMLIT CLOUD (2025) ===
-# This forces yfinance to use a SAFE, supported browser impersonate
 safe_session = requests.Session(impersonate="chrome124")  # chrome124 is fully supported
 yf.shared._DFS = {}                                      # Clear any bad cache
-# Make ALL yfinance calls use this safe session automatically
-yf.Ticker = lambda ticker, **kwargs: yf.Ticker(ticker, session=safe_session, **kwargs)
-yf.download = lambda *args, **kwargs: yf.download(*args, session=safe_session, **kwargs)
+orig_ticker = yf.Ticker
+orig_download = yf.download
+# Corrected yfinance session patch to avoid infinite recursion
+yf.Ticker = lambda ticker, **kwargs: orig_ticker(ticker, session=safe_session, **kwargs)
+yf.download = functools.partial(orig_download, session=safe_session)
 # ================================================
-
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # Configure logging for debugging
@@ -504,5 +505,6 @@ try:
 except Exception as e:
     st.error(f"Error fetching or processing data for ticker {user_input}: {str(e)}")
     st.stop()
+
 
 
