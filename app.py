@@ -20,11 +20,14 @@ import logging
 from io import StringIO
 import requests
 
-# === ADD THESE TWO LINES ONLY ===
-yf.shared._DFS = {}
-yf.pdr_override()
-# ==================================
+# ====================== FIX FOR STREAMLIT CLOUD 2025 ======================
+# yfinance changed internals — pdr_override() no longer exists in new versions
+# This is the new official way that works everywhere (including curl_cffi environments)
+yf.shared._DFS = {}                     # Clear any broken cached sessions
+os.environ["YFINANCE_DISABLE_SCRAPER"] = "1"   # Force safe, simple requests only
+# ==========================================================================
 
+# Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # Configure logging for debugging
 logging.basicConfig(level=logging.INFO)
@@ -497,3 +500,4 @@ try:
 except Exception as e:
     st.error(f"Error fetching or processing data for ticker {user_input}: {str(e)}")
     st.stop()
+
