@@ -21,26 +21,19 @@ from io import StringIO
 import requests
 import functools
 import yfinance as yf
-import yfinance as yf
 from curl_cffi import requests
-
 safe_session = requests.Session(impersonate="chrome124")
 yf.shared._DFS = {}
-
 class SafeTickerWrapper(yf.Ticker):
     def __init__(self, ticker, **kwargs):
         kwargs['session'] = safe_session
         super().__init__(ticker, **kwargs)
-
 def safe_download(*args, **kwargs):
     kwargs['session'] = safe_session
     return yf.download(*args, **kwargs)
-
 yf.Ticker = SafeTickerWrapper
 yf.download = safe_download
-
 # ================================================
-
 # ================================================
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -257,6 +250,7 @@ user_input = st.sidebar.selectbox('Enter Stock Ticker', ticker_list)
 st.sidebar.write('For other Ticker or Company refer a yahoo finance website: https://finance.yahoo.com/')
 indicators = st.sidebar.radio("Indicators", ('SMA', 'EMA', 'MACD', 'RSI', 'Bollinger Bands'))
 returns = st.sidebar.radio("Returns", ('Daily Returns', 'Cumulative Returns'))
+information = get_ticker_info(user_input)
 # Handle logo display with robust fallback
 placeholder_logo = "https://via.placeholder.com/150?text=No+Logo"
 logo_mapping = {
@@ -272,7 +266,6 @@ if os.path.exists(local_logo):
     st.image(local_logo, width=150, caption=f"{user_input} Logo")
     logging.info(f"Using local logo for {user_input}: {local_logo}")
 else:
-    information = get_ticker_info(user_input)
     if "logo_url" in information and information["logo_url"]:
         logo_url = information["logo_url"]
         logging.info(f"Logo URL for {user_input}: {logo_url}")
@@ -515,8 +508,3 @@ try:
 except Exception as e:
     st.error(f"Error fetching or processing data for ticker {user_input}: {str(e)}")
     st.stop()
-
-
-
-
-
