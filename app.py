@@ -204,42 +204,56 @@ def get_stock_price_fig(df, v2, v3):
 # ================================================
 # Data Fetching Functions with Session Fix
 # ================================================
-def fetch_stock_data_simple(ticker, period, interval='1d'):
+def fetch_stock_data_simple(ticker, period, interval='1d', max_retries=3):
     """Fetch stock data without caching to avoid session issues"""
-    try:
-        # Method 1: Use Ticker.history() - most reliable
-        ticker_obj = yf.Ticker(ticker)
-        df = ticker_obj.history(period=period, interval=interval, auto_adjust=False)
-        
-        if df.empty:
-            raise ValueError("Empty dataframe returned")
-        
-        # Handle MultiIndex columns
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = [col[0] for col in df.columns]
-        
-        logging.info(f"Successfully fetched data for {ticker} using Ticker.history()")
-        return df
-        
-    except Exception as e1:
-        logging.warning(f"Ticker.history() failed for {ticker}: {e1}")
+    
+    for attempt in range(max_retries):
+        try:
+            # Method 1: Use Ticker.history() - most reliable
+            logging.info(f"Attempt {attempt + 1}/{max_retries}: Fetching {ticker} using Ticker.history()")
+            ticker_obj = yf.Ticker(ticker)
+            df = ticker_obj.history(period=period, interval=interval, auto_adjust=False)
+            
+            if not df.empty:
+                # Handle MultiIndex columns
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = [col[0] for col in df.columns]
+                
+                logging.info(f"✓ Successfully fetched data for {ticker} using Ticker.history() - {len(df)} rows")
+                return df
+            else:
+                logging.warning(f"Ticker.history() returned empty dataframe for {ticker}")
+                
+        except Exception as e1:
+            logging.warning(f"Attempt {attempt + 1} - Ticker.history() failed for {ticker}: {e1}")
         
         # Method 2: Try download with progress=False
         try:
-            df = yf.download(ticker, period=period, interval=interval, auto_adjust=False, progress=False, show_errors=False)
+            logging.info(f"Attempt {attempt + 1}/{max_retries}: Trying yf.download() for {ticker}")
+            df = yf.download(ticker, period=period, interval=interval, auto_adjust=False, 
+                           progress=False, show_errors=False, threads=False)
             
-            if df.empty:
-                raise ValueError("Empty dataframe returned")
-            
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = [col[0] for col in df.columns]
-            
-            logging.info(f"Successfully fetched data for {ticker} using yf.download()")
-            return df
-            
+            if not df.empty:
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = [col[0] for col in df.columns]
+                
+                logging.info(f"✓ Successfully fetched data for {ticker} using yf.download() - {len(df)} rows")
+                return df
+            else:
+                logging.warning(f"yf.download() returned empty dataframe for {ticker}")
+                
         except Exception as e2:
-            logging.error(f"All methods failed for {ticker}. Error: {e2}")
-            return pd.DataFrame()
+            logging.warning(f"Attempt {attempt + 1} - yf.download() failed for {ticker}: {e2}")
+        
+        # Wait a bit before retrying (exponential backoff)
+        if attempt < max_retries - 1:
+            import time
+            wait_time = 2 ** attempt  # 1s, 2s, 4s
+            logging.info(f"Waiting {wait_time}s before retry...")
+            time.sleep(wait_time)
+    
+    logging.error(f"❌ All {max_retries} attempts failed for {ticker}")
+    return pd.DataFrame()
 
 def get_ticker_info_simple(ticker):
     """Get ticker info without caching to avoid session issues"""
@@ -299,6 +313,9 @@ st.write('---')
 # Sidebar Configuration
 # ================================================
 st.sidebar.subheader('Query parameters')
+
+# Debug mode
+debug_mode = st.sidebar.checkbox("🐛 Debug Mode", value=False)
 
 # Load configuration files
 period = load_csv('https://raw.githubusercontent.com/mayanknagar10/stock_market_analysis_and_prediction/main/period.csv')
@@ -364,12 +381,35 @@ else:
 # Fetch and Process Stock Data
 # ================================================
 try:
-    with st.spinner("Fetching stock data..."):
+    with st.spinner("Fetching stock data... This may take a moment."):
         df = fetch_stock_data_simple(user_input, time)
+    
+    if debug_mode:
+        st.write(f"**Debug Info:** Fetched {len(df)} rows for {user_input}")
+        st.write(f"**Columns:** {df.columns.tolist() if not df.empty else 'Empty DataFrame'}")
     
     if df.empty:
         st.error(f"❌ No data found for ticker **{user_input}**. Please check the ticker symbol and try again.")
         st.info("💡 Tip: Visit https://finance.yahoo.com/ to find the correct ticker symbol.")
+        
+        # Show some helpful information
+        st.markdown("""
+        ### Common Issues:
+        - The ticker symbol might be incorrect
+        - For Indian stocks, use `.NS` suffix (e.g., `RELIANCE.NS`)
+        - For NSE stocks, try `.NS` suffix (e.g., `SUDARSCHEM.NS`)
+        - For NASDAQ stocks, try without any suffix (e.g., `AAPL`)
+        - Some stocks might not have data for the selected time period
+        
+        ### Suggestions:
+        - Try a different time period (e.g., 1 year instead of 2 years)
+        - Verify the ticker on Yahoo Finance
+        - Check if the stock is actively traded
+        """)
+        
+        if debug_mode:
+            st.warning("Debug: Check the logs above for detailed error messages")
+        
         st.stop()
     
     logging.info(f"Dataframe shape: {df.shape}, Columns: {df.columns.tolist()}")
