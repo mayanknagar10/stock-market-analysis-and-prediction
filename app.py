@@ -20,19 +20,6 @@ import logging
 from io import StringIO
 import requests
 import functools
-import yfinance as yf
-from curl_cffi import requests
-safe_session = requests.Session(impersonate="chrome124")
-yf.shared._DFS = {}
-class SafeTickerWrapper(yf.Ticker):
-    def __init__(self, ticker, **kwargs):
-        kwargs['session'] = safe_session
-        super().__init__(ticker, **kwargs)
-def safe_download(*args, **kwargs):
-    kwargs['session'] = safe_session
-    return yf.download(*args, **kwargs)
-yf.Ticker = SafeTickerWrapper
-yf.download = safe_download
 # ================================================
 # ================================================
 # Suppress TensorFlow warnings
