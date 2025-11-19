@@ -21,20 +21,24 @@ from io import StringIO
 import requests
 import functools
 import yfinance as yf
+import yfinance as yf
 from curl_cffi import requests
-import functools
 
-# Save original references BEFORE patching
-orig_ticker = yf.Ticker
-orig_download = yf.download
+safe_session = requests.Session(impersonate="chrome124")
+yf.shared._DFS = {}
 
-# === FIXED SESSION FOR STREAMLIT CLOUD (2025) ===
-safe_session = requests.Session(impersonate="chrome124")  # chrome124 is fully supported
-yf.shared._DFS = {}  # Clear any bad cache
+class SafeTickerWrapper(yf.Ticker):
+    def __init__(self, ticker, **kwargs):
+        kwargs['session'] = safe_session
+        super().__init__(ticker, **kwargs)
 
-# Patch yf.Ticker and yf.download to use safe_session WITHOUT infinite recursion
-yf.Ticker = lambda ticker, **kwargs: orig_ticker(ticker, session=safe_session, **kwargs)
-yf.download = functools.partial(orig_download, session=safe_session)
+def safe_download(*args, **kwargs):
+    kwargs['session'] = safe_session
+    return yf.download(*args, **kwargs)
+
+yf.Ticker = SafeTickerWrapper
+yf.download = safe_download
+
 # ================================================
 
 # ================================================
@@ -511,6 +515,7 @@ try:
 except Exception as e:
     st.error(f"Error fetching or processing data for ticker {user_input}: {str(e)}")
     st.stop()
+
 
 
 
