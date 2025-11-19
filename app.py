@@ -2,32 +2,30 @@ from time import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import pandas_datareader as data
 from sklearn.preprocessing import MinMaxScaler
 from keras.layers import Dense, Dropout, LSTM
 from keras.models import Sequential
 from keras.models import load_model
-import yahoo_fin.stock_info as si
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 from datetime import date, timedelta, datetime
-from arch import arch_model
-import yfinance as yf
 import os
 import logging
 from io import StringIO
 import requests
-import functools
+import warnings
 
 # ================================================
 # Configuration
 # ================================================
-# Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-# Configure logging for debugging
 logging.basicConfig(level=logging.INFO)
+warnings.filterwarnings('ignore')
+
+# Import yfinance with special handling
+import yfinance as yf
 
 # Custom LSTM to handle deprecated parameters
 class CustomLSTM(LSTM):
@@ -193,56 +191,90 @@ def get_stock_price_fig(df, v2, v3):
         plot_bgcolor='#ebf3ff',
         width=500,
         height=600,
-        xaxis=dict(
-            showticklabels=True,
-            showgrid=False,
-            title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))
-        ),
-        xaxis3=dict(
-            showgrid=False,
-            title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))
-        ),
-        xaxis4=dict(
-            showticklabels=False,
-            showgrid=False,
-            title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))
-        ),
-        yaxis=dict(
-            title=dict(text="Price", font=dict(family="Arial", size=12, color="black"))
-        ),
-        yaxis2=dict(
-            title=dict(text="Volume", font=dict(family="Arial", size=12, color="black"))
-        ),
-        yaxis3=dict(
-            title=dict(text=v2, font=dict(family="Arial", size=12, color="black"))
-        ),
-        yaxis4=dict(
-            title=dict(text=v3 + " %", font=dict(family="Arial", size=12, color="black"))
-        )
+        xaxis=dict(showticklabels=True, showgrid=False, title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        xaxis3=dict(showgrid=False, title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        xaxis4=dict(showticklabels=False, showgrid=False, title=dict(text="Date", font=dict(family="Arial", size=12, color="black"))),
+        yaxis=dict(title=dict(text="Price", font=dict(family="Arial", size=12, color="black"))),
+        yaxis2=dict(title=dict(text="Volume", font=dict(family="Arial", size=12, color="black"))),
+        yaxis3=dict(title=dict(text=v2, font=dict(family="Arial", size=12, color="black"))),
+        yaxis4=dict(title=dict(text=v3 + " %", font=dict(family="Arial", size=12, color="black")))
     )
     return fig
 
 # ================================================
-# Caching Functions
+# Data Fetching Functions with Session Fix
 # ================================================
-@st.cache_data
-def fetch_stock_data(ticker, period, interval='1d'):
+def fetch_stock_data_simple(ticker, period, interval='1d'):
+    """Fetch stock data without caching to avoid session issues"""
     try:
-        df = yf.download(ticker, period=period, interval=interval, auto_adjust=False)
+        # Method 1: Use Ticker.history() - most reliable
+        ticker_obj = yf.Ticker(ticker)
+        df = ticker_obj.history(period=period, interval=interval, auto_adjust=False)
+        
+        if df.empty:
+            raise ValueError("Empty dataframe returned")
+        
         # Handle MultiIndex columns
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = [col[0] for col in df.columns]
+        
+        logging.info(f"Successfully fetched data for {ticker} using Ticker.history()")
         return df
-    except Exception as e:
-        logging.error(f"Error in fetch_stock_data for {ticker}: {e}")
-        return pd.DataFrame()
+        
+    except Exception as e1:
+        logging.warning(f"Ticker.history() failed for {ticker}: {e1}")
+        
+        # Method 2: Try download with progress=False
+        try:
+            df = yf.download(ticker, period=period, interval=interval, auto_adjust=False, progress=False, show_errors=False)
+            
+            if df.empty:
+                raise ValueError("Empty dataframe returned")
+            
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = [col[0] for col in df.columns]
+            
+            logging.info(f"Successfully fetched data for {ticker} using yf.download()")
+            return df
+            
+        except Exception as e2:
+            logging.error(f"All methods failed for {ticker}. Error: {e2}")
+            return pd.DataFrame()
 
-@st.cache_data
-def get_ticker_info(ticker):
+def get_ticker_info_simple(ticker):
+    """Get ticker info without caching to avoid session issues"""
     try:
-        return yf.Ticker(ticker).info or {}
+        ticker_obj = yf.Ticker(ticker)
+        info = {}
+        
+        # Try to get full info
+        try:
+            info = ticker_obj.info
+            if info:
+                logging.info(f"Successfully fetched info for {ticker}")
+                return info
+        except Exception as e:
+            logging.warning(f"ticker.info failed for {ticker}: {e}")
+        
+        # Try fast_info as fallback
+        try:
+            fast_info = ticker_obj.fast_info
+            info = {
+                'longName': ticker,
+                'previousClose': getattr(fast_info, 'previous_close', None),
+                'marketCap': getattr(fast_info, 'market_cap', None),
+                'fiftyTwoWeekHigh': getattr(fast_info, 'year_high', None),
+                'fiftyTwoWeekLow': getattr(fast_info, 'year_low', None),
+            }
+            logging.info(f"Using fast_info for {ticker}")
+            return info
+        except Exception as e:
+            logging.warning(f"fast_info also failed for {ticker}: {e}")
+        
+        return {}
+        
     except Exception as e:
-        logging.warning(f"Error fetching ticker info for {ticker}: {e}")
+        logging.error(f"Complete failure getting info for {ticker}: {e}")
         return {}
 
 @st.cache_data
@@ -302,7 +334,8 @@ returns = st.sidebar.radio("Returns", ('Daily Returns', 'Cumulative Returns'))
 # ================================================
 st.header('INFORMATION')
 
-information = get_ticker_info(user_input)
+# Get ticker info
+information = get_ticker_info_simple(user_input)
 
 # Handle logo display with robust fallback
 placeholder_logo = "https://via.placeholder.com/150?text=No+Logo"
@@ -318,38 +351,28 @@ logo_mapping = {
 local_logo = logo_mapping.get(user_input, f"logos/{user_input}.png")
 if os.path.exists(local_logo):
     st.image(local_logo, width=150, caption=f"{user_input} Logo")
-    logging.info(f"Using local logo for {user_input}: {local_logo}")
 else:
     if "logo_url" in information and information["logo_url"]:
-        logo_url = information["logo_url"]
-        logging.info(f"Logo URL for {user_input}: {logo_url}")
         try:
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-            response = requests.get(logo_url, headers=headers, timeout=5)
-            if response.status_code == 200 and 'image' in response.headers.get('Content-Type', ''):
-                st.image(logo_url, width=150, caption=f"{user_input} Logo")
-            else:
-                st.image(placeholder_logo, width=150, caption=f"No logo available for {user_input}")
-                logging.warning(f"Invalid logo URL for {user_input}")
-        except Exception as e:
-            st.image(placeholder_logo, width=150, caption=f"No logo available for {user_input}")
-            logging.warning(f"Error accessing logo URL for {user_input}: {str(e)}")
+            st.image(information["logo_url"], width=150, caption=f"{user_input} Logo")
+        except:
+            st.image(placeholder_logo, width=150, caption=f"No logo available")
     else:
-        st.image(placeholder_logo, width=150, caption=f"No logo available for {user_input}")
-        logging.info(f"No logo_url found in info for {user_input}")
+        st.image(placeholder_logo, width=150, caption=f"No logo available")
 
 # ================================================
 # Fetch and Process Stock Data
 # ================================================
 try:
-    with st.spinner("Fetching data..."):
-        df = fetch_stock_data(user_input, time)
+    with st.spinner("Fetching stock data..."):
+        df = fetch_stock_data_simple(user_input, time)
     
     if df.empty:
-        st.error(f"No data found for ticker {user_input}. Please check the ticker symbol.")
+        st.error(f"❌ No data found for ticker **{user_input}**. Please check the ticker symbol and try again.")
+        st.info("💡 Tip: Visit https://finance.yahoo.com/ to find the correct ticker symbol.")
         st.stop()
     
-    logging.info(f"Columns in df: {df.columns.tolist()}")
+    logging.info(f"Dataframe shape: {df.shape}, Columns: {df.columns.tolist()}")
     
     # Display company name and summary
     string_name = information.get('longName', user_input)
@@ -361,7 +384,7 @@ try:
     # ================================================
     # Candlestick Chart
     # ================================================
-    st.subheader('Candlestick Chart')
+    st.subheader('📊 Candlestick Chart')
     candlestick = go.Candlestick(
         x=df.index,
         open=df['Open'],
@@ -374,77 +397,93 @@ try:
         title=f"{user_input} Candlestick Chart",
         xaxis=dict(title="Date"),
         yaxis=dict(title="Price"),
-        xaxis_rangeslider_visible=False
+        xaxis_rangeslider_visible=False,
+        height=500
     )
     st.plotly_chart(fig, use_container_width=True)
     
     # ================================================
     # Recent Data
     # ================================================
-    st.subheader('Recent Data')
+    st.subheader('📈 Recent Data')
     df_display = df.copy()
     df_display['Date'] = df_display.index
-    st.dataframe(df_display.tail(10))
+    st.dataframe(df_display[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].tail(10), use_container_width=True)
     
     # ================================================
     # Fundamentals
     # ================================================
-    st.subheader('Fundamentals')
-    try:
-        ticker = yf.Ticker(user_input)
-        info = ticker.info or {}
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.metric("52 Week Range", f"{info.get('fiftyTwoWeekLow', 'N/A')} - {info.get('fiftyTwoWeekHigh', 'N/A')}")
-            st.metric("Day's Range", f"{info.get('dayLow', 'N/A')} - {info.get('dayHigh', 'N/A')}")
-            st.metric("Average Volume", f"{info.get('averageVolume', 'N/A'):,}" if info.get('averageVolume') else 'N/A')
-            st.metric("Volume", f"{info.get('volume', 'N/A'):,}" if info.get('volume') else 'N/A')
-        
-        with col2:
-            st.metric("Market Cap", f"{info.get('marketCap', 'N/A'):,}" if info.get('marketCap') else 'N/A')
-            st.metric("PE Ratio", f"{info.get('trailingPE', 'N/A'):.2f}" if info.get('trailingPE') else 'N/A')
-            st.metric("EPS", f"{info.get('trailingEps', 'N/A'):.2f}" if info.get('trailingEps') else 'N/A')
-            st.metric("Quote Price", f"{info.get('regularMarketPrice', info.get('previousClose', 'N/A')):.2f}" if info.get('regularMarketPrice') or info.get('previousClose') else 'N/A')
+    st.subheader('💼 Fundamentals')
     
-    except Exception as e:
-        st.warning(f"Error fetching fundamentals: {str(e)}")
+    # Fetch fresh info for fundamentals
+    fund_info = get_ticker_info_simple(user_input)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fifty_two_low = fund_info.get('fiftyTwoWeekLow', 'N/A')
+        fifty_two_high = fund_info.get('fiftyTwoWeekHigh', 'N/A')
+        st.metric("52 Week Range", f"{fifty_two_low} - {fifty_two_high}")
+        
+        day_low = fund_info.get('dayLow', 'N/A')
+        day_high = fund_info.get('dayHigh', 'N/A')
+        st.metric("Day's Range", f"{day_low} - {day_high}")
+        
+        avg_vol = fund_info.get('averageVolume', None)
+        st.metric("Average Volume", f"{avg_vol:,}" if avg_vol else 'N/A')
+        
+        vol = fund_info.get('volume', None)
+        st.metric("Volume", f"{vol:,}" if vol else 'N/A')
+    
+    with col2:
+        mkt_cap = fund_info.get('marketCap', None)
+        st.metric("Market Cap", f"${mkt_cap:,}" if mkt_cap else 'N/A')
+        
+        pe = fund_info.get('trailingPE', None)
+        st.metric("PE Ratio", f"{pe:.2f}" if pe else 'N/A')
+        
+        eps = fund_info.get('trailingEps', None)
+        st.metric("EPS", f"{eps:.2f}" if eps else 'N/A')
+        
+        price = fund_info.get('regularMarketPrice', fund_info.get('previousClose', None))
+        st.metric("Quote Price", f"${price:.2f}" if price else 'N/A')
     
     # ================================================
     # Stock Price Chart
     # ================================================
-    st.subheader("Stock Price Chart")
+    st.subheader("📉 Stock Price Chart")
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df.index, y=df['Open'], name='Open', line=dict(color='blue')))
-    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='green')))
-    fig.add_trace(go.Scatter(x=df.index, y=df['High'], name='High', line=dict(color='red')))
-    fig.add_trace(go.Scatter(x=df.index, y=df['Low'], name='Low', line=dict(color='purple')))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Open'], name='Open', line=dict(color='blue', width=1)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='green', width=1)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['High'], name='High', line=dict(color='red', width=1)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Low'], name='Low', line=dict(color='purple', width=1)))
     fig.update_layout(
         title=f"{user_input} Stock Prices",
         xaxis=dict(title="Date"),
         yaxis=dict(title="Stock Price"),
-        hovermode='x unified'
+        hovermode='x unified',
+        height=450
     )
     st.plotly_chart(fig, use_container_width=True)
     
     # ================================================
     # Volume Chart
     # ================================================
-    st.subheader("Volume Traded Chart")
+    st.subheader("📊 Volume Traded Chart")
     fig = go.Figure()
     fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='Volume', opacity=0.6, marker_color='lightblue'))
     fig.update_layout(
         title=f"{user_input} Volume Traded",
         xaxis=dict(title="Date"),
-        yaxis=dict(title="Volume")
+        yaxis=dict(title="Volume"),
+        height=400
     )
     st.plotly_chart(fig, use_container_width=True)
     
     # ================================================
     # Technical Indicators
     # ================================================
-    st.subheader('Technical Indicators and Returns')
+    st.subheader('🔧 Technical Indicators and Returns')
     
     # Calculate all indicators
     df = MACD(df)
@@ -462,7 +501,7 @@ try:
     # ================================================
     # Bollinger Bands
     # ================================================
-    st.subheader('Bollinger Bands')
+    st.subheader('📐 Bollinger Bands')
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='rgb(31, 119, 180)')))
     fig.add_trace(go.Scatter(x=df.index, y=df['BOLU'], name='Upper Band', line=dict(width=0.5, color='#89BCFD')))
@@ -477,50 +516,53 @@ try:
     fig.update_layout(
         title='Bollinger Bands',
         xaxis=dict(title="Date"),
-        yaxis=dict(title="Price")
+        yaxis=dict(title="Price"),
+        height=450
     )
     st.plotly_chart(fig, use_container_width=True)
     
     # ================================================
     # Moving Averages
     # ================================================
-    st.subheader('Moving Averages')
+    st.subheader('📈 Moving Averages')
     
-    st.write('Closing Price with 100MA')
+    st.write('**Closing Price with 100MA**')
     ma100 = df.Close.rolling(100).mean()
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df.index, y=ma100, name='100MA', line=dict(color='red')))
-    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='blue')))
+    fig.add_trace(go.Scatter(x=df.index, y=ma100, name='100MA', line=dict(color='red', width=2)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='blue', width=1)))
     fig.update_layout(
-        title=f"{user_input} Closing Price with 100MA",
+        title=f"{user_input} - 100 Day Moving Average",
         xaxis=dict(title="Date"),
-        yaxis=dict(title="Price")
+        yaxis=dict(title="Price"),
+        height=400
     )
     st.plotly_chart(fig, use_container_width=True)
     
-    st.write('Closing Price with 100MA & 200MA')
+    st.write('**Closing Price with 100MA & 200MA**')
     ma100 = df.Close.rolling(100).mean()
     ma200 = df.Close.rolling(200).mean()
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df.index, y=ma100, name='100MA', line=dict(color='red')))
-    fig.add_trace(go.Scatter(x=df.index, y=ma200, name='200MA', line=dict(color='green')))
-    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='blue')))
+    fig.add_trace(go.Scatter(x=df.index, y=ma100, name='100MA', line=dict(color='red', width=2)))
+    fig.add_trace(go.Scatter(x=df.index, y=ma200, name='200MA', line=dict(color='green', width=2)))
+    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Close', line=dict(color='blue', width=1)))
     fig.update_layout(
-        title=f"{user_input} Closing Price with 100MA & 200MA",
+        title=f"{user_input} - 100 & 200 Day Moving Averages",
         xaxis=dict(title="Date"),
-        yaxis=dict(title="Price")
+        yaxis=dict(title="Price"),
+        height=400
     )
     st.plotly_chart(fig, use_container_width=True)
     
     # ================================================
     # LSTM Prediction Section
     # ================================================
-    st.subheader('LSTM Price Prediction')
+    st.subheader('🤖 LSTM Price Prediction')
     
     # Check if model file exists
     if not os.path.exists('keras_model.h5'):
-        st.warning("LSTM model file 'keras_model.h5' not found. Skipping prediction section.")
-        st.info("To use predictions, please ensure the keras_model.h5 file is in the same directory as this script.")
+        st.warning("⚠️ LSTM model file 'keras_model.h5' not found in the current directory.")
+        st.info("💡 To use predictions, please ensure the keras_model.h5 file is available.")
     else:
         try:
             # Prepare data for LSTM
@@ -531,8 +573,7 @@ try:
             
             # Split data
             train_size = int(len(ds_scaled) * 0.70)
-            test_size = len(ds_scaled) - train_size
-            ds_train, ds_test = ds_scaled[0:train_size, :], ds_scaled[train_size:len(ds_scaled), :]
+            ds_train, ds_test = ds_scaled[0:train_size, :], ds_scaled[train_size:, :]
             
             def create_ds(dataset, step):
                 Xtrain, Ytrain = [], []
@@ -551,23 +592,18 @@ try:
             
             # Load model
             model = load_model('keras_model.h5', custom_objects={'LSTM': CustomLSTM})
-            logging.info(f"Model loaded successfully. Input shape: {model.input_shape}")
             
             # Make predictions
-            train_predict = model.predict(X_train)
-            test_predict = model.predict(X_test)
-            
-            train_predict = normalizer.inverse_transform(train_predict)
-            test_predict = normalizer.inverse_transform(test_predict)
+            train_predict = model.predict(X_train, verbose=0)
+            test_predict = model.predict(X_test, verbose=0)
             
             # Future predictions (30 days)
             fut_inp = ds_test[-100:]
-            fut_inp = fut_inp.reshape(1, -1)
-            tmp_inp = fut_inp[0].tolist()
+            tmp_inp = fut_inp.flatten().tolist()
             lst_output = []
             n_steps = 100
             
-            with st.spinner("Generating predictions..."):
+            with st.spinner("🔮 Generating 30-day predictions..."):
                 for i in range(30):
                     fut_inp_reshaped = np.array(tmp_inp[-n_steps:]).reshape(1, n_steps, 1)
                     yhat = model.predict(fut_inp_reshaped, verbose=0)
@@ -578,7 +614,7 @@ try:
             lst_output = np.array(lst_output, dtype=float)
             
             # Plot prediction results
-            st.write('Historical vs Predicted (Next 30 Days)')
+            st.write('**📊 Historical vs Predicted (Next 30 Days)**')
             plot_new = np.arange(1, 101)
             plot_pred = np.arange(101, 131)
             
@@ -586,19 +622,20 @@ try:
             fig.add_trace(go.Scatter(
                 x=plot_new, 
                 y=normalizer.inverse_transform(ds_scaled[-100:]).flatten(), 
-                name='Historical',
-                line=dict(color='blue')
+                name='Historical (Last 100 days)',
+                line=dict(color='blue', width=2)
             ))
             fig.add_trace(go.Scatter(
                 x=plot_pred, 
                 y=normalizer.inverse_transform(lst_output.reshape(-1, 1)).flatten(), 
-                name='Predicted',
-                line=dict(color='red', dash='dash')
+                name='Predicted (Next 30 days)',
+                line=dict(color='red', dash='dash', width=2)
             ))
             fig.update_layout(
-                title=f"{user_input} - 30 Day Price Prediction",
-                xaxis=dict(title="Time Period"),
-                yaxis=dict(title="Price")
+                title=f"{user_input} - 30 Day Forecast",
+                xaxis=dict(title="Time Period (Days)"),
+                yaxis=dict(title="Price ($)"),
+                height=450
             )
             st.plotly_chart(fig, use_container_width=True)
             
@@ -609,47 +646,66 @@ try:
             
             final_graph = normalizer.inverse_transform(ds_new.reshape(-1, 1)).flatten().tolist()
             
-            st.write('Complete Price Prediction Chart')
+            st.write('**📈 Complete Price Prediction Chart**')
             fig = go.Figure()
-            fig.add_trace(go.Scatter(y=final_graph, name='Price', line=dict(color='blue')))
+            
+            # Historical data
+            historical_end = len(final_graph) - 30
+            fig.add_trace(go.Scatter(
+                y=final_graph[:historical_end], 
+                name='Historical',
+                line=dict(color='blue', width=1.5)
+            ))
+            
+            # Predicted data
+            fig.add_trace(go.Scatter(
+                x=list(range(historical_end-1, len(final_graph))),
+                y=final_graph[historical_end-1:], 
+                name='Predicted',
+                line=dict(color='red', dash='dash', width=2)
+            ))
+            
             predicted_price = round(final_graph[-1], 2)
             fig.add_hline(
                 y=predicted_price, 
                 line_dash="dot", 
                 line_color="red", 
-                annotation_text=f"Predicted 30D: ${predicted_price}"
+                annotation_text=f"Predicted: ${predicted_price}",
+                annotation_position="right"
             )
             fig.update_layout(
-                title=f"{user_input} - Full Prediction",
-                xaxis=dict(title="Time"),
-                yaxis=dict(title="Price")
+                title=f"{user_input} - Full Price History & Prediction",
+                xaxis=dict(title="Time Period"),
+                yaxis=dict(title="Price ($)"),
+                height=500
             )
             st.plotly_chart(fig, use_container_width=True)
             
-            # Display predicted price
-            st.success(f"**Predicted price in 30 days: ${predicted_price}**")
-            
-            # Calculate price change
+            # Display predicted price with metrics
             current_price = df['Close'].iloc[-1]
             price_change = predicted_price - current_price
             price_change_pct = (price_change / current_price) * 100
+            
+            st.success(f"✅ **Predicted price in 30 days: ${predicted_price}**")
             
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("Current Price", f"${current_price:.2f}")
             with col2:
-                st.metric("Predicted Price (30D)", f"${predicted_price:.2f}")
+                st.metric("Predicted Price (30D)", f"${predicted_price:.2f}", f"{price_change:.2f}")
             with col3:
-                st.metric("Expected Change", f"${price_change:.2f}", f"{price_change_pct:.2f}%")
+                st.metric("Expected Change %", f"{price_change_pct:.2f}%", 
+                         "Bullish 📈" if price_change > 0 else "Bearish 📉")
         
         except Exception as e:
-            st.error(f"Error in prediction model: {str(e)}")
+            st.error(f"❌ Error in prediction model: {str(e)}")
             logging.error(f"LSTM prediction error: {str(e)}", exc_info=True)
-            st.info("The prediction section encountered an error. This could be due to insufficient data or model compatibility issues.")
+            st.info("💡 The prediction section encountered an error. This could be due to insufficient data or model compatibility issues.")
 
 except Exception as e:
-    st.error(f"Error processing data for ticker {user_input}: {str(e)}")
+    st.error(f"❌ Error processing data for ticker **{user_input}**: {str(e)}")
     logging.error(f"Main execution error: {str(e)}", exc_info=True)
+    st.info("💡 Please try a different ticker or time period.")
     st.stop()
 
 # ================================================
@@ -657,7 +713,8 @@ except Exception as e:
 # ================================================
 st.write('---')
 st.markdown("""
-<div style='text-align: center'>
-    <p>Made with ❤️ using Streamlit | Data source: Yahoo Finance</p>
+<div style='text-align: center; padding: 20px;'>
+    <p style='color: #666;'>Made with ❤️ using Streamlit | Data source: Yahoo Finance via yfinance</p>
+    <p style='color: #999; font-size: 12px;'>Disclaimer: This tool is for educational purposes only. Not financial advice.</p>
 </div>
 """, unsafe_allow_html=True)
