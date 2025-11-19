@@ -19,13 +19,17 @@ import os
 import logging
 from io import StringIO
 import requests
+from curl_cffi import requests
+import yfinance as yf
 
-# ====================== FIX FOR STREAMLIT CLOUD 2025 ======================
-# yfinance changed internals — pdr_override() no longer exists in new versions
-# This is the new official way that works everywhere (including curl_cffi environments)
-yf.shared._DFS = {}                     # Clear any broken cached sessions
-os.environ["YFINANCE_DISABLE_SCRAPER"] = "1"   # Force safe, simple requests only
-# ==========================================================================
+# === FIXED SESSION FOR STREAMLIT CLOUD (2025) ===
+# This forces yfinance to use a SAFE, supported browser impersonate
+safe_session = requests.Session(impersonate="chrome124")  # chrome124 is fully supported
+yf.shared._DFS = {}                                      # Clear any bad cache
+# Make ALL yfinance calls use this safe session automatically
+yf.Ticker = lambda ticker, **kwargs: yf.Ticker(ticker, session=safe_session, **kwargs)
+yf.download = lambda *args, **kwargs: yf.download(*args, session=safe_session, **kwargs)
+# ================================================
 
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -500,4 +504,5 @@ try:
 except Exception as e:
     st.error(f"Error fetching or processing data for ticker {user_input}: {str(e)}")
     st.stop()
+
 
