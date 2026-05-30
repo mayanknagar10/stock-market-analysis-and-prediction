@@ -22,13 +22,20 @@ from plotly.subplots import make_subplots
 from sklearn.preprocessing import MinMaxScaler
 
 # TensorFlow/Keras imports are optional at import time so the app can still run
-# without prediction if the model/dependency is unavailable.
+# without prediction if the dependency is unavailable.
 try:
-    from keras.layers import LSTM
-    from keras.models import load_model
+    from keras.callbacks import Callback, EarlyStopping
+    from keras.layers import Dense, Dropout, LSTM
+    from keras.models import Sequential
+    from keras.optimizers import Adam
 except Exception:  # pragma: no cover - shown in UI when prediction is requested
+    Callback = None
+    EarlyStopping = None
+    Dense = None
+    Dropout = None
     LSTM = None
-    load_model = None
+    Sequential = None
+    Adam = None
 
 # -----------------------------------------------------------------------------
 # App configuration
@@ -39,7 +46,6 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message
 warnings.filterwarnings("ignore")
 
 APP_DIR = Path(__file__).resolve().parent
-MODEL_PATH = APP_DIR / "keras_model.h5"
 
 DEFAULT_PERIODS = ["1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "max"]
 DEFAULT_INDICATOR_PERIODS = ["6m", "1y", "3y", "5y"]
@@ -54,21 +60,6 @@ CSV_SOURCES = {
     "indicators_period": (APP_DIR / "indicators_period.csv", f"{RAW_BASE_URL}/indicators_period.csv"),
     "company_data": (APP_DIR / "company_data.csv", f"{RAW_BASE_URL}/company_data.csv"),
 }
-
-
-class CustomLSTM(LSTM if LSTM is not None else object):
-    """Compatibility shim for older saved Keras models.
-
-    Some older H5 models include arguments such as `time_major` that newer Keras
-    versions may not accept. This removes those unsupported arguments while
-    loading the model.
-    """
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        kwargs.pop("time_major", None)
-        kwargs.pop("batch_input_shape", None)
-        kwargs.pop("input_shape", None)
-        super().__init__(*args, **kwargs)
 
 
 # -----------------------------------------------------------------------------
@@ -337,91 +328,253 @@ def line_chart(title: str, x: Any, series: dict[str, Any], y_title: str = "Price
 
 
 # -----------------------------------------------------------------------------
-# LSTM prediction
+# Ticker-specific LSTM prediction
 # -----------------------------------------------------------------------------
 
 
 def create_sequence_dataset(dataset: np.ndarray, step: int) -> tuple[np.ndarray, np.ndarray]:
+    """Create supervised learning sequences from a scaled one-column array."""
     x_values, y_values = [], []
-    for i in range(len(dataset) - step - 1):
+    for i in range(len(dataset) - step):
         x_values.append(dataset[i : i + step, 0])
         y_values.append(dataset[i + step, 0])
     return np.array(x_values), np.array(y_values)
 
 
-def render_lstm_prediction(df: pd.DataFrame, ticker: str) -> None:
-    st.subheader("LSTM Price Prediction")
+def build_fast_lstm_model(sequence_length: int) -> Any:
+    """Build a small LSTM that trains quickly inside Streamlit."""
+    model = Sequential(
+        [
+            LSTM(32, return_sequences=True, input_shape=(sequence_length, 1)),
+            Dropout(0.15),
+            LSTM(16),
+            Dense(8, activation="relu"),
+            Dense(1),
+        ]
+    )
+    model.compile(optimizer=Adam(learning_rate=0.001), loss="huber")
+    return model
 
-    if load_model is None or LSTM is None:
+
+class StreamlitTrainingProgress(Callback if Callback is not None else object):
+    """Keras callback that updates a Streamlit progress bar and ETA text."""
+
+    def __init__(self, total_epochs: int, progress_bar: Any, status_box: Any) -> None:
+        super().__init__()
+        self.total_epochs = max(total_epochs, 1)
+        self.progress_bar = progress_bar
+        self.status_box = status_box
+        self.start_time = time.time()
+        self.epoch_start = self.start_time
+
+    def on_epoch_begin(self, epoch: int, logs: dict[str, Any] | None = None) -> None:
+        self.epoch_start = time.time()
+        self.status_box.info(f"Training epoch {epoch + 1}/{self.total_epochs}...")
+
+    def on_epoch_end(self, epoch: int, logs: dict[str, Any] | None = None) -> None:
+        completed = epoch + 1
+        elapsed = time.time() - self.start_time
+        avg_epoch_time = elapsed / completed
+        remaining_epochs = max(self.total_epochs - completed, 0)
+        eta_seconds = int(avg_epoch_time * remaining_epochs)
+        loss = (logs or {}).get("loss")
+        val_loss = (logs or {}).get("val_loss")
+        progress = min(completed / self.total_epochs, 1.0)
+        self.progress_bar.progress(progress)
+        loss_text = f"loss={loss:.5f}" if isinstance(loss, (int, float)) else "loss=N/A"
+        val_text = f", val_loss={val_loss:.5f}" if isinstance(val_loss, (int, float)) else ""
+        self.status_box.info(
+            f"Training epoch {completed}/{self.total_epochs} complete — {loss_text}{val_text}. "
+            f"Approx. time remaining: {eta_seconds}s"
+        )
+
+
+def forecast_with_recursive_lstm(
+    model: Any,
+    last_window: np.ndarray,
+    scaler: MinMaxScaler,
+    forecast_days: int,
+) -> np.ndarray:
+    """Generate a recursive forecast from the most recent scaled sequence."""
+    window = last_window.astype(float).flatten().tolist()
+    predictions: list[float] = []
+
+    for _ in range(forecast_days):
+        model_input = np.array(window[-len(last_window) :]).reshape(1, len(last_window), 1)
+        next_scaled = float(model.predict(model_input, verbose=0)[0, 0])
+        # Keep recursive values in a sane normalized range to avoid explosive output.
+        next_scaled = float(np.clip(next_scaled, -0.25, 1.25))
+        window.append(next_scaled)
+        predictions.append(next_scaled)
+
+    return scaler.inverse_transform(np.array(predictions).reshape(-1, 1)).flatten()
+
+
+def render_lstm_prediction(df: pd.DataFrame, ticker: str) -> None:
+    st.subheader("Ticker-Specific LSTM Forecast")
+    st.caption(
+        "This trains a small model inside the Streamlit app for the selected ticker. "
+        "It is still an educational estimate, not a guaranteed market prediction."
+    )
+
+    if any(obj is None for obj in [Callback, EarlyStopping, Dense, Dropout, LSTM, Sequential, Adam]):
         st.warning("TensorFlow/Keras is not available, so prediction is disabled.")
         return
 
-    if not MODEL_PATH.exists():
-        st.warning("Model file `keras_model.h5` was not found. Put it in the same folder as `app.py` to enable predictions.")
+    close = df[["Close"]].dropna().copy()
+    if len(close) < 260:
+        st.warning("Not enough historical data for training. Select at least 2y or 5y for better results.")
         return
 
-    close = df[["Close"]].dropna()
-    if len(close) < 250:
-        st.warning("Not enough historical data for LSTM prediction. Select at least 1y or 2y.")
+    with st.expander("Training settings", expanded=False):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            forecast_days = st.slider("Forecast days", min_value=7, max_value=60, value=30, step=1)
+        with col2:
+            epochs = st.slider("Training epochs", min_value=5, max_value=30, value=12, step=1)
+        with col3:
+            sequence_length = st.slider("Lookback days", min_value=30, max_value=120, value=60, step=10)
+        st.caption("For faster training, keep epochs around 8–12 and lookback around 60 days.")
+
+    # Fit scaler only on training data to avoid future leakage during backtesting.
+    raw_prices = close.values.astype(float)
+    train_cutoff = int(len(raw_prices) * 0.80)
+    if train_cutoff <= sequence_length + 20:
+        st.warning("Not enough training rows after split. Select a longer period.")
         return
+
+    train_prices = raw_prices[:train_cutoff]
+    test_prices = raw_prices[train_cutoff - sequence_length :]
+
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled_train = scaler.fit_transform(train_prices)
+    scaled_test = scaler.transform(test_prices)
+
+    x_train, y_train = create_sequence_dataset(scaled_train, sequence_length)
+    x_test, y_test = create_sequence_dataset(scaled_test, sequence_length)
+
+    if x_train.size == 0 or x_test.size == 0:
+        st.warning("Not enough sequence data for training/testing. Select a longer period or shorter lookback.")
+        return
+
+    x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], 1)
+    x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], 1)
+
+    train_button = st.button("Train model and forecast", type="primary", use_container_width=True)
+    if not train_button:
+        st.info("Click **Train model and forecast** to train a fresh model for this ticker.")
+        return
+
+    progress_bar = st.progress(0)
+    status_box = st.empty()
 
     try:
-        normalizer = MinMaxScaler(feature_range=(0, 1))
-        scaled = normalizer.fit_transform(close.values.reshape(-1, 1))
+        model = build_fast_lstm_model(sequence_length)
+        callbacks = [
+            StreamlitTrainingProgress(epochs, progress_bar, status_box),
+            EarlyStopping(monitor="val_loss", patience=4, restore_best_weights=True),
+        ]
 
-        train_size = int(len(scaled) * 0.70)
-        train_data, test_data = scaled[:train_size], scaled[train_size:]
+        start = time.time()
+        history = model.fit(
+            x_train,
+            y_train,
+            validation_split=0.15,
+            epochs=epochs,
+            batch_size=32,
+            verbose=0,
+            callbacks=callbacks,
+            shuffle=False,
+        )
+        elapsed = time.time() - start
+        progress_bar.progress(1.0)
+        status_box.success(f"Training finished in {elapsed:.1f}s. Generating forecast...")
 
-        time_stamp = 100
-        x_train, _ = create_sequence_dataset(train_data, time_stamp)
-        x_test, _ = create_sequence_dataset(test_data, time_stamp)
+        # Backtest on the most recent 20% of selected data.
+        predicted_test_scaled = model.predict(x_test, verbose=0)
+        predicted_test = scaler.inverse_transform(predicted_test_scaled.reshape(-1, 1)).flatten()
+        actual_test = scaler.inverse_transform(y_test.reshape(-1, 1)).flatten()
 
-        if x_train.size == 0 or x_test.size == 0 or len(test_data) < time_stamp:
-            st.warning("Not enough data for model prediction after train/test split. Select a longer time period.")
-            return
+        errors = predicted_test - actual_test
+        mae = float(np.mean(np.abs(errors)))
+        rmse = float(np.sqrt(np.mean(errors**2)))
+        mape = float(np.mean(np.abs(errors / np.where(actual_test == 0, np.nan, actual_test))) * 100)
 
-        x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], 1)
-        x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], 1)
-
-        model = load_model(MODEL_PATH, custom_objects={"LSTM": CustomLSTM}, compile=False)
-        _ = model.predict(x_train, verbose=0)
-        _ = model.predict(x_test, verbose=0)
-
-        temp_input = test_data[-time_stamp:].flatten().tolist()
-        predictions: list[float] = []
-
-        with st.spinner("Generating 30-day prediction..."):
-            for _ in range(30):
-                model_input = np.array(temp_input[-time_stamp:]).reshape(1, time_stamp, 1)
-                prediction = model.predict(model_input, verbose=0)
-                value = float(prediction[0, 0])
-                temp_input.append(value)
-                predictions.append(value)
-
-        prediction_array = np.array(predictions, dtype=float).reshape(-1, 1)
-        last_100_prices = normalizer.inverse_transform(scaled[-100:]).flatten()
-        predicted_prices = normalizer.inverse_transform(prediction_array).flatten()
-
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=list(range(1, 101)), y=last_100_prices, name="Historical last 100 days"))
-        fig.add_trace(go.Scatter(x=list(range(101, 131)), y=predicted_prices, name="Predicted next 30 days", line=dict(dash="dash")))
-        fig.update_layout(title=f"{ticker} - 30 Day Forecast", xaxis_title="Days", yaxis_title="Price", height=450)
-        st.plotly_chart(fig, use_container_width=True)
+        # Future forecast from the latest real prices, using the same training scaler.
+        scaled_all = scaler.transform(raw_prices)
+        last_window = scaled_all[-sequence_length:].flatten()
+        future_prices = forecast_with_recursive_lstm(model, last_window, scaler, forecast_days)
 
         current_price = float(close["Close"].iloc[-1])
-        predicted_price = float(predicted_prices[-1])
+        predicted_price = float(future_prices[-1])
         price_change = predicted_price - current_price
-        price_change_pct = (price_change / current_price) * 100 if current_price else 0
+        price_change_pct = (price_change / current_price) * 100 if current_price else 0.0
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Current Price", format_money(current_price))
-        col2.metric("Predicted Price 30D", format_money(predicted_price), f"{price_change:,.2f}")
-        col3.metric("Expected Change", f"{price_change_pct:,.2f}%")
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        metric_col1.metric("Current Price", format_money(current_price))
+        metric_col2.metric(f"Forecast Price {forecast_days}D", format_money(predicted_price), f"{price_change:,.2f}")
+        metric_col3.metric("Forecast Change", f"{price_change_pct:,.2f}%")
+        metric_col4.metric("Backtest MAPE", f"{mape:,.2f}%")
+
+        st.caption(
+            f"Backtest on recent data: MAE {mae:,.2f}, RMSE {rmse:,.2f}, MAPE {mape:,.2f}%. "
+            "Lower values mean the model matched recent historical data better."
+        )
+
+        backtest_index = close.index[-len(actual_test) :]
+        future_index = pd.bdate_range(start=close.index[-1] + pd.Timedelta(days=1), periods=forecast_days)
+
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=close.index[-180:],
+                y=close["Close"].tail(180),
+                name="Actual recent close",
+                mode="lines",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=backtest_index,
+                y=predicted_test,
+                name="Backtest prediction",
+                mode="lines",
+                line=dict(dash="dot"),
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=future_index,
+                y=future_prices,
+                name=f"Forecast next {forecast_days} trading days",
+                mode="lines",
+                line=dict(dash="dash"),
+            )
+        )
+        fig.update_layout(
+            title=f"{ticker} ticker-specific LSTM forecast",
+            xaxis_title="Date",
+            yaxis_title="Price",
+            hovermode="x unified",
+            height=500,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        forecast_table = pd.DataFrame({"Date": future_index, "Forecast Close": future_prices})
+        st.dataframe(forecast_table, use_container_width=True)
+
+        if mape > 8:
+            st.warning(
+                "This ticker's recent backtest error is high, so treat the forecast as weak. "
+                "Try a longer period, fewer forecast days, or more epochs."
+            )
+        else:
+            st.success("Recent backtest error is reasonably low for an educational model, but this is still not financial advice.")
 
     except Exception as exc:
-        logging.exception("LSTM prediction failed")
-        st.error(f"Prediction failed: {exc}")
-        st.info("This is usually caused by model/version incompatibility or insufficient data for the selected period.")
+        logging.exception("Ticker-specific LSTM training failed")
+        st.error(f"Training or prediction failed: {exc}")
+        st.info("Try selecting a longer period, reducing lookback days, or using a major ticker with enough price history.")
 
 
 # -----------------------------------------------------------------------------
