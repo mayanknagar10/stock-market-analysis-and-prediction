@@ -1,429 +1,270 @@
 """
-Professional ML prediction module.
-- Feature engineering from OHLCV + technical indicators
-- LSTM with proper look-back window
-- XGBoost + LightGBM with extensive features
-- Ensemble with dynamic weighting
-- Walk-forward backtesting (no data leakage)
-- Uncertainty quantification (MC Dropout / quantile regression)
-- Evaluation: RMSE, MAE, MAPE, Directional Accuracy
+Prediction engine v3.
+Target = log return (stationary). CI = GBM volatility cone sqrt(t).
+Ensemble: XGBoost + LightGBM + optional Bidirectional LSTM.
 """
-
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import RobustScaler
-from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from typing import Dict, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 import warnings
 warnings.filterwarnings("ignore")
 
-# Optional heavy imports — gracefully degrade if not installed
+try: import xgboost as xgb; _XGB=True
+except: _XGB=False
+try: import lightgbm as lgb; _LGB=True
+except: _LGB=False
 try:
-    import xgboost as xgb
-    _XGB = True
-except ImportError:
-    _XGB = False
-
-try:
-    import lightgbm as lgb
-    _LGB = True
-except ImportError:
-    _LGB = False
-
-try:
+    import tensorflow as tf; tf.get_logger().setLevel("ERROR")
     from tensorflow.keras.models import Sequential
-    from tensorflow.keras.layers import (LSTM, Dense, Dropout,
-                                         BatchNormalization, Bidirectional)
+    from tensorflow.keras.layers import (Bidirectional, LSTM, Dense,
+                                         Dropout, BatchNormalization, Input)
     from tensorflow.keras.optimizers import Adam
     from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-    from tensorflow.keras import backend as K
-    import tensorflow as tf
-    tf.get_logger().setLevel("ERROR")
-    _TF = True
-except ImportError:
-    _TF = False
+    _TF=True
+except: _TF=False
+
+TRADING_DAYS=252
 
 
-PREDICTION_HORIZONS = [1, 5, 10, 20]   # days ahead
-
-
-# ─────────────────────────────────────────
-# FEATURE ENGINEERING
-# ─────────────────────────────────────────
-
-def _build_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Create ML feature matrix from OHLCV + pre-computed indicator columns.
-    Drops NaN rows and filters to numeric columns only.
-    """
-    from core.indicators import add_all_indicators  # lazy import
+def _build_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    """Returns (X_features, log_returns) — X aligned to log_returns index."""
+    from core.indicators import add_all_indicators
     full = add_all_indicators(df)
-    # Calendar features
-    full["DayOfWeek"] = full.index.dayofweek
-    full["Month"]     = full.index.month
-    full["Quarter"]   = full.index.quarter
-    full["IsMonday"]  = (full.index.dayofweek == 0).astype(int)
-    full["IsFriday"]  = (full.index.dayofweek == 4).astype(int)
-    # Drop non-feature columns
-    exclude = ["Open", "High", "Low", "Close", "Volume"]
-    feature_cols = [c for c in full.columns if c not in exclude and
-                    full[c].dtype in [np.float64, np.float32, np.int64, np.int32]]
-    X = full[feature_cols].copy()
-    X.replace([np.inf, -np.inf], np.nan, inplace=True)
-    X.dropna(inplace=True)
-    return X, full.loc[X.index, "Close"]
+    full["LogReturn"] = np.log(full["Close"]/full["Close"].shift(1))
+    drop = ["Open","High","Low","Close","Volume","LogReturn"]
+    feat_cols = [c for c in full.columns if c not in drop
+                 and full[c].dtype in [np.float64,np.float32,np.int64,np.int32]]
+    combined = pd.concat([full[feat_cols], full["LogReturn"]], axis=1).dropna()
+    X = combined[feat_cols].copy()
+    y = combined["LogReturn"]
+    X.replace([np.inf,-np.inf], np.nan, inplace=True)
+    X.ffill(inplace=True); X.fillna(0, inplace=True)
+    return X, y
 
 
-def _make_sequences(X: np.ndarray, y: np.ndarray,
-                    window: int) -> Tuple[np.ndarray, np.ndarray]:
-    """Convert flat arrays to (samples, timesteps, features) for LSTM."""
-    Xs, ys = [], []
-    for i in range(window, len(X)):
-        Xs.append(X[i - window: i])
-        ys.append(y[i])
-    return np.array(Xs), np.array(ys)
+def _vol_cone(last_price, daily_vol, horizon, z=1.28):
+    """GBM confidence cone: width grows as sqrt(t)."""
+    t = np.arange(1, horizon+1)
+    lo = last_price * np.exp(-z * daily_vol * np.sqrt(t))
+    hi = last_price * np.exp(+z * daily_vol * np.sqrt(t))
+    return lo, hi
 
 
-# ─────────────────────────────────────────
-# LSTM MODEL
-# ─────────────────────────────────────────
+def _make_sequences(X, y, window=30):
+    Xs,ys=[],[]
+    for i in range(window,len(X)):
+        Xs.append(X[i-window:i]); ys.append(y[i])
+    return np.array(Xs,dtype=np.float32), np.array(ys,dtype=np.float32)
 
-class LSTMPredictor:
-    """Bidirectional LSTM with MC Dropout for uncertainty quantification."""
 
-    def __init__(self, window: int = 30, n_features: int = 10,
-                 units: int = 64, dropout: float = 0.2):
-        self.window    = window
-        self.n_features = n_features
-        self.scaler_X  = RobustScaler()
-        self.scaler_y  = RobustScaler()
-        self.model     = None
-        self.units     = units
-        self.dropout   = dropout
+class LSTMModel:
+    WINDOW=20
+    def __init__(self, n_feat, units=48, drop=0.2):
+        self.n_feat=n_feat; self.units=units; self.drop=drop
+        self.sx=RobustScaler(); self.sy=RobustScaler()
+        self.model=None; self._fitted=False
 
     def _build(self):
-        if not _TF:
-            return
-        m = Sequential([
-            Bidirectional(LSTM(self.units, return_sequences=True,
-                               dropout=self.dropout, recurrent_dropout=0.1),
-                          input_shape=(self.window, self.n_features)),
+        m=Sequential([Input(shape=(self.WINDOW,self.n_feat)),
+            Bidirectional(LSTM(self.units,return_sequences=True,
+                               dropout=self.drop,recurrent_dropout=0.0)),
             BatchNormalization(),
-            Bidirectional(LSTM(self.units // 2, return_sequences=False,
-                               dropout=self.dropout)),
-            BatchNormalization(),
-            Dense(32, activation="relu"),
-            Dropout(self.dropout),
-            Dense(16, activation="relu"),
-            Dense(1),
-        ])
-        m.compile(optimizer=Adam(learning_rate=5e-4), loss="huber",
-                  metrics=["mae"])
-        self.model = m
+            Bidirectional(LSTM(max(self.units//2,16),return_sequences=False,dropout=self.drop)),
+            BatchNormalization(), Dense(24,activation="relu"),
+            Dropout(self.drop), Dense(1)])
+        m.compile(optimizer=Adam(2e-3), loss="huber", metrics=["mae"])
+        self.model=m
 
-    def fit(self, X_train: np.ndarray, y_train: np.ndarray,
-            epochs: int = 50, batch_size: int = 32, verbose: int = 0):
-        if not _TF:
-            return self
+    def fit(self, X, y, epochs=35, batch=64):
+        if not _TF: return self
+        Xs=self.sx.fit_transform(X); ys=self.sy.fit_transform(y.reshape(-1,1)).ravel()
+        Xseq,yseq=_make_sequences(Xs,ys,self.WINDOW)
+        if len(Xseq)<40: return self
         self._build()
-        self.n_features = X_train.shape[-1]
-        callbacks = [
-            EarlyStopping(patience=10, restore_best_weights=True),
-            ReduceLROnPlateau(patience=5, factor=0.5, min_lr=1e-6),
-        ]
-        self.model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
-                       validation_split=0.15, callbacks=callbacks, verbose=verbose)
-        return self
+        self.model.fit(Xseq,yseq,epochs=epochs,batch_size=batch,
+            validation_split=0.15,verbose=0,
+            callbacks=[EarlyStopping(patience=6,restore_best_weights=True),
+                       ReduceLROnPlateau(patience=3,factor=0.5,min_lr=1e-6)])
+        self._fitted=True; return self
 
-    def predict(self, X: np.ndarray, mc_samples: int = 50) -> Tuple[np.ndarray, np.ndarray]:
-        """MC Dropout: returns (mean, std) of predictions."""
-        if not _TF or self.model is None:
-            dummy = np.zeros(len(X))
-            return dummy, dummy
-        preds = np.stack([self.model(X, training=True).numpy().flatten()
-                          for _ in range(mc_samples)], axis=0)
-        return preds.mean(axis=0), preds.std(axis=0)
+    def predict(self, X, mc=30):
+        if not _TF or not self._fitted: return np.zeros(1),np.zeros(1)
+        Xs=self.sx.transform(X); seq=Xs[-self.WINDOW:].reshape(1,self.WINDOW,self.n_feat)
+        preds=np.array([self.model(seq,training=True).numpy().flatten()[0] for _ in range(mc)])
+        mr=float(self.sy.inverse_transform([[preds.mean()]])[0,0])
+        sr=float(preds.std()*self.sy.scale_[0])
+        return np.array([mr]), np.array([sr])
 
 
-# ─────────────────────────────────────────
-# TREE MODEL  (XGBoost / LightGBM)
-# ─────────────────────────────────────────
-
-class TreeEnsemblePredictor:
-    """XGBoost + LightGBM wrapped with quantile regression for intervals."""
-
+class TreeEnsemble:
     def __init__(self):
-        self.models   = {}
-        self.scaler_X = RobustScaler()
-        self.scaler_y = RobustScaler()
-        self._fitted  = False
+        self.models={}; self.sx=RobustScaler()
+        self._fitted=False; self.feat_names:List[str]=[]
 
-    def _make_xgb(self, quantile: Optional[float] = None):
-        if not _XGB:
-            return None
-        params = dict(
-            n_estimators=400, learning_rate=0.05, max_depth=6,
-            subsample=0.8, colsample_bytree=0.8, reg_alpha=0.1, reg_lambda=1.0,
-            n_jobs=-1, random_state=42, verbosity=0,
-        )
-        if quantile is not None:
-            params.update(objective="reg:quantileerror", quantile_alpha=quantile)
-        else:
-            params["objective"] = "reg:squarederror"
-        return xgb.XGBRegressor(**params)
+    def _xgb(self, q=None):
+        if not _XGB: return None
+        p=dict(n_estimators=500,learning_rate=0.04,max_depth=5,subsample=0.8,
+               colsample_bytree=0.7,reg_alpha=0.05,reg_lambda=1.0,
+               n_jobs=-1,random_state=42,verbosity=0)
+        if q is not None: p.update(objective="reg:quantileerror",quantile_alpha=q)
+        else: p["objective"]="reg:squarederror"
+        return xgb.XGBRegressor(**p)
 
-    def _make_lgb(self, quantile: Optional[float] = None):
-        if not _LGB:
-            return None
-        params = dict(
-            n_estimators=400, learning_rate=0.05, max_depth=6, num_leaves=63,
-            subsample=0.8, colsample_bytree=0.8, reg_alpha=0.1, reg_lambda=1.0,
-            n_jobs=-1, random_state=42, verbose=-1,
-        )
-        if quantile is not None:
-            params.update(objective="quantile", alpha=quantile)
-        else:
-            params["objective"] = "regression"
-        return lgb.LGBMRegressor(**params) if _LGB else None
+    def _lgb(self, q=None):
+        if not _LGB: return None
+        p=dict(n_estimators=500,learning_rate=0.04,max_depth=5,num_leaves=31,
+               subsample=0.8,colsample_bytree=0.7,reg_alpha=0.05,reg_lambda=1.0,
+               n_jobs=-1,random_state=42,verbose=-1)
+        if q is not None: p.update(objective="quantile",alpha=q)
+        else: p["objective"]="regression"
+        return lgb.LGBMRegressor(**p)
 
-    def fit(self, X: np.ndarray, y: np.ndarray):
-        Xs = self.scaler_X.fit_transform(X)
-        ys = y.ravel()
-        for tag, model in [
-            ("xgb_mid",  self._make_xgb()),
-            ("xgb_lo",   self._make_xgb(0.1)),
-            ("xgb_hi",   self._make_xgb(0.9)),
-            ("lgb_mid",  self._make_lgb()),
-        ]:
-            if model is not None:
-                model.fit(Xs, ys)
-                self.models[tag] = model
-        self._fitted = True
-        return self
+    def fit(self, X, y, feat_names=None):
+        Xs=self.sx.fit_transform(X); yr=y.ravel()
+        if feat_names: self.feat_names=feat_names
+        for tag,m in [("xgb",self._xgb()),("xgb_lo",self._xgb(0.10)),
+                       ("xgb_hi",self._xgb(0.90)),("lgb",self._lgb())]:
+            if m is not None: m.fit(Xs,yr); self.models[tag]=m
+        self._fitted=True; return self
 
-    def predict(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Returns (mean, lower_10, upper_90)."""
-        Xs = self.scaler_X.transform(X)
-        preds = []
-        lo, hi = None, None
-        for tag, m in self.models.items():
-            p = m.predict(Xs)
-            if tag in ("xgb_mid", "lgb_mid"):
-                preds.append(p)
-            elif tag == "xgb_lo":
-                lo = p
-            elif tag == "xgb_hi":
-                hi = p
-        mean_pred = np.mean(preds, axis=0) if preds else np.zeros(len(X))
-        lo  = lo  if lo  is not None else mean_pred * 0.98
-        hi  = hi  if hi  is not None else mean_pred * 1.02
-        return mean_pred, lo, hi
+    def predict(self, X):
+        Xs=self.sx.transform(X)
+        preds=[self.models[k].predict(Xs) for k in ("xgb","lgb") if k in self.models]
+        mean_=np.mean(preds,axis=0) if preds else np.zeros(len(X))
+        lo_=self.models["xgb_lo"].predict(Xs) if "xgb_lo" in self.models else mean_*0.98
+        hi_=self.models["xgb_hi"].predict(Xs) if "xgb_hi" in self.models else mean_*1.02
+        return mean_,lo_,hi_
 
-    def feature_importance(self, feature_names) -> pd.DataFrame:
-        results = []
-        for tag in ("xgb_mid", "lgb_mid"):
+    def feature_importance(self) -> pd.DataFrame:
+        rows=[]
+        for tag in ("xgb","lgb"):
             if tag in self.models:
-                m = self.models[tag]
-                imp = m.feature_importances_ if hasattr(m, "feature_importances_") else []
-                if len(imp):
-                    results.append(pd.DataFrame({
-                        "Feature": feature_names[:len(imp)],
-                        "Importance": imp,
-                        "Model": tag,
-                    }))
-        if results:
-            df = pd.concat(results)
-            return df.groupby("Feature")["Importance"].mean().sort_values(ascending=False).reset_index()
-        return pd.DataFrame(columns=["Feature", "Importance"])
+                imp=getattr(self.models[tag],"feature_importances_",np.array([]))
+                if len(imp) and self.feat_names:
+                    n=min(len(imp),len(self.feat_names))
+                    rows.append(pd.DataFrame({"Feature":self.feat_names[:n],"Importance":imp[:n]}))
+        if rows:
+            return (pd.concat(rows).groupby("Feature")["Importance"]
+                    .mean().sort_values(ascending=False).reset_index())
+        return pd.DataFrame(columns=["Feature","Importance"])
 
 
-# ─────────────────────────────────────────
-# RIDGE REGRESSION  (fallback / baseline)
-# ─────────────────────────────────────────
-
-class RidgePredictor:
-    def __init__(self, alpha: float = 1.0):
-        from sklearn.pipeline import make_pipeline
-        from sklearn.preprocessing import PolynomialFeatures
-        self.scaler = RobustScaler()
-        self.model  = Ridge(alpha=alpha, fit_intercept=True)
-
-    def fit(self, X: np.ndarray, y: np.ndarray):
-        self.model.fit(self.scaler.fit_transform(X), y)
-        return self
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return self.model.predict(self.scaler.transform(X))
-
-
-# ─────────────────────────────────────────
-# WALK-FORWARD BACKTESTING
-# ─────────────────────────────────────────
-
-def walk_forward_backtest(
-    df: pd.DataFrame,
-    horizon: int = 5,
-    n_folds: int = 5,
-    train_frac: float = 0.7,
-    use_lstm: bool = False,
-) -> Dict:
+def forecast_future(df: pd.DataFrame, horizon: int=10) -> Dict:
     """
-    Walk-forward (expanding window) backtest.
-    Evaluates TreeEnsemble + optionally LSTM on multiple folds.
-
-    Returns dict with:
-      - fold_metrics: per-fold DataFrame
-      - aggregate: mean/std across folds
-      - predictions_df: aligned actual vs predicted with dates
+    Train on full history; forecast next `horizon` business days.
+    Target = log return (stationary). Reconstructs price via P·exp(Σr).
+    CI = GBM volatility cone (±1.28σ√t).
     """
-    X, y = _build_features(df)
-    X_arr = X.values.astype(np.float32)
-    y_arr = y.values.astype(np.float32)
-    dates = y.index
+    X,y_ret = _build_features(df)
+    Xa=X.values.astype(np.float32); ya=y_ret.values.astype(np.float32)
+    prices  = df["Close"].reindex(y_ret.index)
 
-    # Target: price n days ahead
-    y_target = np.roll(y_arr, -horizon)
-    # Trim last `horizon` rows (lookahead)
-    X_arr  = X_arr[:-horizon]
-    y_arr  = y_arr[:-horizon]
-    y_tgt  = y_target[:-horizon]
-    dates  = dates[:-horizon]
+    # target = NEXT-day log return
+    y_next=np.roll(ya,-1)
+    X_tr,y_tr=Xa[:-1],y_next[:-1]
 
-    total    = len(X_arr)
-    fold_sz  = total // (n_folds + 1)
-    min_train = int(total * train_frac)
+    # Tree ensemble
+    tree=TreeEnsemble()
+    tree.fit(X_tr,y_tr,feat_names=list(X.columns))
 
-    fold_records   = []
-    all_dates_pred = []
+    # In-sample metrics
+    fitted_ret,_,_=tree.predict(X_tr)
+    p_actual=prices.values[:-1]*np.exp(np.roll(ya,-1)[:-1])
+    p_pred  =prices.values[:-1]*np.exp(fitted_ret)
+    valid=p_actual[:-1]; pred_v=p_pred[:-1]
+    mae   = float(mean_absolute_error(valid,pred_v))
+    rmse  = float(np.sqrt(mean_squared_error(valid,pred_v)))
+    mape  = float(np.mean(np.abs((valid-pred_v)/(np.abs(valid)+1e-9)))*100)
+    dir_a = float(np.mean(np.sign(fitted_ret[:-1])==np.sign(y_tr[:-1]))*100)
+
+    # Optional LSTM
+    lstm=None; lstm_w=0.0
+    if _TF and len(Xa)>=80:
+        try:
+            lstm=LSTMModel(n_feat=Xa.shape[1])
+            lstm.fit(Xa[:-1],ya[:-1],epochs=35,batch=64)
+            if lstm._fitted: lstm_w=0.35
+        except: lstm=None
+
+    # Predict 1-day log return from latest features
+    mean_ret_tree,_,_=tree.predict(Xa[[-1]])
+    mean_ret=float(mean_ret_tree[0])
+    if lstm is not None and lstm._fitted:
+        mr_lstm,_=lstm.predict(Xa)
+        mean_ret=(1-lstm_w)*mean_ret+lstm_w*float(mr_lstm[0])
+
+    # Historical vol for CI cone
+    daily_vol=float(ya.std()); last_price=float(prices.iloc[-1])
+    lo_cone,hi_cone=_vol_cone(last_price,daily_vol,horizon)
+
+    # Multi-step: compound 1-day return
+    future_dates=pd.bdate_range(prices.index[-1],periods=horizon+1)[1:]
+    cum=0.0; rows=[]
+    for i,dt in enumerate(future_dates):
+        cum+=mean_ret
+        p=last_price*np.exp(cum)
+        rows.append({"Date":dt,"Forecast":round(p,4),
+                     "Lower_80":round(float(lo_cone[i]),4),
+                     "Upper_80":round(float(hi_cone[i]),4),
+                     "Log_Return":round(mean_ret,6)})
+    fc=pd.DataFrame(rows).set_index("Date")
+
+    return {
+        "forecast":fc, "in_sample_mae":round(mae,4),
+        "in_sample_rmse":round(rmse,4), "in_sample_mape":round(mape,2),
+        "in_sample_dir_acc":round(dir_a,1),
+        "daily_volatility":round(daily_vol*100,4),
+        "n_features":Xa.shape[1], "n_train":len(X_tr),
+        "feature_importance":tree.feature_importance(),
+        "models_available":{"xgboost":_XGB,"lightgbm":_LGB,"lstm":_TF},
+        "lstm_used":lstm is not None and lstm._fitted,
+        "lstm_weight":round(lstm_w,2),
+    }
+
+
+def walk_forward_backtest(df: pd.DataFrame, horizon:int=1,
+                          n_folds:int=5, train_frac:float=0.65) -> Dict:
+    X,y_ret=_build_features(df)
+    Xa=X.values.astype(np.float32); ya=y_ret.values.astype(np.float32)
+    dates=y_ret.index; prices=df["Close"].reindex(dates).values.astype(np.float32)
+
+    y_tgt=np.roll(ya,-horizon); Xa=Xa[:-horizon]; y_tgt=y_tgt[:-horizon]
+    prices=prices[:-horizon]; dates=dates[:-horizon]
+
+    total=len(Xa); min_tr=int(total*train_frac)
+    fold_sz=max((total-min_tr)//n_folds,10)
+    fold_recs=[]; all_preds=[]; last_tree=None
 
     for fold in range(n_folds):
-        test_start = min_train + fold * fold_sz
-        test_end   = min(test_start + fold_sz, total)
-        if test_end <= test_start:
-            break
+        ts=min_tr+fold*fold_sz; te=min(ts+fold_sz,total)
+        if te<=ts: break
+        Xtr,ytr=Xa[:ts],y_tgt[:ts]; Xte,yte=Xa[ts:te],y_tgt[ts:te]
+        pte=prices[ts:te]; dte=dates[ts:te]
 
-        X_train = X_arr[:test_start]
-        y_train = y_tgt[:test_start]
-        X_test  = X_arr[test_start:test_end]
-        y_test  = y_tgt[test_start:test_end]
-        d_test  = dates[test_start:test_end]
+        tree=TreeEnsemble()
+        tree.fit(Xtr,ytr,feat_names=list(X.columns))
+        pr,lo,hi=tree.predict(Xte); last_tree=tree
 
-        tree = TreeEnsemblePredictor()
-        tree.fit(X_train, y_train)
-        mean_pred, lo, hi = tree.predict(X_test)
+        ap=pte*np.exp(yte); pp=pte*np.exp(pr)
+        mae=float(mean_absolute_error(ap,pp))
+        rmse=float(np.sqrt(mean_squared_error(ap,pp)))
+        mape=float(np.mean(np.abs((ap-pp)/(np.abs(ap)+1e-9)))*100)
+        dir_a=float(np.mean(np.sign(pr)==np.sign(yte))*100)
+        fold_recs.append({"Fold":fold+1,"Train":ts,"Test":te-ts,
+            "MAE":round(mae,2),"RMSE":round(rmse,2),
+            "MAPE (%)":round(mape,2),"Dir. Accuracy (%)":round(dir_a,2)})
+        for i,d in enumerate(dte):
+            all_preds.append({"Date":d,"Actual":float(ap[i]),"Predicted":float(pp[i]),
+                "Lower":float(pte[i]*np.exp(lo[i])),"Upper":float(pte[i]*np.exp(hi[i])),"Fold":fold+1})
 
-        # Metrics
-        actual  = y_test
-        mae     = mean_absolute_error(actual, mean_pred)
-        rmse    = np.sqrt(mean_squared_error(actual, mean_pred))
-        mape    = np.mean(np.abs((actual - mean_pred) / (np.abs(actual) + 1e-9))) * 100
-        dir_acc = np.mean(np.sign(mean_pred - X_test[:, 0]) ==
-                          np.sign(actual - X_test[:, 0])) * 100
-
-        fold_records.append({
-            "Fold": fold + 1,
-            "MAE":  round(mae, 4),
-            "RMSE": round(rmse, 4),
-            "MAPE (%)": round(mape, 2),
-            "Dir. Accuracy (%)": round(dir_acc, 2),
-            "N": len(actual),
-        })
-
-        for i, d in enumerate(d_test):
-            all_dates_pred.append({
-                "Date":      d,
-                "Actual":    float(actual[i]),
-                "Predicted": float(mean_pred[i]),
-                "Lower":     float(lo[i]),
-                "Upper":     float(hi[i]),
-                "Fold":      fold + 1,
-            })
-
-    fold_df = pd.DataFrame(fold_records)
-    pred_df = pd.DataFrame(all_dates_pred).set_index("Date")
-
-    agg = {}
-    for col in ["MAE", "RMSE", "MAPE (%)", "Dir. Accuracy (%)"]:
+    fold_df=pd.DataFrame(fold_recs)
+    pred_df=(pd.DataFrame(all_preds).set_index("Date") if all_preds else pd.DataFrame())
+    agg={}
+    for col in ["MAE","RMSE","MAPE (%)","Dir. Accuracy (%)"]:
         if col in fold_df.columns:
-            agg[f"{col}_mean"] = round(float(fold_df[col].mean()), 3)
-            agg[f"{col}_std"]  = round(float(fold_df[col].std()), 3)
-
-    return {
-        "fold_metrics": fold_df,
-        "aggregate":    agg,
-        "predictions":  pred_df,
-        "feature_importance": tree.feature_importance(list(X.columns)),
-    }
-
-
-# ─────────────────────────────────────────
-# PRODUCTION FORECAST  (out-of-sample)
-# ─────────────────────────────────────────
-
-def forecast_future(df: pd.DataFrame, horizon: int = 10) -> Dict:
-    """
-    Train on all available data, predict next `horizon` business days.
-    Returns:
-      - price_forecast: DataFrame with Date, Forecast, Lower_80, Upper_80
-      - model_info: training metadata
-    """
-    X, y = _build_features(df)
-    X_arr = X.values.astype(np.float32)
-    y_arr = y.values.astype(np.float32)
-
-    # Target: next-day close (rolling 1-day ahead)
-    y_1d = np.roll(y_arr, -1)
-    X_train = X_arr[:-1]
-    y_train = y_1d[:-1]
-
-    tree = TreeEnsemblePredictor()
-    tree.fit(X_train, y_train)
-
-    # Forecast: use last row of features as base
-    last_features = X_arr[[-1]]
-    mean_p, lo_p, hi_p = tree.predict(last_features)
-    last_close = float(y_arr[-1])
-
-    # Multi-step: iterative single-step
-    forecasts = []
-    futures   = pd.bdate_range(df.index[-1], periods=horizon + 1)[1:]
-    current   = last_close
-    spread    = (hi_p[0] - lo_p[0]) / last_close  # relative uncertainty
-
-    for i, date in enumerate(futures):
-        scale      = (1 + i * 0.3)               # uncertainty grows with horizon
-        ratio      = mean_p[0] / last_close
-        f_close    = current * ratio
-        forecasts.append({
-            "Date":     date,
-            "Forecast": round(f_close, 4),
-            "Lower_80": round(f_close * (1 - spread * scale), 4),
-            "Upper_80": round(f_close * (1 + spread * scale), 4),
-        })
-        current = f_close
-
-    forecast_df = pd.DataFrame(forecasts).set_index("Date")
-
-    # In-sample fit quality
-    fitted, _, _ = tree.predict(X_train)
-    mae  = mean_absolute_error(y_train, fitted)
-    rmse = np.sqrt(mean_squared_error(y_train, fitted))
-    mape = np.mean(np.abs((y_train - fitted) / (np.abs(y_train) + 1e-9))) * 100
-
-    feat_imp = tree.feature_importance(list(X.columns))
-
-    return {
-        "forecast":           forecast_df,
-        "in_sample_mae":      round(mae, 4),
-        "in_sample_rmse":     round(rmse, 4),
-        "in_sample_mape":     round(mape, 2),
-        "n_features":         X_arr.shape[1],
-        "n_train":            len(X_train),
-        "feature_importance": feat_imp,
-        "models_available":   {
-            "xgboost":  _XGB,
-            "lightgbm": _LGB,
-            "lstm":     _TF,
-        },
-    }
+            agg[f"{col}_mean"]=round(float(fold_df[col].mean()),3)
+            agg[f"{col}_std"] =round(float(fold_df[col].std()),3)
+    fi=last_tree.feature_importance() if last_tree else pd.DataFrame()
+    return {"fold_metrics":fold_df,"aggregate":agg,"predictions":pred_df,"feature_importance":fi}
