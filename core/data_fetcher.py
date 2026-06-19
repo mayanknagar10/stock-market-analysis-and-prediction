@@ -1,25 +1,15 @@
 """
 Professional data fetching module.
-Handles OHLCV, fundamentals, news, and multi-ticker fetching with robust caching.
-
-Market support:
-  US equities  :  AAPL, MSFT, TSLA …
-  NSE (India)  :  RELIANCE.NS, TCS.NS, INFY.NS …
-  BSE (India)  :  RELIANCE.BO, TCS.BO …
-  US indices   :  ^GSPC, ^IXIC, ^DJI
-  NSE indices  :  ^NSEI (Nifty 50), ^NSEBANK (Bank Nifty)
-  BSE index    :  ^BSESN (Sensex)
-  Crypto       :  BTC-USD, ETH-USD …
+Supports US, NSE (.NS), BSE (.BO), indices and crypto via Yahoo Finance.
 """
 
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from typing import Optional, Dict, List, Tuple
+from typing import Dict, List, Tuple
 import streamlit as st
 import warnings
 warnings.filterwarnings("ignore")
-
 
 PERIOD_MAP = {
     "1 Month":  ("1mo",  "1d"),
@@ -31,106 +21,73 @@ PERIOD_MAP = {
     "Max":      ("max",  "1mo"),
 }
 
-# ── Currency helpers ───────────────────────────────────────────────────────
-
-CURRENCY_SYMBOLS = {
-    "INR": "₹",
-    "USD": "$",
-    "EUR": "€",
-    "GBP": "£",
-    "JPY": "¥",
-    "CNY": "¥",
-    "AUD": "A$",
-    "CAD": "C$",
-    "HKD": "HK$",
-    "SGD": "S$",
+CURRENCY_SYMBOLS: Dict[str, str] = {
+    "INR": "₹", "USD": "$", "EUR": "€", "GBP": "£",
+    "JPY": "¥", "CNY": "¥", "AUD": "A$", "CAD": "C$",
+    "HKD": "HK$", "SGD": "S$",
 }
 
+
 def currency_symbol(currency: str) -> str:
-    """Return the display symbol for a given ISO currency code."""
-    return CURRENCY_SYMBOLS.get(currency.upper(), currency + " ")
+    """
+    Return display symbol for a currency.
+    - ISO code  → look up in table  (e.g. 'USD' → '$')
+    - Already a symbol → return as-is (e.g. '$' → '$', '₹' → '₹')
+    No trailing spaces are added.
+    """
+    s = str(currency).strip()
+    # If it looks like an ISO code (3 alpha chars) → look up
+    if len(s) == 3 and s.isalpha():
+        return CURRENCY_SYMBOLS.get(s.upper(), s)
+    # Otherwise treat as a symbol already (pass through unchanged)
+    return s
 
 
 def detect_market(ticker: str) -> str:
-    """
-    Infer the market from the ticker suffix.
-    Returns 'NSE', 'BSE', 'US', or 'OTHER'.
-    """
+    """Infer market from ticker suffix. Returns 'NSE', 'BSE', or 'US'."""
     t = ticker.upper().strip()
-    if t.endswith(".NS"):
+    if t.endswith(".NS") or t.startswith("^NSEI") or t.startswith("^NSEBANK"):
         return "NSE"
-    if t.endswith(".BO"):
+    if t.endswith(".BO") or t.startswith("^BSESN"):
         return "BSE"
-    if t.startswith("^NSEI") or t.startswith("^BSE"):
-        return "NSE"
     return "US"
 
 
-def normalise_ticker(raw: str) -> str:
-    """
-    Accept common shorthand and return a Yahoo-Finance-compatible symbol.
-    e.g.  'RELIANCE'  →  'RELIANCE.NS'  is NOT done here — the user must
-    type the suffix.  This function just strips whitespace and uppercases.
-    """
-    return raw.upper().strip()
-
-
-# ── Data fetching ──────────────────────────────────────────────────────────
-
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_ohlcv(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
-    """
-    Fetch OHLCV data from Yahoo Finance.
-    Works for US, NSE (.NS), BSE (.BO), indices, and crypto.
-    Returns a cleaned DataFrame with tz-naive DatetimeIndex, or empty DF on failure.
-    """
+    """Fetch OHLCV from Yahoo Finance. Returns empty DataFrame on failure."""
     try:
-        t = normalise_ticker(ticker)
-        stock = yf.Ticker(t)
-        df = stock.history(period=period, interval=interval, auto_adjust=True)
-
+        df = yf.Ticker(ticker.upper().strip()).history(
+            period=period, interval=interval, auto_adjust=True
+        )
         if df is None or df.empty:
             return pd.DataFrame()
-
         df.index = pd.to_datetime(df.index).tz_localize(None)
         df = df[["Open", "High", "Low", "Close", "Volume"]].copy()
         df.dropna(subset=["Close"], inplace=True)
-
-        # NSE/BSE indices have Volume = 0 legitimately, so only filter for equities
-        if not ticker.startswith("^"):
-            df = df[df["Volume"] >= 0]
-
         for col in ["Open", "High", "Low", "Close"]:
             df = df[df[col] > 0]
-
         return df
-
     except Exception as e:
-        st.error(f"⚠️  Could not fetch data for **{ticker}**: {e}")
+        st.error(f"⚠️ Could not fetch **{ticker}**: {e}")
         return pd.DataFrame()
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_fundamentals(ticker: str) -> Dict:
-    """
-    Fetch fundamental info.
-    Correctly returns INR-denominated values for NSE/BSE tickers.
-    """
-    defaults = {
-        "name": ticker, "sector": "—", "industry": "—",
-        "market_cap": None, "pe_ttm": None, "pe_fwd": None,
-        "eps": None, "dividend_yield": None, "beta": None,
-        "week52_high": None, "week52_low": None,
-        "avg_volume_10d": None, "avg_volume_3m": None,
-        "description": "", "website": "", "employees": None,
-        "currency": "INR" if detect_market(ticker) in ("NSE", "BSE") else "USD",
-        "exchange": detect_market(ticker),
-        "revenue_ttm": None, "gross_margin": None,
-        "operating_margin": None, "roe": None, "debt_equity": None,
-    }
+    defaults = dict(
+        name=ticker, sector="—", industry="—",
+        market_cap=None, pe_ttm=None, pe_fwd=None, eps=None,
+        dividend_yield=None, beta=None, week52_high=None, week52_low=None,
+        avg_volume_10d=None, avg_volume_3m=None, description="",
+        website="", employees=None,
+        currency="INR" if detect_market(ticker) in ("NSE","BSE") else "USD",
+        exchange=detect_market(ticker),
+        revenue_ttm=None, gross_margin=None, operating_margin=None,
+        roe=None, debt_equity=None,
+    )
     try:
-        info = yf.Ticker(normalise_ticker(ticker)).info or {}
-        currency = info.get("currency", defaults["currency"])
+        info = yf.Ticker(ticker.upper().strip()).info or {}
         return {
             "name":             info.get("longName", ticker),
             "sector":           info.get("sector", "—"),
@@ -148,8 +105,8 @@ def fetch_fundamentals(ticker: str) -> Dict:
             "description":      info.get("longBusinessSummary", ""),
             "website":          info.get("website", ""),
             "employees":        info.get("fullTimeEmployees"),
-            "currency":         currency,
-            "exchange":         info.get("exchange", detect_market(ticker)),
+            "currency":         info.get("currency", defaults["currency"]),
+            "exchange":         info.get("exchange", defaults["exchange"]),
             "revenue_ttm":      info.get("totalRevenue"),
             "gross_margin":     info.get("grossMargins"),
             "operating_margin": info.get("operatingMargins"),
@@ -162,52 +119,29 @@ def fetch_fundamentals(ticker: str) -> Dict:
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_news(ticker: str, max_items: int = 8) -> List[Dict]:
-    """Fetch recent news headlines for a ticker."""
     try:
-        items = yf.Ticker(normalise_ticker(ticker)).news or []
-        return items[:max_items]
+        return (yf.Ticker(ticker.upper().strip()).news or [])[:max_items]
     except Exception:
         return []
 
 
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_benchmark(period: str = "1y", market: str = "US") -> pd.DataFrame:
-    """
-    Fetch a default benchmark based on the detected market.
-      US  →  ^GSPC  (S&P 500)
-      NSE →  ^NSEI  (Nifty 50)
-      BSE →  ^BSESN (Sensex)
-    """
-    bench_map = {
-        "US":  "^GSPC",
-        "NSE": "^NSEI",
-        "BSE": "^BSESN",
-    }
-    symbol = bench_map.get(market, "^GSPC")
-    return fetch_ohlcv(symbol, period=period)
-
-
-@st.cache_data(ttl=300, show_spinner=False)
-def fetch_multi(tickers: Tuple[str, ...], period: str = "1y") -> Dict[str, pd.DataFrame]:
-    """Fetch OHLCV for multiple tickers. Accepts tuple for hashability."""
-    return {t: fetch_ohlcv(t, period) for t in tickers}
-
-
-def returns_series(df: pd.DataFrame, col: str = "Close") -> pd.Series:
-    """Compute log returns from a price series."""
-    return np.log(df[col] / df[col].shift(1)).dropna()
+    sym = {"US": "^GSPC", "NSE": "^NSEI", "BSE": "^BSESN"}.get(market, "^GSPC")
+    return fetch_ohlcv(sym, period=period)
 
 
 def validate_ticker(ticker: str) -> Tuple[bool, str]:
-    """Quick validation: check if a ticker exists and has recent data."""
     try:
         df = fetch_ohlcv(ticker, period="5d")
         if df.empty:
-            market = detect_market(ticker)
-            hint = ""
-            if market == "US" and "." not in ticker and not ticker.startswith("^"):
-                hint = " For NSE stocks add .NS suffix, e.g. RELIANCE.NS"
+            hint = " For NSE stocks add .NS (e.g. RELIANCE.NS)" \
+                   if detect_market(ticker) == "US" and "." not in ticker else ""
             return False, f"No data found for '{ticker}'.{hint}"
         return True, ""
     except Exception as e:
         return False, str(e)
+
+
+def compute_returns(prices: pd.Series) -> pd.Series:
+    return prices.pct_change().dropna()
