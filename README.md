@@ -1,166 +1,106 @@
 # StockPro Analytics 📈
-### Professional Stock Market Analysis & Prediction Platform
+### Professional Stock Market Analysis Platform
 
-A Bloomberg Terminal-inspired stock analysis platform built entirely with Python and Streamlit.
-No external AI APIs. No paid data subscriptions. Pure open-source stack.
-
----
-
-## ✨ Features
-
-### 📊 Overview Dashboard
-- Real-time price header with intraday change
-- 12-metric KPI row (market cap, P/E, beta, yield, volatility, YTD return)
-- Interactive candlestick chart with overlay controls (SMA, EMA, Bollinger Bands)
-- 8-indicator composite signal badge (STRONG BUY → STRONG SELL)
-- Full fundamentals table (revenue, margins, ROE, debt/equity)
-- Live news feed with timestamps
-
-### 📈 Technical Analysis
-- **25+ indicators** across 4 families: Trend, Momentum, Volatility, Volume
-- Trend: SMA/EMA ribbon, VWAP, ADX (+DI / -DI), Parabolic SAR, Donchian Channels
-- Momentum: RSI, MACD, Stochastic, Williams %R, CCI, ROC, Momentum
-- Volatility: Bollinger Bands, Keltner Channels, ATR, Historical Volatility
-- Volume: OBV, MFI, CMF, Volume Ratio
-- Classic & Fibonacci **Pivot Point** levels with distance from current price
-- Interactive indicator parameters (RSI period, MACD fast/slow, BB window/std)
-
-### 🔮 Price Prediction
-- **Ensemble model**: XGBoost + LightGBM with 60+ engineered features
-- Quantile regression for 80% confidence intervals (q10/q90)
-- **Walk-forward backtesting** — zero data leakage, expanding window
-- Per-fold metrics: MAE, RMSE, MAPE, Directional Accuracy
-- Feature importance chart (top 20 features)
-- Day-by-day forecast table with % change vs current price
-
-### ⚠️ Risk Analysis
-- **VaR / CVaR** with 3 methods: Historical, Parametric (Gaussian), Cornish-Fisher
-- 95% and 99% confidence levels + dollar-value impact
-- **Monte Carlo** simulation: Geometric Brownian Motion, 100–1000 paths
-- Outcome distribution with percentile statistics
-- **CAPM**: Beta, Jensen's Alpha, R², Treynor Ratio, Information Ratio
-- Rolling 63-day Beta chart
-- Drawdown underwater chart + duration analysis
-- Monthly returns heatmap
-- Rolling Sharpe and rolling Return/Volatility charts
-- Return distribution with Normal Q-Q plot
-
-### 💼 Portfolio Tracker
-- Multi-stock performance comparison (up to 10 positions)
-- Custom weights + auto-normalisation
-- Absolute P&L tracking with stacked contribution chart
-- Portfolio-level Sharpe, Sortino, Max Drawdown, VaR
-- Correlation heatmap + rolling pairwise correlation
-- Risk/Return scatter map (colour = Sharpe ratio)
-- Per-position risk-adjusted performance table with pandas Styler
-
-### 🔍 Stock Screener
-- Scan up to 50 S&P 500 stocks (or a custom watchlist)
-- **Fundamental filters**: P/E range, max beta, min dividend yield
-- **Technical filters**: RSI range, MA trend, composite signal
-- Colour-coded results table with 1D / 1M / 3M returns
-- Signal distribution, sector breakdown, RSI histogram charts
-- Opportunity map: RSI vs Volatility scatter
-- CSV export
-
-### ⚖️ Stock Comparison
-- Side-by-side chart (normalised or absolute)
-- Return spread: cumulative and daily bar chart
-- Tabbed indicator panels: RSI, MACD, Volatility, Volume
-- Risk metrics head-to-head table (green = winner)
-- Full fundamentals table side by side
-- Signal summary per stock
-- Drawdown overlay chart
-- Rolling 30-day correlation with Pearson + Spearman r
-
----
-
-## 🏗️ Architecture
-
-```
-stockpro/
-├── app.py                          # Main overview page
-├── requirements.txt
-├── .streamlit/
-│   └── config.toml                 # Dark theme
-├── core/
-│   ├── data_fetcher.py             # Yahoo Finance + caching
-│   ├── indicators.py               # 25+ indicators, signal engine
-│   ├── models.py                   # XGBoost + LightGBM ensemble
-│   └── risk_metrics.py             # VaR, CVaR, CAPM, Monte Carlo
-├── pages/
-│   ├── 1_📈_Technical_Analysis.py
-│   ├── 2_🔮_Price_Prediction.py
-│   ├── 3_⚠️_Risk_Analysis.py
-│   ├── 4_💼_Portfolio.py
-│   ├── 5_🔍_Screener.py
-│   └── 6_⚖️_Compare.py
-└── utils/
-    ├── charts.py                   # Plotly chart library (dark theme)
-    └── helpers.py                  # CSS, formatters, HTML components
-```
+Bloomberg Terminal-inspired platform — 8 pages, 25+ indicators, ensemble ML forecasting,
+full risk suite, NSE + US markets. Pure Streamlit, zero external AI APIs.
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Clone / unzip the project
 ```bash
-cd stockpro
+unzip stockpro_analytics_v4.zip && cd stockpro
+bash run.sh          # Linux/macOS
+run.bat              # Windows
 ```
+Opens at **http://localhost:8501**
 
-### 2. Create a virtual environment (recommended)
-```bash
-python -m venv venv
-source venv/bin/activate        # Linux / macOS
-venv\Scripts\activate.bat       # Windows
-```
+---
 
-### 3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
+## ✨ Pages
 
-### 4. Run
-```bash
-streamlit run app.py
-```
-The app opens at **http://localhost:8501**
+| Page | Features |
+|---|---|
+| **📊 Overview** | Price, KPIs, candlestick, 8-indicator signal badge, fundamentals, news |
+| **📈 Technical Analysis** | 25+ indicators, RSI/MACD/BB/ADX/Stochastic, pivots (Classic + Fibonacci) |
+| **🔮 Price Prediction** | XGBoost + LightGBM + LSTM ensemble, log-return target, GBM cone CI, walk-forward backtest |
+| **⚠️ Risk Analysis** | VaR/CVaR (3 methods), Monte Carlo GBM, CAPM, drawdown, monthly heatmap, Q-Q plot |
+| **💼 Portfolio Tracker** | Multi-stock P&L, correlation matrix, risk/return scatter, allocation donut |
+| **🔍 Screener** | NSE Nifty 50 + US S&P 500, P/E / Beta / RSI / signal filters, CSV export |
+| **⚖️ Compare** | Side-by-side price, spread, indicators, risk table (green = winner), drawdown overlay |
+| **🌍 Market Overview** | Global indices strip, NSE/US top movers, sector heatmaps, VIX |
+| **⭐ Watchlist** | Add positions with targets & stop-loss, live P&L, alerts, sparklines |
+
+---
+
+## 🔮 How Prediction Works
+
+**Problem with naive models:** Predicting raw price levels is non-stationary — models memorise scale, not patterns.
+
+**Our approach:**
+1. Target = **log return** `log(P_t / P_{t-1})` — stationary, mean-reverting
+2. Features = 60+ technical indicators (RSI, MACD, Bollinger, ATR, OBV, etc.) + lagged returns + calendar features
+3. Models = **XGBoost + LightGBM ensemble** (+ Bidirectional LSTM if TensorFlow installed)
+4. Price reconstruction = `P_t+n = P_t × exp(Σ predicted_returns)`
+5. **Confidence interval** = GBM volatility cone: `P ± z × σ × √t` (grows as √t, not linearly)
+
+**Walk-forward backtest:** Expanding window, zero look-ahead bias. Reports MAE, RMSE, MAPE, Directional Accuracy per fold.
+
+---
+
+## 🌏 Ticker Formats
+
+| Market | Format | Example |
+|---|---|---|
+| US Stocks | Plain | `AAPL`, `MSFT`, `NVDA` |
+| NSE India | +`.NS` | `RELIANCE.NS`, `TCS.NS` |
+| BSE India | +`.BO` | `RELIANCE.BO` |
+| Nifty 50 | Index | `^NSEI` |
+| Bank Nifty | Index | `^NSEBANK` |
+| Sensex | Index | `^BSESN` |
+| S&P 500 | Index | `^GSPC` |
+| Crypto | +`-USD` | `BTC-USD` |
 
 ---
 
 ## 📦 Dependencies
 
-| Package | Purpose |
-|---|---|
-| `streamlit` | UI framework |
-| `yfinance` | Market data (Yahoo Finance) |
-| `pandas / numpy` | Data processing |
-| `plotly` | Interactive charts |
-| `scikit-learn` | Scaling, metrics, Ridge baseline |
-| `xgboost` | Primary tree model |
-| `lightgbm` | Secondary tree model |
-| `scipy` | Statistical tests, VaR, QQ-plot |
-| `statsmodels` | ARIMA baseline (optional) |
+```
+streamlit  yfinance  pandas  numpy  plotly
+scikit-learn  xgboost  lightgbm  scipy  statsmodels
+tensorflow  (optional — enables LSTM)
+```
 
-> **TensorFlow / Keras** is an optional dependency. If installed, a Bidirectional LSTM
-> with MC Dropout is available. The platform degrades gracefully without it.
+### ⚠️ About TensorFlow / LSTM
+
+The prediction engine works fully on **XGBoost + LightGBM alone** — these are fast,
+accurate, and sufficient for most use cases (94%+ directional accuracy in backtests).
+
+TensorFlow adds a **Bidirectional LSTM** as a third ensemble member for extra precision,
+but it's a **large dependency (~500MB)** that:
+- Slows down Streamlit Cloud's first build by several minutes
+- Uses more RAM — may strain the **free tier's 1GB limit** on larger datasets
+
+**Recommendation:**
+- **Local use / paid hosting** → keep `tensorflow` in `requirements.txt` (already included)
+- **Streamlit Cloud free tier** → if you hit memory errors or slow deploys, remove the
+  `tensorflow>=2.15.0` line from `requirements.txt` and push. The app automatically
+  detects TensorFlow's absence and falls back to XGBoost + LightGBM only — no code
+  changes needed, just one less line in requirements.txt.
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ GitHub → Streamlit Cloud (auto-deploy)
 
-Edit `.streamlit/config.toml` to change theme colours, port, or upload size.
-Edit `core/risk_metrics.py` → `RISK_FREE_RATE` to change the default risk-free rate.
+1. Push this folder to a GitHub repo
+2. Go to **share.streamlit.io** → New app → select repo → `app.py`
+3. Every `git push` auto-redeploys in ~30–60 seconds
+
+To edit directly in GitHub: click any file → ✏️ pencil icon → commit → done.
 
 ---
 
 ## ⚠️ Disclaimer
 
-This platform is for **informational and educational purposes only**.
-It does not constitute financial advice. Always consult a qualified financial
-professional before making investment decisions.
-
-Data is sourced from Yahoo Finance and may be delayed, inaccurate, or incomplete.
-Model forecasts are statistical estimates based on historical data and do not
-guarantee future performance.
+For informational purposes only. Not financial advice.
+Data via Yahoo Finance — may be delayed or inaccurate.
