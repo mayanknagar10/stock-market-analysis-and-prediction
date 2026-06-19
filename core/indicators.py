@@ -1,407 +1,185 @@
-"""
-Professional technical indicators library.
-All calculations are vectorised with pandas/numpy — no external TA library dependency
-so there are no version conflicts. Covers trend, momentum, volatility, and volume families.
-"""
-
+"""25+ technical indicators — all pure numpy/pandas, zero TA-lib dependency."""
 import pandas as pd
 import numpy as np
-from typing import Dict, Tuple
+from typing import Dict
 
+# ── Trend ──────────────────────────────────────────────────────────────────
+def sma(s, w): return s.rolling(w, min_periods=1).mean()
+def ema(s, span): return s.ewm(span=span, adjust=False).mean()
+def wma(s, w):
+    wts = np.arange(1, w+1)
+    return s.rolling(w).apply(lambda x: np.dot(x, wts)/wts.sum(), raw=True)
+def vwap(df):
+    tp = (df["High"]+df["Low"]+df["Close"])/3
+    return (tp*df["Volume"]).cumsum()/df["Volume"].cumsum()
 
-# ─────────────────────────────────────────
-# TREND INDICATORS
-# ─────────────────────────────────────────
+def adx(df, w=14):
+    H,L,C = df["High"],df["Low"],df["Close"]
+    tr = pd.concat([H-L,(H-C.shift(1)).abs(),(L-C.shift(1)).abs()],axis=1).max(axis=1)
+    atr_ = tr.ewm(span=w,adjust=False).mean()
+    dmp = np.where((H-H.shift(1))>(L.shift(1)-L), np.maximum(H-H.shift(1),0),0)
+    dmm = np.where((L.shift(1)-L)>(H-H.shift(1)), np.maximum(L.shift(1)-L,0),0)
+    dip = 100*pd.Series(dmp,index=df.index).ewm(span=w,adjust=False).mean()/atr_.replace(0,np.nan)
+    dim = 100*pd.Series(dmm,index=df.index).ewm(span=w,adjust=False).mean()/atr_.replace(0,np.nan)
+    dx  = 100*(dip-dim).abs()/(dip+dim).replace(0,np.nan)
+    return pd.DataFrame({"ADX":dx.ewm(span=w,adjust=False).mean(),"DI+":dip,"DI-":dim},index=df.index)
 
-def sma(series: pd.Series, window: int) -> pd.Series:
-    return series.rolling(window, min_periods=1).mean()
-
-
-def ema(series: pd.Series, span: int) -> pd.Series:
-    return series.ewm(span=span, adjust=False).mean()
-
-
-def wma(series: pd.Series, window: int) -> pd.Series:
-    weights = np.arange(1, window + 1)
-    return series.rolling(window).apply(lambda x: np.dot(x, weights) / weights.sum(), raw=True)
-
-
-def vwap(df: pd.DataFrame) -> pd.Series:
-    """VWAP — resets daily (grouped by date)."""
-    tp = (df["High"] + df["Low"] + df["Close"]) / 3
-    cum_tp_vol = (tp * df["Volume"]).cumsum()
-    cum_vol = df["Volume"].cumsum()
-    return cum_tp_vol / cum_vol
-
-
-def adx(df: pd.DataFrame, window: int = 14) -> pd.DataFrame:
-    """Average Directional Index with +DI and -DI."""
-    high, low, close = df["High"], df["Low"], df["Close"]
-
-    tr1 = high - low
-    tr2 = (high - close.shift(1)).abs()
-    tr3 = (low - close.shift(1)).abs()
-    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    atr_ = tr.ewm(span=window, adjust=False).mean()
-
-    dm_plus  = np.where((high - high.shift(1)) > (low.shift(1) - low),
-                        np.maximum(high - high.shift(1), 0), 0)
-    dm_minus = np.where((low.shift(1) - low) > (high - high.shift(1)),
-                        np.maximum(low.shift(1) - low, 0), 0)
-
-    sm_plus  = pd.Series(dm_plus,  index=df.index).ewm(span=window, adjust=False).mean()
-    sm_minus = pd.Series(dm_minus, index=df.index).ewm(span=window, adjust=False).mean()
-
-    di_plus  = 100 * sm_plus  / atr_.replace(0, np.nan)
-    di_minus = 100 * sm_minus / atr_.replace(0, np.nan)
-    dx = 100 * (di_plus - di_minus).abs() / (di_plus + di_minus).replace(0, np.nan)
-    adx_val  = dx.ewm(span=window, adjust=False).mean()
-
-    return pd.DataFrame({"ADX": adx_val, "DI+": di_plus, "DI-": di_minus}, index=df.index)
-
-
-def parabolic_sar(df: pd.DataFrame, af_start: float = 0.02, af_max: float = 0.2) -> pd.Series:
-    """Parabolic SAR."""
-    high, low = df["High"].values, df["Low"].values
-    n = len(high)
-    sar = np.zeros(n)
-    ep  = np.zeros(n)
-    af  = np.full(n, af_start)
-    bull = True
-
-    sar[0] = low[0]
-    ep[0]  = high[0]
-
-    for i in range(1, n):
-        prev_sar = sar[i - 1]
-        prev_ep  = ep[i - 1]
-        prev_af  = af[i - 1]
-
+def parabolic_sar(df, af0=0.02, af_max=0.2):
+    H,L = df["High"].values, df["Low"].values
+    n   = len(H); sar=np.zeros(n); ep=np.zeros(n); af=np.full(n,af0); bull=True
+    sar[0]=L[0]; ep[0]=H[0]
+    for i in range(1,n):
+        ps,pe,pa = sar[i-1],ep[i-1],af[i-1]
         if bull:
-            sar[i] = prev_sar + prev_af * (prev_ep - prev_sar)
-            sar[i] = min(sar[i], low[i - 1], low[i - 2] if i > 1 else low[i - 1])
-            if high[i] > prev_ep:
-                ep[i] = high[i]
-                af[i] = min(prev_af + af_start, af_max)
-            else:
-                ep[i] = prev_ep
-                af[i] = prev_af
-            if low[i] < sar[i]:
-                bull = False
-                sar[i] = prev_ep
-                ep[i]  = low[i]
-                af[i]  = af_start
+            sar[i]=min(ps+pa*(pe-ps), L[i-1], L[i-2] if i>1 else L[i-1])
+            if H[i]>pe: ep[i]=H[i]; af[i]=min(pa+af0,af_max)
+            else:        ep[i]=pe;   af[i]=pa
+            if L[i]<sar[i]: bull=False; sar[i]=pe; ep[i]=L[i]; af[i]=af0
         else:
-            sar[i] = prev_sar + prev_af * (prev_ep - prev_sar)
-            sar[i] = max(sar[i], high[i - 1], high[i - 2] if i > 1 else high[i - 1])
-            if low[i] < prev_ep:
-                ep[i] = low[i]
-                af[i] = min(prev_af + af_start, af_max)
-            else:
-                ep[i] = prev_ep
-                af[i] = prev_af
-            if high[i] > sar[i]:
-                bull = True
-                sar[i] = prev_ep
-                ep[i]  = high[i]
-                af[i]  = af_start
+            sar[i]=max(ps+pa*(pe-ps), H[i-1], H[i-2] if i>1 else H[i-1])
+            if L[i]<pe: ep[i]=L[i]; af[i]=min(pa+af0,af_max)
+            else:        ep[i]=pe;   af[i]=pa
+            if H[i]>sar[i]: bull=True; sar[i]=pe; ep[i]=H[i]; af[i]=af0
+    return pd.Series(sar,index=df.index,name="PSAR")
 
-    return pd.Series(sar, index=df.index, name="PSAR")
+# ── Momentum ───────────────────────────────────────────────────────────────
+def rsi(s, w=14):
+    d=s.diff(); g=d.clip(lower=0).ewm(com=w-1,adjust=False).mean()
+    ls=(-d.clip(upper=0)).ewm(com=w-1,adjust=False).mean()
+    return 100-100/(1+g/ls.replace(0,np.nan))
 
+def macd(s, fast=12, slow=26, sig=9):
+    m=ema(s,fast)-ema(s,slow); signal=ema(m,sig)
+    return pd.DataFrame({"MACD":m,"Signal":signal,"Hist":m-signal},index=s.index)
 
-# ─────────────────────────────────────────
-# MOMENTUM INDICATORS
-# ─────────────────────────────────────────
+def stochastic(df, k=14, d=3):
+    lo=df["Low"].rolling(k).min(); hi=df["High"].rolling(k).max()
+    K=100*(df["Close"]-lo)/(hi-lo).replace(0,np.nan)
+    return pd.DataFrame({"%K":K,"%D":K.rolling(d).mean()},index=df.index)
 
-def rsi(series: pd.Series, window: int = 14) -> pd.Series:
-    delta = series.diff()
-    gain  = delta.clip(lower=0).ewm(com=window - 1, adjust=False).mean()
-    loss  = (-delta.clip(upper=0)).ewm(com=window - 1, adjust=False).mean()
-    rs    = gain / loss.replace(0, np.nan)
-    return 100 - (100 / (1 + rs))
+def williams_r(df, w=14):
+    hi=df["High"].rolling(w).max(); lo=df["Low"].rolling(w).min()
+    return -100*(hi-df["Close"])/(hi-lo).replace(0,np.nan)
 
+def cci(df, w=20):
+    tp=( df["High"]+df["Low"]+df["Close"])/3
+    mad=tp.rolling(w).apply(lambda x: np.mean(np.abs(x-np.mean(x))),raw=True)
+    return (tp-tp.rolling(w).mean())/(0.015*mad.replace(0,np.nan))
 
-def macd(series: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9
-         ) -> pd.DataFrame:
-    ema_fast   = ema(series, fast)
-    ema_slow   = ema(series, slow)
-    macd_line  = ema_fast - ema_slow
-    signal_line = ema(macd_line, signal)
-    histogram   = macd_line - signal_line
-    return pd.DataFrame({"MACD": macd_line, "Signal": signal_line, "Hist": histogram},
-                        index=series.index)
+def roc(s, w=10): return 100*(s-s.shift(w))/s.shift(w)
+def momentum(s, w=10): return s-s.shift(w)
 
+# ── Volatility ─────────────────────────────────────────────────────────────
+def bollinger_bands(s, w=20, n=2.0):
+    mid=sma(s,w); std=s.rolling(w).std()
+    up=mid+n*std; lo=mid-n*std
+    return pd.DataFrame({"BB_Upper":up,"BB_Mid":mid,"BB_Lower":lo,
+                          "BB_Width":(up-lo)/mid,"BB_%B":(s-lo)/(up-lo).replace(0,np.nan)},
+                         index=s.index)
 
-def stochastic(df: pd.DataFrame, k_window: int = 14, d_window: int = 3) -> pd.DataFrame:
-    low_min  = df["Low"].rolling(k_window).min()
-    high_max = df["High"].rolling(k_window).max()
-    k = 100 * (df["Close"] - low_min) / (high_max - low_min).replace(0, np.nan)
-    d = k.rolling(d_window).mean()
-    return pd.DataFrame({"%K": k, "%D": d}, index=df.index)
+def atr(df, w=14):
+    tr=pd.concat([df["High"]-df["Low"],
+                  (df["High"]-df["Close"].shift(1)).abs(),
+                  (df["Low"] -df["Close"].shift(1)).abs()],axis=1).max(axis=1)
+    return tr.ewm(span=w,adjust=False).mean()
 
+def keltner_channels(df, span=20, mult=2.0):
+    mid=ema(df["Close"],span); a=atr(df,span)
+    return pd.DataFrame({"KC_Upper":mid+mult*a,"KC_Mid":mid,"KC_Lower":mid-mult*a},index=df.index)
 
-def williams_r(df: pd.DataFrame, window: int = 14) -> pd.Series:
-    high_max = df["High"].rolling(window).max()
-    low_min  = df["Low"].rolling(window).min()
-    return -100 * (high_max - df["Close"]) / (high_max - low_min).replace(0, np.nan)
+def donchian_channels(df, w=20):
+    up=df["High"].rolling(w).max(); lo=df["Low"].rolling(w).min()
+    return pd.DataFrame({"DC_Upper":up,"DC_Mid":(up+lo)/2,"DC_Lower":lo},index=df.index)
 
+def historical_volatility(s, w=20): return np.log(s/s.shift(1)).rolling(w).std()*np.sqrt(252)
 
-def cci(df: pd.DataFrame, window: int = 20) -> pd.Series:
-    tp     = (df["High"] + df["Low"] + df["Close"]) / 3
-    sma_tp = tp.rolling(window).mean()
-    mad    = tp.rolling(window).apply(lambda x: np.mean(np.abs(x - np.mean(x))), raw=True)
-    return (tp - sma_tp) / (0.015 * mad.replace(0, np.nan))
+# ── Volume ─────────────────────────────────────────────────────────────────
+def obv(df): return (np.sign(df["Close"].diff()).fillna(0)*df["Volume"]).cumsum()
 
+def money_flow_index(df, w=14):
+    tp=( df["High"]+df["Low"]+df["Close"])/3; rmf=tp*df["Volume"]
+    pos=rmf.where(tp>tp.shift(1),0); neg=rmf.where(tp<tp.shift(1),0)
+    return 100-100/(1+pos.rolling(w).sum()/neg.rolling(w).sum().replace(0,np.nan))
 
-def roc(series: pd.Series, window: int = 10) -> pd.Series:
-    return 100 * (series - series.shift(window)) / series.shift(window)
+def chaikin_money_flow(df, w=20):
+    rng=(df["High"]-df["Low"]).replace(0,np.nan)
+    clv=((df["Close"]-df["Low"])-(df["High"]-df["Close"]))/rng
+    return (clv*df["Volume"]).rolling(w).sum()/df["Volume"].rolling(w).sum()
 
+def volume_ratio(df, w=14): return df["Volume"]/df["Volume"].rolling(w).mean()
 
-def momentum(series: pd.Series, window: int = 10) -> pd.Series:
-    return series - series.shift(window)
-
-
-# ─────────────────────────────────────────
-# VOLATILITY INDICATORS
-# ─────────────────────────────────────────
-
-def bollinger_bands(series: pd.Series, window: int = 20, num_std: float = 2.0
-                    ) -> pd.DataFrame:
-    mid = sma(series, window)
-    std = series.rolling(window).std()
-    upper = mid + num_std * std
-    lower = mid - num_std * std
-    width = (upper - lower) / mid
-    pct_b = (series - lower) / (upper - lower).replace(0, np.nan)
-    return pd.DataFrame({
-        "BB_Upper": upper, "BB_Mid": mid, "BB_Lower": lower,
-        "BB_Width": width, "BB_%B": pct_b
-    }, index=series.index)
-
-
-def atr(df: pd.DataFrame, window: int = 14) -> pd.Series:
-    tr1 = df["High"] - df["Low"]
-    tr2 = (df["High"] - df["Close"].shift(1)).abs()
-    tr3 = (df["Low"]  - df["Close"].shift(1)).abs()
-    tr  = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    return tr.ewm(span=window, adjust=False).mean()
-
-
-def keltner_channels(df: pd.DataFrame, ema_span: int = 20, atr_mult: float = 2.0
-                     ) -> pd.DataFrame:
-    mid   = ema(df["Close"], ema_span)
-    atr_v = atr(df, ema_span)
-    return pd.DataFrame({
-        "KC_Upper": mid + atr_mult * atr_v,
-        "KC_Mid":   mid,
-        "KC_Lower": mid - atr_mult * atr_v,
-    }, index=df.index)
-
-
-def donchian_channels(df: pd.DataFrame, window: int = 20) -> pd.DataFrame:
-    upper = df["High"].rolling(window).max()
-    lower = df["Low"].rolling(window).min()
-    mid   = (upper + lower) / 2
-    return pd.DataFrame({"DC_Upper": upper, "DC_Mid": mid, "DC_Lower": lower},
-                        index=df.index)
-
-
-def historical_volatility(series: pd.Series, window: int = 20) -> pd.Series:
-    """Annualised historical volatility (log-return std * √252)."""
-    log_ret = np.log(series / series.shift(1))
-    return log_ret.rolling(window).std() * np.sqrt(252)
-
-
-# ─────────────────────────────────────────
-# VOLUME INDICATORS
-# ─────────────────────────────────────────
-
-def obv(df: pd.DataFrame) -> pd.Series:
-    direction = np.sign(df["Close"].diff()).fillna(0)
-    return (direction * df["Volume"]).cumsum()
-
-
-def money_flow_index(df: pd.DataFrame, window: int = 14) -> pd.Series:
-    tp  = (df["High"] + df["Low"] + df["Close"]) / 3
-    rmf = tp * df["Volume"]
-    pos_mf = rmf.where(tp > tp.shift(1), 0)
-    neg_mf = rmf.where(tp < tp.shift(1), 0)
-    pos_sum = pos_mf.rolling(window).sum()
-    neg_sum = neg_mf.rolling(window).sum()
-    mfr = pos_sum / neg_sum.replace(0, np.nan)
-    return 100 - (100 / (1 + mfr))
-
-
-def chaikin_money_flow(df: pd.DataFrame, window: int = 20) -> pd.Series:
-    clv = ((df["Close"] - df["Low"]) - (df["High"] - df["Close"])) / \
-          (df["High"] - df["Low"]).replace(0, np.nan)
-    mfv = clv * df["Volume"]
-    return mfv.rolling(window).sum() / df["Volume"].rolling(window).sum()
-
-
-def volume_ratio(df: pd.DataFrame, window: int = 14) -> pd.Series:
-    """Volume relative to rolling mean — useful for spotting breakouts."""
-    return df["Volume"] / df["Volume"].rolling(window).mean()
-
-
-# ─────────────────────────────────────────
-# SIGNAL GENERATION
-# ─────────────────────────────────────────
-
-def generate_signals(df: pd.DataFrame) -> Dict[str, dict]:
-    """
-    Compute all indicators and generate BUY / SELL / NEUTRAL signals.
-    Returns a dict keyed by indicator name with value, signal, and strength.
-    """
+# ── Signal engine ──────────────────────────────────────────────────────────
+def generate_signals(df: pd.DataFrame) -> Dict:
     c = df["Close"]
+    rsi_v  = float(rsi(c).iloc[-1])
+    macd_h = float(macd(c)["Hist"].iloc[-1])
+    macd_h_prev = float(macd(c)["Hist"].iloc[-2])
+    bb     = bollinger_bands(c); pctb=float(bb["BB_%B"].iloc[-1])
+    e20=float(ema(c,20).iloc[-1]); e50=float(ema(c,50).iloc[-1])
+    last=float(c.iloc[-1])
+    stoch  = stochastic(df); k=float(stoch["%K"].iloc[-1]); d_=float(stoch["%D"].iloc[-1])
+    adx_df = adx(df); adxv=float(adx_df["ADX"].iloc[-1])
+    dip=float(adx_df["DI+"].iloc[-1]); dim=float(adx_df["DI-"].iloc[-1])
+    vr=float(volume_ratio(df).iloc[-1])
+    cci_v=float(cci(df).iloc[-1])
 
-    # --- RSI ---
-    rsi_val = rsi(c).iloc[-1]
-    rsi_sig = "BUY" if rsi_val < 30 else ("SELL" if rsi_val > 70 else "NEUTRAL")
-
-    # --- MACD ---
-    macd_df  = macd(c)
-    macd_val = macd_df["Hist"].iloc[-1]
-    prev_hist = macd_df["Hist"].iloc[-2]
-    macd_sig = "BUY" if (macd_val > 0 and prev_hist < 0) else (
-               "SELL" if (macd_val < 0 and prev_hist > 0) else (
-               "BUY" if macd_val > 0 else "SELL"))
-
-    # --- Bollinger Bands ---
-    bb   = bollinger_bands(c)
-    pctb = bb["BB_%B"].iloc[-1]
-    bb_sig = "BUY" if pctb < 0 else ("SELL" if pctb > 1 else "NEUTRAL")
-
-    # --- Moving average cross ---
-    ema20 = ema(c, 20).iloc[-1]
-    ema50 = ema(c, 50).iloc[-1]
-    ma_sig = "BUY" if ema20 > ema50 else "SELL"
-
-    # --- Stochastic ---
-    stoch = stochastic(df)
-    k_val = stoch["%K"].iloc[-1]
-    d_val = stoch["%D"].iloc[-1]
-    stoch_sig = "BUY" if (k_val < 20 and k_val > d_val) else (
-                "SELL" if (k_val > 80 and k_val < d_val) else "NEUTRAL")
-
-    # --- ADX Trend strength ---
-    adx_df = adx(df)
-    adx_val = adx_df["ADX"].iloc[-1]
-    di_plus  = adx_df["DI+"].iloc[-1]
-    di_minus = adx_df["DI-"].iloc[-1]
-    adx_sig  = "BUY" if (adx_val > 25 and di_plus > di_minus) else (
-               "SELL" if (adx_val > 25 and di_minus > di_plus) else "NEUTRAL")
-
-    # --- Volume trend ---
-    vr = volume_ratio(df).iloc[-1]
-    vol_sig = "BUY" if (vr > 1.5 and c.iloc[-1] > c.iloc[-2]) else (
-              "SELL" if (vr > 1.5 and c.iloc[-1] < c.iloc[-2]) else "NEUTRAL")
-
-    # --- CCI ---
-    cci_val = cci(df).iloc[-1]
-    cci_sig = "BUY" if cci_val < -100 else ("SELL" if cci_val > 100 else "NEUTRAL")
-
-    def strength(sig, mag):
-        if sig == "NEUTRAL":
-            return "—"
-        return "Strong" if mag else "Moderate"
+    def _s(cond_buy, cond_sell):
+        return "BUY" if cond_buy else ("SELL" if cond_sell else "NEUTRAL")
 
     signals = {
-        "RSI (14)":          {"value": f"{rsi_val:.1f}",  "signal": rsi_sig,
-                              "note": "Oversold<30 / Overbought>70"},
-        "MACD (12,26,9)":    {"value": f"{macd_val:.3f}", "signal": macd_sig,
-                              "note": "Histogram crossover"},
-        "Bollinger %B":      {"value": f"{pctb:.2f}",     "signal": bb_sig,
-                              "note": "<0 oversold / >1 overbought"},
-        "MA Cross (20/50)":  {"value": f"{ema20:.2f}/{ema50:.2f}", "signal": ma_sig,
-                              "note": "EMA 20 vs EMA 50"},
-        "Stochastic":        {"value": f"K={k_val:.1f}",  "signal": stoch_sig,
-                              "note": "K<20 oversold / K>80 overbought"},
-        "ADX (14)":          {"value": f"{adx_val:.1f}",  "signal": adx_sig,
-                              "note": ">25 = strong trend"},
-        "Volume Ratio":      {"value": f"{vr:.2f}x",      "signal": vol_sig,
-                              "note": ">1.5x avg = high activity"},
-        "CCI (20)":          {"value": f"{cci_val:.1f}",  "signal": cci_sig,
-                              "note": "<-100 oversold / >100 overbought"},
+        "RSI (14)":        {"value":f"{rsi_v:.1f}",  "signal":_s(rsi_v<30,rsi_v>70),
+                            "note":"Oversold<30 / Overbought>70"},
+        "MACD (12,26,9)":  {"value":f"{macd_h:+.4f}","signal":_s(macd_h>0 and macd_h_prev<=0,macd_h<0 and macd_h_prev>=0),
+                            "note":"Histogram crossover"},
+        "Bollinger %B":    {"value":f"{pctb:.2f}",   "signal":_s(pctb<0,pctb>1),
+                            "note":"<0 oversold / >1 overbought"},
+        "MA Cross (20/50)":{"value":f"{e20:.1f}/{e50:.1f}","signal":_s(e20>e50,e20<e50),
+                            "note":"EMA20 vs EMA50"},
+        "Stochastic":      {"value":f"K={k:.1f}",    "signal":_s(k<20 and k>d_,k>80 and k<d_),
+                            "note":"K<20 oversold / K>80 overbought"},
+        "ADX (14)":        {"value":f"{adxv:.1f}",   "signal":_s(adxv>25 and dip>dim,adxv>25 and dim>dip),
+                            "note":">25 = strong trend"},
+        "Volume Ratio":    {"value":f"{vr:.2f}x",    "signal":_s(vr>1.5 and last>float(c.iloc[-2]),
+                                                                  vr>1.5 and last<float(c.iloc[-2])),
+                            "note":">1.5x avg = high activity"},
+        "CCI (20)":        {"value":f"{cci_v:.0f}",  "signal":_s(cci_v<-100,cci_v>100),
+                            "note":"<-100 oversold / >100 overbought"},
     }
-
-    # Composite signal
-    buy_count  = sum(1 for v in signals.values() if v["signal"] == "BUY")
-    sell_count = sum(1 for v in signals.values() if v["signal"] == "SELL")
-    total = buy_count + sell_count
-    if total == 0:
-        composite = "NEUTRAL"
-    elif buy_count / total >= 0.65:
-        composite = "STRONG BUY"
-    elif buy_count / total >= 0.5:
-        composite = "BUY"
-    elif sell_count / total >= 0.65:
-        composite = "STRONG SELL"
-    else:
-        composite = "SELL"
-
-    return {"indicators": signals, "composite": composite,
-            "buy_count": buy_count, "sell_count": sell_count}
-
+    buy_n  = sum(1 for v in signals.values() if v["signal"]=="BUY")
+    sell_n = sum(1 for v in signals.values() if v["signal"]=="SELL")
+    total  = buy_n+sell_n
+    if total == 0:    composite = "NEUTRAL"
+    elif buy_n/total>=0.65:  composite = "STRONG BUY"
+    elif buy_n/total>=0.50:  composite = "BUY"
+    elif sell_n/total>=0.65: composite = "STRONG SELL"
+    else:                    composite = "SELL"
+    return {"indicators":signals,"composite":composite,
+            "buy_count":buy_n,"sell_count":sell_n}
 
 def add_all_indicators(df: pd.DataFrame) -> pd.DataFrame:
-    """Add all indicator columns to the DataFrame for ML feature engineering."""
-    out = df.copy()
-    c = out["Close"]
-
-    # Trend
-    for w in [9, 20, 50, 200]:
-        out[f"SMA_{w}"]  = sma(c, w)
-        out[f"EMA_{w}"]  = ema(c, w)
+    """Add all indicator columns — used as ML features."""
+    out = df.copy(); c = out["Close"]
+    for w in [9,20,50,200]: out[f"SMA_{w}"]=sma(c,w); out[f"EMA_{w}"]=ema(c,w)
     out["VWAP"] = vwap(out)
-
-    # Momentum
-    out["RSI_14"]  = rsi(c)
-    out["RSI_7"]   = rsi(c, 7)
-    for w in [5, 10, 20]:
-        out[f"ROC_{w}"] = roc(c, w)
-        out[f"MOM_{w}"] = momentum(c, w)
-    macd_df = macd(c)
-    out["MACD"]        = macd_df["MACD"]
-    out["MACD_Signal"] = macd_df["Signal"]
-    out["MACD_Hist"]   = macd_df["Hist"]
-    stoch_df = stochastic(out)
-    out["Stoch_K"] = stoch_df["%K"]
-    out["Stoch_D"] = stoch_df["%D"]
-    out["Williams_R"] = williams_r(out)
-    out["CCI_20"]     = cci(out)
-
-    # Volatility
-    bb_df = bollinger_bands(c)
-    out["BB_Upper"] = bb_df["BB_Upper"]
-    out["BB_Lower"] = bb_df["BB_Lower"]
-    out["BB_Width"] = bb_df["BB_Width"]
-    out["BB_PctB"]  = bb_df["BB_%B"]
-    out["ATR_14"]   = atr(out)
-    out["HV_20"]    = historical_volatility(c, 20)
-
-    # Volume
-    out["OBV"]      = obv(out)
-    out["MFI_14"]   = money_flow_index(out)
-    out["CMF_20"]   = chaikin_money_flow(out)
-    out["VolRatio"] = volume_ratio(out)
-
-    # Price-based features
-    out["DailyReturn"]  = c.pct_change()
-    out["LogReturn"]    = np.log(c / c.shift(1))
-    out["HL_Spread"]    = (out["High"] - out["Low"]) / c
-    out["OC_Spread"]    = (out["Close"] - out["Open"]) / out["Open"]
-    out["GapUp"]        = (out["Open"] - out["Close"].shift(1)) / out["Close"].shift(1)
-
-    # Lagged closes
-    for lag in [1, 2, 3, 5, 10, 20]:
-        out[f"Close_Lag{lag}"] = c.shift(lag)
-
-    # Rolling stats
-    for w in [5, 10, 20]:
-        out[f"Rolling_Mean_{w}"] = c.rolling(w).mean()
-        out[f"Rolling_Std_{w}"]  = c.rolling(w).std()
-        out[f"Rolling_Min_{w}"]  = c.rolling(w).min()
-        out[f"Rolling_Max_{w}"]  = c.rolling(w).max()
-
+    out["RSI_14"]=rsi(c); out["RSI_7"]=rsi(c,7)
+    for w in [5,10,20]: out[f"ROC_{w}"]=roc(c,w); out[f"MOM_{w}"]=momentum(c,w)
+    md=macd(c); out["MACD"]=md["MACD"]; out["MACD_Sig"]=md["Signal"]; out["MACD_H"]=md["Hist"]
+    st_=stochastic(out); out["Stoch_K"]=st_["%K"]; out["Stoch_D"]=st_["%D"]
+    out["WilliamsR"]=williams_r(out); out["CCI_20"]=cci(out)
+    bb=bollinger_bands(c)
+    out["BB_Up"]=bb["BB_Upper"]; out["BB_Lo"]=bb["BB_Lower"]
+    out["BB_W"]=bb["BB_Width"];  out["BB_B"]=bb["BB_%B"]
+    out["ATR_14"]=atr(out); out["HV_20"]=historical_volatility(c,20)
+    out["OBV"]=obv(out); out["MFI_14"]=money_flow_index(out)
+    out["CMF_20"]=chaikin_money_flow(out); out["VolRatio"]=volume_ratio(out)
+    out["DayRet"]=c.pct_change(); out["LogRet"]=np.log(c/c.shift(1))
+    out["HL"]=( out["High"]-out["Low"])/c; out["OC"]=(c-out["Open"])/out["Open"]
+    out["Gap"]=(out["Open"]-c.shift(1))/c.shift(1)
+    out["DayOfWeek"]=out.index.dayofweek; out["Month"]=out.index.month
+    out["IsMonday"]=(out.index.dayofweek==0).astype(int)
+    out["IsFriday"]=(out.index.dayofweek==4).astype(int)
+    for lag in [1,2,3,5,10,20]: out[f"CLag{lag}"]=c.shift(lag)
+    for w in [5,10,20]:
+        out[f"RM{w}"]=c.rolling(w).mean(); out[f"RS{w}"]=c.rolling(w).std()
+        out[f"RMn{w}"]=c.rolling(w).min();  out[f"RMx{w}"]=c.rolling(w).max()
     return out
