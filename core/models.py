@@ -1,270 +1,525 @@
 """
-Prediction engine v3.
-Target = log return (stationary). CI = GBM volatility cone sqrt(t).
-Ensemble: XGBoost + LightGBM + optional Bidirectional LSTM.
+Prediction engine v4 — Universal Checkpoint Architecture.
+
+KEY DESIGN CHANGE FROM v3:
+  v3 trained a fresh XGBoost+LightGBM(+LSTM) model from scratch on every
+  single page load, fitted to only ONE stock's ~250-1500 rows of history.
+  This was slow (20-90s per request) AND inaccurate (a model with 60+
+  features has far too little data to learn from on a single ticker —
+  it mostly overfits noise).
+
+  v4 trains ONE model ONCE on a cross-section of many different stocks
+  (pooled together, scale-free features — see core/indicators.build_ml_features),
+  saves it as a checkpoint to disk, and every page load just LOADS the
+  checkpoint (instant) and runs inference on the current ticker's latest
+  feature row. This is the standard approach used by real quant cross-
+  sectional models: train once on a broad universe, predict for ANY stock
+  without retraining, because the model learns general relationships
+  between technical-indicator-patterns and forward returns rather than
+  memorising one company's idiosyncratic price history.
+
+  Training the checkpoint requires internet access to Yahoo Finance
+  (see scripts/train_universal_model.py or the in-app "Train Universal
+  Model" panel on the Price Prediction page). If no checkpoint exists
+  yet, the app falls back to a small, fast, single-ticker XGBoost model
+  so it never crashes — but accuracy and speed are both better once a
+  real checkpoint is trained.
 """
+
+import os
+import json
+import time
 import numpy as np
 import pandas as pd
+from datetime import datetime, timezone
 from sklearn.preprocessing import RobustScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from typing import Dict, List, Optional, Tuple
 import warnings
 warnings.filterwarnings("ignore")
 
-try: import xgboost as xgb; _XGB=True
-except: _XGB=False
-try: import lightgbm as lgb; _LGB=True
-except: _LGB=False
 try:
-    import tensorflow as tf; tf.get_logger().setLevel("ERROR")
-    from tensorflow.keras.models import Sequential
-    from tensorflow.keras.layers import (Bidirectional, LSTM, Dense,
-                                         Dropout, BatchNormalization, Input)
-    from tensorflow.keras.optimizers import Adam
-    from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-    _TF=True
-except: _TF=False
+    import xgboost as xgb
+    _XGB = True
+except ImportError:
+    _XGB = False
 
-TRADING_DAYS=252
+try:
+    import lightgbm as lgb
+    _LGB = True
+except ImportError:
+    _LGB = False
+
+MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models")
+XGB_PATH   = os.path.join(MODELS_DIR, "universal_xgb.json")
+LGB_PATH   = os.path.join(MODELS_DIR, "universal_lgb.txt")
+META_PATH  = os.path.join(MODELS_DIR, "universal_meta.json")
+
+DEFAULT_TRAIN_UNIVERSE = [
+    "RELIANCE.NS","TCS.NS","HDFCBANK.NS","INFY.NS","ICICIBANK.NS",
+    "HINDUNILVR.NS","ITC.NS","SBIN.NS","BHARTIARTL.NS","KOTAKBANK.NS",
+    "LT.NS","AXISBANK.NS","ASIANPAINT.NS","MARUTI.NS","HCLTECH.NS",
+    "SUNPHARMA.NS","TITAN.NS","BAJFINANCE.NS","WIPRO.NS","TATAMOTORS.NS",
+    "AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","JPM","V","UNH",
+    "XOM","JNJ","WMT","HD","BAC","NFLX","AMD","INTC","BA","GS",
+]
+
+TARGET_HORIZON = 1
 
 
-def _build_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
-    """Returns (X_features, log_returns) — X aligned to log_returns index."""
-    from core.indicators import add_all_indicators
-    full = add_all_indicators(df)
-    full["LogReturn"] = np.log(full["Close"]/full["Close"].shift(1))
-    drop = ["Open","High","Low","Close","Volume","LogReturn"]
-    feat_cols = [c for c in full.columns if c not in drop
-                 and full[c].dtype in [np.float64,np.float32,np.int64,np.int32]]
-    combined = pd.concat([full[feat_cols], full["LogReturn"]], axis=1).dropna()
-    X = combined[feat_cols].copy()
-    y = combined["LogReturn"]
-    X.replace([np.inf,-np.inf], np.nan, inplace=True)
-    X.ffill(inplace=True); X.fillna(0, inplace=True)
+def _build_training_row_set(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    """Build (X, y) for ONE ticker's history; y = next-day log return."""
+    from core.indicators import build_ml_features
+    feats = build_ml_features(df)
+    log_c = np.log(df["Close"])
+    next_ret = (log_c.shift(-1) - log_c)
+    combined = pd.concat([feats, next_ret.rename("target")], axis=1)
+    combined.replace([np.inf, -np.inf], np.nan, inplace=True)
+    combined.dropna(inplace=True)
+    X = combined.drop(columns=["target"])
+    y = combined["target"]
     return X, y
 
 
-def _vol_cone(last_price, daily_vol, horizon, z=1.28):
-    """GBM confidence cone: width grows as sqrt(t)."""
-    t = np.arange(1, horizon+1)
+def _latest_feature_row(df: pd.DataFrame, feature_names: List[str]) -> np.ndarray:
+    """Most recent feature row for inference, aligned to feature_names."""
+    from core.indicators import build_ml_features
+    feats = build_ml_features(df)
+    feats = feats.replace([np.inf, -np.inf], np.nan).ffill().fillna(0)
+    row = feats.iloc[[-1]]
+    row = row.reindex(columns=feature_names, fill_value=0)
+    return row.values.astype(np.float32)
+
+
+# ─────────────────────────────────────────────────────────────────
+# UNIVERSAL MODEL — TRAINING (pooled, cross-sectional)
+# ─────────────────────────────────────────────────────────────────
+
+def train_universal_model(universe: Optional[List[str]] = None,
+                          period: str = "5y", progress_callback=None) -> Dict:
+    """
+    Train the universal checkpoint on a pooled cross-section of many tickers.
+    Saves XGBoost + LightGBM boosters + metadata to MODELS_DIR.
+    Requires internet access to Yahoo Finance.
+    """
+    from core.data_fetcher import fetch_ohlcv
+
+    universe = universe or DEFAULT_TRAIN_UNIVERSE
+    os.makedirs(MODELS_DIR, exist_ok=True)
+
+    def _prog(pct, msg):
+        if progress_callback:
+            progress_callback(pct, msg)
+
+    all_X, all_y, all_tickers = [], [], []
+    n = len(universe)
+    for i, ticker in enumerate(universe):
+        _prog((i / n) * 0.6, f"Fetching {ticker} ({i+1}/{n})…")
+        try:
+            df = fetch_ohlcv(ticker, period=period, interval="1d")
+            if df.empty or len(df) < 100:
+                continue
+            X, y = _build_training_row_set(df)
+            if len(X) < 50:
+                continue
+            all_X.append(X)
+            all_y.append(y)
+            all_tickers.extend([ticker] * len(X))
+        except Exception:
+            continue
+
+    if not all_X:
+        raise RuntimeError(
+            "Could not fetch training data for any ticker. Check internet "
+            "access to Yahoo Finance (works on Streamlit Cloud / local "
+            "machines, fails in network-restricted sandboxes)."
+        )
+
+    _prog(0.62, "Pooling data across all tickers…")
+    X_pool = pd.concat(all_X, axis=0, ignore_index=True)
+    y_pool = pd.concat(all_y, axis=0, ignore_index=True)
+    tickers_arr = np.array(all_tickers)
+    feature_names = list(X_pool.columns)
+
+    _prog(0.65, "Building train/test split…")
+    train_mask = np.zeros(len(X_pool), dtype=bool)
+    for t in np.unique(tickers_arr):
+        idx = np.where(tickers_arr == t)[0]
+        cut = int(len(idx) * 0.85)
+        train_mask[idx[:cut]] = True
+    test_mask = ~train_mask
+
+    X_train, y_train = X_pool[train_mask], y_pool[train_mask]
+    X_test, y_test = X_pool[test_mask], y_pool[test_mask]
+
+    _prog(0.70, f"Training on {len(X_train):,} rows across {len(np.unique(tickers_arr))} tickers…")
+
+    scaler = RobustScaler()
+    Xtr_s = scaler.fit_transform(X_train)
+    Xte_s = scaler.transform(X_test)
+
+    models = {}
+    if _XGB:
+        xgb_model = xgb.XGBRegressor(
+            n_estimators=600, learning_rate=0.03, max_depth=5,
+            subsample=0.8, colsample_bytree=0.7,
+            reg_alpha=0.1, reg_lambda=1.5,
+            n_jobs=-1, random_state=42, verbosity=0,
+            objective="reg:squarederror")
+        xgb_model.fit(Xtr_s, y_train.values)
+        models["xgb"] = xgb_model
+    if _LGB:
+        _prog(0.80, "Training LightGBM…")
+        lgb_model = lgb.LGBMRegressor(
+            n_estimators=600, learning_rate=0.03, max_depth=5, num_leaves=31,
+            subsample=0.8, colsample_bytree=0.7,
+            reg_alpha=0.1, reg_lambda=1.5,
+            n_jobs=-1, random_state=42, verbose=-1,
+            objective="regression")
+        lgb_model.fit(Xtr_s, y_train.values)
+        models["lgb"] = lgb_model
+
+    if not models:
+        raise RuntimeError("Neither XGBoost nor LightGBM is installed.")
+
+    _prog(0.90, "Evaluating on held-out test set…")
+    preds = [m.predict(Xte_s) for m in models.values()]
+    pred_mean = np.mean(preds, axis=0)
+    mae = float(mean_absolute_error(y_test, pred_mean))
+    rmse = float(np.sqrt(mean_squared_error(y_test, pred_mean)))
+    dir_acc = float(np.mean(np.sign(pred_mean) == np.sign(y_test.values)) * 100)
+
+    per_ticker_dir = {}
+    test_tickers = tickers_arr[test_mask]
+    for t in np.unique(test_tickers):
+        m = test_tickers == t
+        if m.sum() < 5:
+            continue
+        p = pred_mean[m]; a = y_test.values[m]
+        per_ticker_dir[t] = round(float(np.mean(np.sign(p) == np.sign(a)) * 100), 1)
+
+    _prog(0.95, "Saving checkpoint…")
+    if "xgb" in models:
+        models["xgb"].get_booster().save_model(XGB_PATH)
+    if "lgb" in models:
+        models["lgb"].booster_.save_model(LGB_PATH)
+
+    scaler_path = os.path.join(MODELS_DIR, "universal_scaler.json")
+    with open(scaler_path, "w") as f:
+        json.dump({"center": scaler.center_.tolist(), "scale": scaler.scale_.tolist()}, f)
+
+    meta = {
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "universe": universe,
+        "n_tickers_used": int(len(np.unique(tickers_arr))),
+        "n_train_rows": int(len(X_train)),
+        "n_test_rows": int(len(X_test)),
+        "feature_names": feature_names,
+        "models_trained": list(models.keys()),
+        "test_mae": round(mae, 6),
+        "test_rmse": round(rmse, 6),
+        "test_directional_accuracy": round(dir_acc, 2),
+        "per_ticker_directional_accuracy": per_ticker_dir,
+    }
+    with open(META_PATH, "w") as f:
+        json.dump(meta, f, indent=2)
+
+    _prog(1.0, "Done!")
+    return meta
+
+
+# ─────────────────────────────────────────────────────────────────
+# UNIVERSAL MODEL — LOADING + INFERENCE
+# ─────────────────────────────────────────────────────────────────
+
+class UniversalPredictor:
+    """Loads the pre-trained checkpoint once; reused across requests."""
+
+    def __init__(self):
+        self.xgb_model = None
+        self.lgb_model = None
+        self.scaler_center = None
+        self.scaler_scale = None
+        self.feature_names: List[str] = []
+        self.meta: Dict = {}
+        self.loaded = False
+
+    def load(self) -> "UniversalPredictor":
+        if not os.path.exists(META_PATH):
+            return self
+        try:
+            with open(META_PATH) as f:
+                self.meta = json.load(f)
+            self.feature_names = self.meta.get("feature_names", [])
+
+            if _XGB and os.path.exists(XGB_PATH):
+                booster = xgb.Booster()
+                booster.load_model(XGB_PATH)
+                self.xgb_model = booster
+
+            if _LGB and os.path.exists(LGB_PATH):
+                self.lgb_model = lgb.Booster(model_file=LGB_PATH)
+
+            scaler_path = os.path.join(MODELS_DIR, "universal_scaler.json")
+            if os.path.exists(scaler_path):
+                with open(scaler_path) as f:
+                    sc = json.load(f)
+                self.scaler_center = np.array(sc["center"], dtype=np.float32)
+                self.scaler_scale = np.array(sc["scale"], dtype=np.float32)
+
+            self.loaded = bool(
+                (self.xgb_model is not None or self.lgb_model is not None)
+                and self.scaler_center is not None)
+        except Exception:
+            self.loaded = False
+        return self
+
+    def _scale(self, X: np.ndarray) -> np.ndarray:
+        scale = np.where(self.scaler_scale == 0, 1.0, self.scaler_scale)
+        return (X - self.scaler_center) / scale
+
+    def predict_next_return(self, X_row: np.ndarray) -> float:
+        if not self.loaded:
+            return 0.0
+        Xs = self._scale(X_row)
+        preds = []
+        if self.xgb_model is not None:
+            # NOTE: trained on a plain numpy array (no column names baked
+            # into the Booster), so we deliberately do NOT pass
+            # feature_names here — XGBoost validates feature names
+            # strictly and a mismatch would raise an error. Column order
+            # is already guaranteed correct via the reindex() at feature-
+            # build time, so positional alignment is sufficient.
+            d = xgb.DMatrix(Xs)
+            preds.append(float(self.xgb_model.predict(d)[0]))
+        if self.lgb_model is not None:
+            preds.append(float(self.lgb_model.predict(Xs)[0]))
+        return float(np.mean(preds)) if preds else 0.0
+
+
+_predictor_singleton: Optional[UniversalPredictor] = None
+
+
+def get_universal_predictor() -> UniversalPredictor:
+    """Module-level cache so the checkpoint loads from disk only once."""
+    global _predictor_singleton
+    if _predictor_singleton is None:
+        _predictor_singleton = UniversalPredictor().load()
+    return _predictor_singleton
+
+
+def reload_universal_predictor() -> UniversalPredictor:
+    """Force-reload after (re)training so the new checkpoint takes effect."""
+    global _predictor_singleton
+    _predictor_singleton = UniversalPredictor().load()
+    return _predictor_singleton
+
+
+def universal_model_available() -> bool:
+    return get_universal_predictor().loaded
+
+
+def universal_model_metadata() -> Dict:
+    return get_universal_predictor().meta
+
+
+# ─────────────────────────────────────────────────────────────────
+# FALLBACK MODEL — fast, single-ticker, used only if no checkpoint exists
+# ─────────────────────────────────────────────────────────────────
+
+class _FallbackPredictor:
+    """Small, fast XGBoost fitted on just this one ticker. Only used when
+    no universal checkpoint has been trained yet."""
+
+    def __init__(self):
+        self.model = None
+        self.scaler = RobustScaler()
+        self.feature_names: List[str] = []
+
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> "_FallbackPredictor":
+        self.feature_names = list(X.columns)
+        Xs = self.scaler.fit_transform(X)
+        if _XGB:
+            self.model = xgb.XGBRegressor(
+                n_estimators=150, learning_rate=0.08, max_depth=4,
+                subsample=0.85, colsample_bytree=0.8,
+                n_jobs=-1, random_state=42, verbosity=0,
+                objective="reg:squarederror")
+            self.model.fit(Xs, y.values)
+        elif _LGB:
+            self.model = lgb.LGBMRegressor(
+                n_estimators=150, learning_rate=0.08, max_depth=4,
+                n_jobs=-1, random_state=42, verbose=-1)
+            self.model.fit(Xs, y.values)
+        return self
+
+    def predict_next_return(self, X_row: np.ndarray) -> float:
+        if self.model is None:
+            return 0.0
+        Xs = self.scaler.transform(X_row)
+        return float(self.model.predict(Xs)[0])
+
+
+def _vol_cone(last_price: float, daily_vol: float, horizon: int, z: float = 1.28
+             ) -> Tuple[np.ndarray, np.ndarray]:
+    """GBM confidence cone: width grows as sqrt(t), not linearly."""
+    t = np.arange(1, horizon + 1)
     lo = last_price * np.exp(-z * daily_vol * np.sqrt(t))
     hi = last_price * np.exp(+z * daily_vol * np.sqrt(t))
     return lo, hi
 
 
-def _make_sequences(X, y, window=30):
-    Xs,ys=[],[]
-    for i in range(window,len(X)):
-        Xs.append(X[i-window:i]); ys.append(y[i])
-    return np.array(Xs,dtype=np.float32), np.array(ys,dtype=np.float32)
+# ─────────────────────────────────────────────────────────────────
+# PUBLIC API
+# ─────────────────────────────────────────────────────────────────
 
-
-class LSTMModel:
-    WINDOW=20
-    def __init__(self, n_feat, units=48, drop=0.2):
-        self.n_feat=n_feat; self.units=units; self.drop=drop
-        self.sx=RobustScaler(); self.sy=RobustScaler()
-        self.model=None; self._fitted=False
-
-    def _build(self):
-        m=Sequential([Input(shape=(self.WINDOW,self.n_feat)),
-            Bidirectional(LSTM(self.units,return_sequences=True,
-                               dropout=self.drop,recurrent_dropout=0.0)),
-            BatchNormalization(),
-            Bidirectional(LSTM(max(self.units//2,16),return_sequences=False,dropout=self.drop)),
-            BatchNormalization(), Dense(24,activation="relu"),
-            Dropout(self.drop), Dense(1)])
-        m.compile(optimizer=Adam(2e-3), loss="huber", metrics=["mae"])
-        self.model=m
-
-    def fit(self, X, y, epochs=35, batch=64):
-        if not _TF: return self
-        Xs=self.sx.fit_transform(X); ys=self.sy.fit_transform(y.reshape(-1,1)).ravel()
-        Xseq,yseq=_make_sequences(Xs,ys,self.WINDOW)
-        if len(Xseq)<40: return self
-        self._build()
-        self.model.fit(Xseq,yseq,epochs=epochs,batch_size=batch,
-            validation_split=0.15,verbose=0,
-            callbacks=[EarlyStopping(patience=6,restore_best_weights=True),
-                       ReduceLROnPlateau(patience=3,factor=0.5,min_lr=1e-6)])
-        self._fitted=True; return self
-
-    def predict(self, X, mc=30):
-        if not _TF or not self._fitted: return np.zeros(1),np.zeros(1)
-        Xs=self.sx.transform(X); seq=Xs[-self.WINDOW:].reshape(1,self.WINDOW,self.n_feat)
-        preds=np.array([self.model(seq,training=True).numpy().flatten()[0] for _ in range(mc)])
-        mr=float(self.sy.inverse_transform([[preds.mean()]])[0,0])
-        sr=float(preds.std()*self.sy.scale_[0])
-        return np.array([mr]), np.array([sr])
-
-
-class TreeEnsemble:
-    def __init__(self):
-        self.models={}; self.sx=RobustScaler()
-        self._fitted=False; self.feat_names:List[str]=[]
-
-    def _xgb(self, q=None):
-        if not _XGB: return None
-        p=dict(n_estimators=500,learning_rate=0.04,max_depth=5,subsample=0.8,
-               colsample_bytree=0.7,reg_alpha=0.05,reg_lambda=1.0,
-               n_jobs=-1,random_state=42,verbosity=0)
-        if q is not None: p.update(objective="reg:quantileerror",quantile_alpha=q)
-        else: p["objective"]="reg:squarederror"
-        return xgb.XGBRegressor(**p)
-
-    def _lgb(self, q=None):
-        if not _LGB: return None
-        p=dict(n_estimators=500,learning_rate=0.04,max_depth=5,num_leaves=31,
-               subsample=0.8,colsample_bytree=0.7,reg_alpha=0.05,reg_lambda=1.0,
-               n_jobs=-1,random_state=42,verbose=-1)
-        if q is not None: p.update(objective="quantile",alpha=q)
-        else: p["objective"]="regression"
-        return lgb.LGBMRegressor(**p)
-
-    def fit(self, X, y, feat_names=None):
-        Xs=self.sx.fit_transform(X); yr=y.ravel()
-        if feat_names: self.feat_names=feat_names
-        for tag,m in [("xgb",self._xgb()),("xgb_lo",self._xgb(0.10)),
-                       ("xgb_hi",self._xgb(0.90)),("lgb",self._lgb())]:
-            if m is not None: m.fit(Xs,yr); self.models[tag]=m
-        self._fitted=True; return self
-
-    def predict(self, X):
-        Xs=self.sx.transform(X)
-        preds=[self.models[k].predict(Xs) for k in ("xgb","lgb") if k in self.models]
-        mean_=np.mean(preds,axis=0) if preds else np.zeros(len(X))
-        lo_=self.models["xgb_lo"].predict(Xs) if "xgb_lo" in self.models else mean_*0.98
-        hi_=self.models["xgb_hi"].predict(Xs) if "xgb_hi" in self.models else mean_*1.02
-        return mean_,lo_,hi_
-
-    def feature_importance(self) -> pd.DataFrame:
-        rows=[]
-        for tag in ("xgb","lgb"):
-            if tag in self.models:
-                imp=getattr(self.models[tag],"feature_importances_",np.array([]))
-                if len(imp) and self.feat_names:
-                    n=min(len(imp),len(self.feat_names))
-                    rows.append(pd.DataFrame({"Feature":self.feat_names[:n],"Importance":imp[:n]}))
-        if rows:
-            return (pd.concat(rows).groupby("Feature")["Importance"]
-                    .mean().sort_values(ascending=False).reset_index())
-        return pd.DataFrame(columns=["Feature","Importance"])
-
-
-def forecast_future(df: pd.DataFrame, horizon: int=10) -> Dict:
+def forecast_future(df: pd.DataFrame, horizon: int = 10) -> Dict:
     """
-    Train on full history; forecast next `horizon` business days.
-    Target = log return (stationary). Reconstructs price via P·exp(Σr).
-    CI = GBM volatility cone (±1.28σ√t).
+    Forecast next `horizon` business days.
+    Fast path: loads the universal checkpoint (cached) and runs inference
+    only — typically completes in under a second.
+    Fallback path: fits a small single-ticker model if no checkpoint exists.
     """
-    X,y_ret = _build_features(df)
-    Xa=X.values.astype(np.float32); ya=y_ret.values.astype(np.float32)
-    prices  = df["Close"].reindex(y_ret.index)
+    t0 = time.time()
+    predictor = get_universal_predictor()
+    mode = "universal" if predictor.loaded else "fallback"
 
-    # target = NEXT-day log return
-    y_next=np.roll(ya,-1)
-    X_tr,y_tr=Xa[:-1],y_next[:-1]
+    log_c = np.log(df["Close"])
+    hist_log_ret = (log_c - log_c.shift(1)).dropna()
+    daily_vol = float(hist_log_ret.std())
+    last_price = float(df["Close"].iloc[-1])
 
-    # Tree ensemble
-    tree=TreeEnsemble()
-    tree.fit(X_tr,y_tr,feat_names=list(X.columns))
+    if mode == "universal":
+        X_row = _latest_feature_row(df, predictor.feature_names)
+        mean_ret = predictor.predict_next_return(X_row)
+        n_features = len(predictor.feature_names)
+        meta = predictor.meta
+        in_sample_mae = meta.get("test_mae")
+        in_sample_dir = meta.get("test_directional_accuracy")
+        n_train = meta.get("n_train_rows")
+        trained_at = meta.get("trained_at")
+        universe_size = meta.get("n_tickers_used")
+    else:
+        X_train, y_train = _build_training_row_set(df)
+        if len(X_train) < 40:
+            raise RuntimeError("Not enough history. Use a longer training period.")
+        fb = _FallbackPredictor().fit(X_train, y_train)
+        X_row = _latest_feature_row(df, fb.feature_names)
+        mean_ret = fb.predict_next_return(X_row)
+        n_features = len(fb.feature_names)
 
-    # In-sample metrics
-    fitted_ret,_,_=tree.predict(X_tr)
-    p_actual=prices.values[:-1]*np.exp(np.roll(ya,-1)[:-1])
-    p_pred  =prices.values[:-1]*np.exp(fitted_ret)
-    valid=p_actual[:-1]; pred_v=p_pred[:-1]
-    mae   = float(mean_absolute_error(valid,pred_v))
-    rmse  = float(np.sqrt(mean_squared_error(valid,pred_v)))
-    mape  = float(np.mean(np.abs((valid-pred_v)/(np.abs(valid)+1e-9)))*100)
-    dir_a = float(np.mean(np.sign(fitted_ret[:-1])==np.sign(y_tr[:-1]))*100)
+        Xs_all = fb.scaler.transform(X_train.values)
+        fitted = fb.model.predict(Xs_all)
+        in_sample_mae = round(float(mean_absolute_error(y_train, fitted)), 6)
+        in_sample_dir = round(float(np.mean(np.sign(fitted) == np.sign(y_train.values)) * 100), 1)
+        n_train = len(X_train)
+        trained_at = None
+        universe_size = 1
 
-    # Optional LSTM
-    lstm=None; lstm_w=0.0
-    if _TF and len(Xa)>=80:
-        try:
-            lstm=LSTMModel(n_feat=Xa.shape[1])
-            lstm.fit(Xa[:-1],ya[:-1],epochs=35,batch=64)
-            if lstm._fitted: lstm_w=0.35
-        except: lstm=None
+    future_dates = pd.bdate_range(df.index[-1], periods=horizon + 1)[1:]
+    lo_cone, hi_cone = _vol_cone(last_price, daily_vol, horizon)
 
-    # Predict 1-day log return from latest features
-    mean_ret_tree,_,_=tree.predict(Xa[[-1]])
-    mean_ret=float(mean_ret_tree[0])
-    if lstm is not None and lstm._fitted:
-        mr_lstm,_=lstm.predict(Xa)
-        mean_ret=(1-lstm_w)*mean_ret+lstm_w*float(mr_lstm[0])
+    cum = 0.0
+    rows = []
+    for i, date in enumerate(future_dates):
+        cum += mean_ret
+        price = last_price * np.exp(cum)
+        rows.append({"Date": date, "Forecast": round(price, 4),
+                     "Lower_80": round(float(lo_cone[i]), 4),
+                     "Upper_80": round(float(hi_cone[i]), 4),
+                     "Log_Return": round(mean_ret, 6)})
+    forecast_df = pd.DataFrame(rows).set_index("Date")
 
-    # Historical vol for CI cone
-    daily_vol=float(ya.std()); last_price=float(prices.iloc[-1])
-    lo_cone,hi_cone=_vol_cone(last_price,daily_vol,horizon)
-
-    # Multi-step: compound 1-day return
-    future_dates=pd.bdate_range(prices.index[-1],periods=horizon+1)[1:]
-    cum=0.0; rows=[]
-    for i,dt in enumerate(future_dates):
-        cum+=mean_ret
-        p=last_price*np.exp(cum)
-        rows.append({"Date":dt,"Forecast":round(p,4),
-                     "Lower_80":round(float(lo_cone[i]),4),
-                     "Upper_80":round(float(hi_cone[i]),4),
-                     "Log_Return":round(mean_ret,6)})
-    fc=pd.DataFrame(rows).set_index("Date")
+    elapsed = round(time.time() - t0, 2)
 
     return {
-        "forecast":fc, "in_sample_mae":round(mae,4),
-        "in_sample_rmse":round(rmse,4), "in_sample_mape":round(mape,2),
-        "in_sample_dir_acc":round(dir_a,1),
-        "daily_volatility":round(daily_vol*100,4),
-        "n_features":Xa.shape[1], "n_train":len(X_tr),
-        "feature_importance":tree.feature_importance(),
-        "models_available":{"xgboost":_XGB,"lightgbm":_LGB,"lstm":_TF},
-        "lstm_used":lstm is not None and lstm._fitted,
-        "lstm_weight":round(lstm_w,2),
+        "forecast": forecast_df, "mode": mode,
+        "in_sample_mae": in_sample_mae, "in_sample_mape": None,
+        "in_sample_dir_acc": in_sample_dir,
+        "daily_volatility": round(daily_vol * 100, 4),
+        "n_features": n_features, "n_train": n_train,
+        "universe_size": universe_size, "trained_at": trained_at,
+        "elapsed_seconds": elapsed,
+        "models_available": {"xgboost": _XGB, "lightgbm": _LGB},
     }
 
 
-def walk_forward_backtest(df: pd.DataFrame, horizon:int=1,
-                          n_folds:int=5, train_frac:float=0.65) -> Dict:
-    X,y_ret=_build_features(df)
-    Xa=X.values.astype(np.float32); ya=y_ret.values.astype(np.float32)
-    dates=y_ret.index; prices=df["Close"].reindex(dates).values.astype(np.float32)
+def walk_forward_backtest(df: pd.DataFrame, horizon: int = 1, n_folds: int = 5,
+                          train_frac: float = 0.65) -> Dict:
+    """
+    Evaluate prediction quality on this ticker's own past data.
+    With the universal checkpoint loaded this is pure inference across
+    rolling windows (no retraining) — fast regardless of n_folds.
+    """
+    predictor = get_universal_predictor()
+    use_universal = predictor.loaded
 
-    y_tgt=np.roll(ya,-horizon); Xa=Xa[:-horizon]; y_tgt=y_tgt[:-horizon]
-    prices=prices[:-horizon]; dates=dates[:-horizon]
+    X_all, y_all = _build_training_row_set(df)
+    if len(X_all) < 60:
+        return {"fold_metrics": pd.DataFrame(), "aggregate": {}, "predictions": pd.DataFrame()}
 
-    total=len(Xa); min_tr=int(total*train_frac)
-    fold_sz=max((total-min_tr)//n_folds,10)
-    fold_recs=[]; all_preds=[]; last_tree=None
+    prices_aligned = df["Close"].reindex(X_all.index)
+    dates = X_all.index
+    total = len(X_all)
+    min_tr = int(total * train_frac)
+    fold_sz = max((total - min_tr) // n_folds, 10)
+
+    fold_records = []
+    all_preds = []
 
     for fold in range(n_folds):
-        ts=min_tr+fold*fold_sz; te=min(ts+fold_sz,total)
-        if te<=ts: break
-        Xtr,ytr=Xa[:ts],y_tgt[:ts]; Xte,yte=Xa[ts:te],y_tgt[ts:te]
-        pte=prices[ts:te]; dte=dates[ts:te]
+        ts = min_tr + fold * fold_sz
+        te = min(ts + fold_sz, total)
+        if te <= ts:
+            break
 
-        tree=TreeEnsemble()
-        tree.fit(Xtr,ytr,feat_names=list(X.columns))
-        pr,lo,hi=tree.predict(Xte); last_tree=tree
+        X_te = X_all.iloc[ts:te]
+        y_te = y_all.iloc[ts:te]
+        p_te = prices_aligned.iloc[ts:te].values
+        d_te = dates[ts:te]
 
-        ap=pte*np.exp(yte); pp=pte*np.exp(pr)
-        mae=float(mean_absolute_error(ap,pp))
-        rmse=float(np.sqrt(mean_squared_error(ap,pp)))
-        mape=float(np.mean(np.abs((ap-pp)/(np.abs(ap)+1e-9)))*100)
-        dir_a=float(np.mean(np.sign(pr)==np.sign(yte))*100)
-        fold_recs.append({"Fold":fold+1,"Train":ts,"Test":te-ts,
-            "MAE":round(mae,2),"RMSE":round(rmse,2),
-            "MAPE (%)":round(mape,2),"Dir. Accuracy (%)":round(dir_a,2)})
-        for i,d in enumerate(dte):
-            all_preds.append({"Date":d,"Actual":float(ap[i]),"Predicted":float(pp[i]),
-                "Lower":float(pte[i]*np.exp(lo[i])),"Upper":float(pte[i]*np.exp(hi[i])),"Fold":fold+1})
+        if use_universal:
+            X_te_aligned = X_te.reindex(columns=predictor.feature_names, fill_value=0)
+            Xs = predictor._scale(X_te_aligned.values.astype(np.float32))
+            preds = []
+            if predictor.xgb_model is not None:
+                d = xgb.DMatrix(Xs)   # no feature_names — see note in predict_next_return
+                preds.append(predictor.xgb_model.predict(d))
+            if predictor.lgb_model is not None:
+                preds.append(predictor.lgb_model.predict(Xs))
+            pred_ret = np.mean(preds, axis=0) if preds else np.zeros(len(X_te))
+        else:
+            X_tr = X_all.iloc[:ts]
+            y_tr = y_all.iloc[:ts]
+            if len(X_tr) < 40:
+                continue
+            fb = _FallbackPredictor().fit(X_tr, y_tr)
+            Xs = fb.scaler.transform(X_te.values)
+            pred_ret = fb.model.predict(Xs)
 
-    fold_df=pd.DataFrame(fold_recs)
-    pred_df=(pd.DataFrame(all_preds).set_index("Date") if all_preds else pd.DataFrame())
-    agg={}
-    for col in ["MAE","RMSE","MAPE (%)","Dir. Accuracy (%)"]:
-        if col in fold_df.columns:
-            agg[f"{col}_mean"]=round(float(fold_df[col].mean()),3)
-            agg[f"{col}_std"] =round(float(fold_df[col].std()),3)
-    fi=last_tree.feature_importance() if last_tree else pd.DataFrame()
-    return {"fold_metrics":fold_df,"aggregate":agg,"predictions":pred_df,"feature_importance":fi}
+        actual_p = p_te * np.exp(y_te.values)
+        pred_p = p_te * np.exp(pred_ret)
+
+        mae = float(mean_absolute_error(actual_p, pred_p))
+        rmse = float(np.sqrt(mean_squared_error(actual_p, pred_p)))
+        mape = float(np.mean(np.abs((actual_p - pred_p) / (np.abs(actual_p) + 1e-9))) * 100)
+        dir_a = float(np.mean(np.sign(pred_ret) == np.sign(y_te.values)) * 100)
+
+        fold_records.append({"Fold": fold + 1, "N": len(X_te),
+            "MAE": round(mae, 2), "RMSE": round(rmse, 2),
+            "MAPE (%)": round(mape, 2), "Dir. Accuracy (%)": round(dir_a, 2)})
+        for i, d in enumerate(d_te):
+            all_preds.append({"Date": d, "Actual": float(actual_p[i]),
+                              "Predicted": float(pred_p[i]), "Fold": fold + 1})
+
+    fold_df = pd.DataFrame(fold_records)
+    pred_df = pd.DataFrame(all_preds).set_index("Date") if all_preds else pd.DataFrame()
+
+    agg = {}
+    for col in ["MAE", "RMSE", "MAPE (%)", "Dir. Accuracy (%)"]:
+        if col in fold_df.columns and not fold_df.empty:
+            agg[f"{col}_mean"] = round(float(fold_df[col].mean()), 3)
+            agg[f"{col}_std"] = round(float(fold_df[col].std()), 3)
+
+    return {"fold_metrics": fold_df, "aggregate": agg, "predictions": pred_df,
+            "mode": "universal" if use_universal else "fallback"}

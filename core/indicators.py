@@ -156,7 +156,92 @@ def generate_signals(df: pd.DataFrame) -> Dict:
     return {"indicators":signals,"composite":composite,
             "buy_count":buy_n,"sell_count":sell_n}
 
-def add_all_indicators(df: pd.DataFrame) -> pd.DataFrame:
+def build_ml_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build a SCALE-FREE feature matrix suitable for a cross-sectional model
+    trained across many different stocks (different price levels, different
+    volume levels). Every feature here is a ratio, percentage, or bounded
+    oscillator — never a raw price or raw volume level — so the same
+    trained model generalises from a ₹50 stock to a ₹50,000 stock without
+    re-training.
+
+    Returns a DataFrame indexed the same as df, with all-NaN warmup rows
+    still present (caller should .dropna()).
+    """
+    out = pd.DataFrame(index=df.index)
+    c, o, h, l, v = df["Close"], df["Open"], df["High"], df["Low"], df["Volume"]
+
+    # ── Multi-horizon historical log returns (what already happened) ──────
+    log_c = np.log(c)
+    for w in [1, 2, 3, 5, 10, 20]:
+        out[f"ret_{w}d"] = log_c - log_c.shift(w)
+
+    # ── Rolling return statistics (scale-free: based on returns) ──────────
+    daily_ret = c.pct_change()
+    for w in [5, 10, 20]:
+        out[f"ret_mean_{w}"] = daily_ret.rolling(w).mean()
+        out[f"ret_std_{w}"]  = daily_ret.rolling(w).std()
+        out[f"ret_skew_{w}"] = daily_ret.rolling(w).skew()
+
+    # ── Momentum oscillators (already bounded / scale-free) ───────────────
+    out["rsi_7"]   = rsi(c, 7)
+    out["rsi_14"]  = rsi(c, 14)
+    st_ = stochastic(df)
+    out["stoch_k"] = st_["%K"]
+    out["stoch_d"] = st_["%D"]
+    out["williams_r"] = williams_r(df)
+    out["cci_20"]  = cci(df)
+    for w in [5, 10, 20]:
+        out[f"roc_{w}"] = roc(c, w)
+
+    # ── MACD — normalised by price (was raw price units before) ───────────
+    md = macd(c)
+    out["macd_norm"]   = md["MACD"]   / c
+    out["macd_sig_norm"] = md["Signal"] / c
+    out["macd_hist_norm"] = md["Hist"] / c
+
+    # ── Bollinger — already scale-free ─────────────────────────────────────
+    bb = bollinger_bands(c)
+    out["bb_pctb"]  = bb["BB_%B"]
+    out["bb_width"] = bb["BB_Width"]
+
+    # ── Price distance from moving averages (% above/below, not raw MA) ───
+    for w in [9, 20, 50, 200]:
+        out[f"dist_sma_{w}"] = c / sma(c, w) - 1
+        out[f"dist_ema_{w}"] = c / ema(c, w) - 1
+
+    # ── Volatility (already annualised %, scale-free) ──────────────────────
+    out["atr_pct"] = atr(df) / c              # ATR normalised by price
+    for w in [10, 20, 50]:
+        out[f"hv_{w}"] = historical_volatility(c, w)
+
+    # ── Volume-based (already ratios) ───────────────────────────────────────
+    out["mfi_14"] = money_flow_index(df)
+    out["cmf_20"] = chaikin_money_flow(df)
+    out["vol_ratio"] = volume_ratio(df)
+    obv_s = obv(df)
+    for w in [5, 10, 20]:
+        out[f"obv_roc_{w}"] = obv_s.pct_change(w).replace([np.inf, -np.inf], 0)
+
+    # ── Trend strength (already bounded 0-100) ──────────────────────────────
+    adx_df = adx(df)
+    out["adx"]   = adx_df["ADX"]
+    out["di_diff"] = adx_df["DI+"] - adx_df["DI-"]   # bounded, scale-free
+
+    # ── Intraday structure (already ratios) ──────────────────────────────────
+    out["hl_spread"] = (h - l) / c
+    out["oc_spread"] = (c - o) / o
+    out["gap"]       = (o - c.shift(1)) / c.shift(1)
+
+    # ── Calendar (categorical, ticker-agnostic) ─────────────────────────────
+    out["day_of_week"] = df.index.dayofweek
+    out["month"]        = df.index.month
+    out["is_monday"]    = (df.index.dayofweek == 0).astype(int)
+    out["is_friday"]    = (df.index.dayofweek == 4).astype(int)
+
+    return out
+
+
     """Add all indicator columns — used as ML features."""
     out = df.copy(); c = out["Close"]
     for w in [9,20,50,200]: out[f"SMA_{w}"]=sma(c,w); out[f"EMA_{w}"]=ema(c,w)

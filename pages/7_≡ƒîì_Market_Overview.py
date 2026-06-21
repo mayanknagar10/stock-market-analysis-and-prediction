@@ -169,7 +169,10 @@ def movers_table(df_m, sym_prefix="₹"):
     bar_c=["#3FB950" if v>=0 else "#F85149" for v in top_n["1D %"]]
     fig=go.Figure(go.Bar(x=top_n["1D %"],y=top_n["Name"],orientation="h",marker_color=bar_c,opacity=0.85,text=[f"{v:+.2f}%" for v in top_n["1D %"]],textposition="outside",textfont=dict(size=9,family="IBM Plex Mono, monospace",color="#C9D1D9")))
     fig.add_vline(x=0,line_color=T["dim"],line_dash="dot",line_width=0.8)
-    fig.update_layout(**{**BASE,"height":320,"title":dict(text="1-Day Returns (%)",font_size=12)},xaxis_title="1D Return (%)",margin=dict(l=8,r=60,t=36,b=8))
+    from utils.charts import safe_layout
+    fig.update_layout(**safe_layout(
+        {"xaxis_title": "1D Return (%)", "margin": dict(l=8,r=60,t=36,b=8)},
+        height=320, title="1-Day Returns (%)"))
     st.plotly_chart(fig,use_container_width=True,config={"displayModeBar":False})
 
 with tabs_m[0]:
@@ -201,7 +204,10 @@ with tabs_m[2]:
         fc=["rgba(63,185,80,0.8)" if v>=0 else "rgba(248,81,73,0.8)" for v in vals]
         fig=go.Figure(go.Bar(x=vals,y=labs,orientation="h",marker_color=fc,text=[f"{v:+.2f}%" for v in vals],textposition="outside",textfont=dict(size=10,family="IBM Plex Mono, monospace",color="#C9D1D9")))
         fig.add_vline(x=0,line_color=T["dim"],line_dash="dot",line_width=0.8)
-        fig.update_layout(**{**BASE,"height":360,"title":dict(text=title,font_size=12)},xaxis_title="Avg 1D Return (%)",margin=dict(l=8,r=70,t=36,b=8))
+        from utils.charts import safe_layout
+        fig.update_layout(**safe_layout(
+            {"xaxis_title": "Avg 1D Return (%)", "margin": dict(l=8,r=70,t=36,b=8)},
+            height=360, title=title))
         return fig
 
     col1,col2=st.columns(2)

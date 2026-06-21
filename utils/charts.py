@@ -29,6 +29,32 @@ def _apply(fig, title="", height=500):
     fig.update_layout(**layout); return fig
 
 
+def safe_layout(extra: Optional[Dict] = None, height: int = 500, title: str = "") -> Dict:
+    """
+    Merge extra Plotly layout options on top of BASE without key collisions.
+    Nested dict keys (xaxis, yaxis, margin, legend, font) are deep-merged;
+    everything else is overwritten. Always pass the *return value* of this
+    function via a single ** spread — never combine with additional raw
+    kwargs, or the old 'got multiple values for keyword argument' bug
+    returns.
+
+    Usage:
+        fig.update_layout(**safe_layout({"xaxis_title": "Date"}, height=320,
+                                        title="My Chart"))
+    """
+    layout = {k: (dict(v) if isinstance(v, dict) else v) for k, v in BASE.items()}
+    layout["height"] = height
+    if title:
+        layout["title"] = dict(text=title, font_size=12, x=0.01, xanchor="left")
+    if extra:
+        for k, v in extra.items():
+            if k in layout and isinstance(layout[k], dict) and isinstance(v, dict):
+                layout[k] = {**layout[k], **v}   # deep-merge nested dicts
+            else:
+                layout[k] = v                     # overwrite scalars/lists
+    return layout
+
+
 def candlestick_chart(df, ticker, overlays:Optional[Dict]=None, volume=True, height=580):
     rows=2 if volume else 1; rh=[0.72,0.28] if volume else [1.0]
     fig=make_subplots(rows=rows,cols=1,shared_xaxes=True,

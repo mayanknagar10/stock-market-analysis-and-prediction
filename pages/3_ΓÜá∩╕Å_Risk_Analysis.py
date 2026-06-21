@@ -216,8 +216,11 @@ with tabs[2]:
         colorscale=[[0,T["red"]],[0.5,T["card"]],[1,T["green"]]],zmid=0,
         text=np.round(m_pivot.values,1),texttemplate="%{text}%",textfont_size=9,
         colorbar=dict(tickfont_size=9)))
-    fig.update_layout(**{**BASE,"height":320,"title":dict(text="Monthly Returns (%)",font_size=12)},
-        xaxis=dict(gridcolor=T["grid"]),yaxis=dict(gridcolor=T["grid"],autorange="reversed"))
+    from utils.charts import safe_layout
+    fig.update_layout(**safe_layout(
+        {"xaxis": dict(gridcolor=T["grid"]),
+         "yaxis": dict(gridcolor=T["grid"], autorange="reversed")},
+        height=320, title="Monthly Returns (%)"))
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
 
 # TAB 4: Monte Carlo
