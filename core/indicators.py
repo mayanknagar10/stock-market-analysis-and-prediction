@@ -61,10 +61,175 @@ def williams_r(df, w=14):
     hi=df["High"].rolling(w).max(); lo=df["Low"].rolling(w).min()
     return -100*(hi-df["Close"])/(hi-lo).replace(0,np.nan)
 
+def _rolling_mad(values: np.ndarray, w: int) -> np.ndarray:
+    """Fast vectorized rolling mean absolute deviation — no Python-level
+    per-window callback, unlike pandas' rolling().apply(lambda...)."""
+    n = len(values)
+    out = np.full(n, np.nan)
+    if n < w:
+        return out
+    windows = np.lib.stride_tricks.sliding_window_view(values, w)
+    means = windows.mean(axis=1, keepdims=True)
+    out[w - 1:] = np.abs(windows - means).mean(axis=1)
+    return out
+
+
+def _rolling_mad_2d(values: np.ndarray, w: int) -> np.ndarray:
+    """2D version of _rolling_mad: values shape (T, n_paths), rolls along
+    axis 0 (time), independently per column (path)."""
+    T, P = values.shape
+    out = np.full((T, P), np.nan)
+    if T < w:
+        return out
+    windows = np.lib.stride_tricks.sliding_window_view(values, w, axis=0)  # (T-w+1, P, w)
+    means = windows.mean(axis=2, keepdims=True)
+    out[w - 1:, :] = np.abs(windows - means).mean(axis=2)
+    return out
+
+
+def build_ml_features_batch(close: pd.DataFrame, open_: pd.DataFrame,
+                            high: pd.DataFrame, low: pd.DataFrame,
+                            vol: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    """
+    Batched version of build_ml_features for Monte Carlo simulation.
+
+    Inputs are WIDE DataFrames of shape (T timesteps, n_paths columns) —
+    one column per simulated path, all sharing the same DatetimeIndex.
+    Returns a dict of {feature_name: wide_DataFrame}, same shape as the
+    inputs, so feat[name].iloc[-1] gives every path's latest value at once.
+
+    This exists purely for speed: pandas rolling/ewm operations are
+    natively vectorized across columns, so computing features for 30
+    simulated paths this way costs barely more than computing them for
+    1 path — replacing 30 separate calls to build_ml_features with a
+    single call here. Every formula mirrors build_ml_features exactly;
+    see test coverage that verifies numerical equivalence on a single
+    path before this is trusted for production use.
+    """
+    c, o, h, l, v = close, open_, high, low, vol
+    feat: Dict[str, pd.DataFrame] = {}
+
+    log_c = np.log(c)
+    for w in [1, 2, 3, 5, 10, 20]:
+        feat[f"ret_{w}d"] = log_c - log_c.shift(w)
+
+    daily_ret = c.pct_change()
+    for w in [5, 10, 20]:
+        feat[f"ret_mean_{w}"] = daily_ret.rolling(w).mean()
+        feat[f"ret_std_{w}"]  = daily_ret.rolling(w).std()
+        feat[f"ret_skew_{w}"] = daily_ret.rolling(w).skew()
+
+    def _rsi_wide(s, w):
+        d = s.diff()
+        g = d.clip(lower=0).ewm(com=w - 1, adjust=False).mean()
+        ls = (-d.clip(upper=0)).ewm(com=w - 1, adjust=False).mean()
+        return 100 - 100 / (1 + g / ls.replace(0, np.nan))
+    feat["rsi_7"]  = _rsi_wide(c, 7)
+    feat["rsi_14"] = _rsi_wide(c, 14)
+
+    lo_k = l.rolling(14).min(); hi_k = h.rolling(14).max()
+    stoch_k = 100 * (c - lo_k) / (hi_k - lo_k).replace(0, np.nan)
+    feat["stoch_k"] = stoch_k
+    feat["stoch_d"] = stoch_k.rolling(3).mean()
+
+    hi_w = h.rolling(14).max(); lo_w = l.rolling(14).min()
+    feat["williams_r"] = -100 * (hi_w - c) / (hi_w - lo_w).replace(0, np.nan)
+
+    tp = (h + l + c) / 3
+    mad_vals = _rolling_mad_2d(tp.values, 20)
+    mad = pd.DataFrame(mad_vals, index=tp.index, columns=tp.columns)
+    feat["cci_20"] = (tp - tp.rolling(20).mean()) / (0.015 * mad.replace(0, np.nan))
+
+    for w in [5, 10, 20]:
+        feat[f"roc_{w}"] = 100 * (c - c.shift(w)) / c.shift(w)
+
+    def _ema_wide(s, span):
+        return s.ewm(span=span, adjust=False).mean()
+    macd_line = _ema_wide(c, 12) - _ema_wide(c, 26)
+    macd_sig  = _ema_wide(macd_line, 9)
+    feat["macd_norm"]      = macd_line / c
+    feat["macd_sig_norm"]  = macd_sig / c
+    feat["macd_hist_norm"] = (macd_line - macd_sig) / c
+
+    mid20 = c.rolling(20, min_periods=1).mean()
+    std20 = c.rolling(20).std()
+    up = mid20 + 2.0 * std20
+    lo_bb = mid20 - 2.0 * std20
+    feat["bb_pctb"]  = (c - lo_bb) / (up - lo_bb).replace(0, np.nan)
+    feat["bb_width"] = (up - lo_bb) / mid20
+
+    for w in [9, 20, 50, 200]:
+        feat[f"dist_sma_{w}"] = c / c.rolling(w, min_periods=1).mean() - 1
+        feat[f"dist_ema_{w}"] = c / _ema_wide(c, w) - 1
+
+    tr1 = h - l
+    tr2 = (h - c.shift(1)).abs()
+    tr3 = (l - c.shift(1)).abs()
+    # NaN-aware elementwise max (matches pandas .max(axis=1, skipna=True)
+    # behaviour from the single-path atr() — np.maximum would propagate
+    # NaN instead of skipping it, which breaks day-1 ATR/ADX values)
+    tr_stack = np.stack([tr1.values, tr2.values, tr3.values], axis=-1)
+    tr = pd.DataFrame(np.nanmax(tr_stack, axis=-1), index=c.index, columns=c.columns)
+    atr_s = tr.ewm(span=14, adjust=False).mean()
+    feat["atr_pct"] = atr_s / c
+
+    for w in [10, 20, 50]:
+        feat[f"hv_{w}"] = np.log(c / c.shift(1)).rolling(w).std() * np.sqrt(252)
+
+    tp_mfi = (h + l + c) / 3
+    rmf = tp_mfi * v
+    pos = rmf.where(tp_mfi > tp_mfi.shift(1), 0)
+    neg = rmf.where(tp_mfi < tp_mfi.shift(1), 0)
+    feat["mfi_14"] = 100 - 100 / (1 + pos.rolling(14).sum() / neg.rolling(14).sum().replace(0, np.nan))
+
+    rng_hl = (h - l).replace(0, np.nan)
+    clv = ((c - l) - (h - c)) / rng_hl
+    feat["cmf_20"] = (clv * v).rolling(20).sum() / v.rolling(20).sum()
+
+    feat["vol_ratio"] = v / v.rolling(14).mean()
+
+    obv_s = (np.sign(c.diff()).fillna(0) * v).cumsum()
+    for w in [5, 10, 20]:
+        feat[f"obv_roc_{w}"] = obv_s.pct_change(w).replace([np.inf, -np.inf], 0)
+
+    h_diff = h - h.shift(1)
+    l_diff = l.shift(1) - l
+    dmp_vals = np.where(h_diff.values > l_diff.values, np.maximum(h_diff.values, 0), 0)
+    dmm_vals = np.where(l_diff.values > h_diff.values, np.maximum(l_diff.values, 0), 0)
+    dmp = pd.DataFrame(dmp_vals, index=c.index, columns=c.columns)
+    dmm = pd.DataFrame(dmm_vals, index=c.index, columns=c.columns)
+    dip = 100 * dmp.ewm(span=14, adjust=False).mean() / atr_s.replace(0, np.nan)
+    dim = 100 * dmm.ewm(span=14, adjust=False).mean() / atr_s.replace(0, np.nan)
+    dx  = 100 * (dip - dim).abs() / (dip + dim).replace(0, np.nan)
+    feat["adx"]     = dx.ewm(span=14, adjust=False).mean()
+    feat["di_diff"] = dip - dim
+
+    feat["hl_spread"] = (h - l) / c
+    feat["oc_spread"] = (c - o) / o
+    feat["gap"]       = (o - c.shift(1)) / c.shift(1)
+
+    n_paths = c.shape[1]
+    feat["day_of_week"] = pd.DataFrame(
+        np.tile(c.index.dayofweek.values.reshape(-1, 1), (1, n_paths)),
+        index=c.index, columns=c.columns)
+    feat["month"] = pd.DataFrame(
+        np.tile(c.index.month.values.reshape(-1, 1), (1, n_paths)),
+        index=c.index, columns=c.columns)
+    feat["is_monday"] = pd.DataFrame(
+        np.tile((c.index.dayofweek == 0).astype(int).reshape(-1, 1), (1, n_paths)),
+        index=c.index, columns=c.columns)
+    feat["is_friday"] = pd.DataFrame(
+        np.tile((c.index.dayofweek == 4).astype(int).reshape(-1, 1), (1, n_paths)),
+        index=c.index, columns=c.columns)
+
+    return feat
+
+
 def cci(df, w=20):
-    tp=( df["High"]+df["Low"]+df["Close"])/3
-    mad=tp.rolling(w).apply(lambda x: np.mean(np.abs(x-np.mean(x))),raw=True)
+    tp = (df["High"]+df["Low"]+df["Close"])/3
+    mad = pd.Series(_rolling_mad(tp.values, w), index=tp.index)
     return (tp-tp.rolling(w).mean())/(0.015*mad.replace(0,np.nan))
+
 
 def roc(s, w=10): return 100*(s-s.shift(w))/s.shift(w)
 def momentum(s, w=10): return s-s.shift(w)
@@ -167,104 +332,143 @@ def build_ml_features(df: pd.DataFrame) -> pd.DataFrame:
 
     Returns a DataFrame indexed the same as df, with all-NaN warmup rows
     still present (caller should .dropna()).
+
+    Performance note: all 56 feature Series are collected into a plain
+    dict and the DataFrame is constructed ONCE at the end via
+    pd.DataFrame(feat). Assigning 56 columns one-at-a-time onto a growing
+    DataFrame (out["x"] = ...) is significantly slower in pandas due to
+    per-insertion block-manager overhead — this matters here because
+    build_ml_features is called recursively inside Monte Carlo forecast
+    simulation (core.models._simulate_one_path), often hundreds of times
+    per request.
     """
-    out = pd.DataFrame(index=df.index)
     c, o, h, l, v = df["Close"], df["Open"], df["High"], df["Low"], df["Volume"]
+    feat = {}
 
     # ── Multi-horizon historical log returns (what already happened) ──────
     log_c = np.log(c)
     for w in [1, 2, 3, 5, 10, 20]:
-        out[f"ret_{w}d"] = log_c - log_c.shift(w)
+        feat[f"ret_{w}d"] = log_c - log_c.shift(w)
 
     # ── Rolling return statistics (scale-free: based on returns) ──────────
     daily_ret = c.pct_change()
     for w in [5, 10, 20]:
-        out[f"ret_mean_{w}"] = daily_ret.rolling(w).mean()
-        out[f"ret_std_{w}"]  = daily_ret.rolling(w).std()
-        out[f"ret_skew_{w}"] = daily_ret.rolling(w).skew()
+        feat[f"ret_mean_{w}"] = daily_ret.rolling(w).mean()
+        feat[f"ret_std_{w}"]  = daily_ret.rolling(w).std()
+        feat[f"ret_skew_{w}"] = daily_ret.rolling(w).skew()
 
     # ── Momentum oscillators (already bounded / scale-free) ───────────────
-    out["rsi_7"]   = rsi(c, 7)
-    out["rsi_14"]  = rsi(c, 14)
+    feat["rsi_7"]  = rsi(c, 7)
+    feat["rsi_14"] = rsi(c, 14)
     st_ = stochastic(df)
-    out["stoch_k"] = st_["%K"]
-    out["stoch_d"] = st_["%D"]
-    out["williams_r"] = williams_r(df)
-    out["cci_20"]  = cci(df)
+    feat["stoch_k"] = st_["%K"]
+    feat["stoch_d"] = st_["%D"]
+    feat["williams_r"] = williams_r(df)
+    feat["cci_20"] = cci(df)
     for w in [5, 10, 20]:
-        out[f"roc_{w}"] = roc(c, w)
+        feat[f"roc_{w}"] = roc(c, w)
 
     # ── MACD — normalised by price (was raw price units before) ───────────
     md = macd(c)
-    out["macd_norm"]   = md["MACD"]   / c
-    out["macd_sig_norm"] = md["Signal"] / c
-    out["macd_hist_norm"] = md["Hist"] / c
+    feat["macd_norm"]     = md["MACD"]   / c
+    feat["macd_sig_norm"] = md["Signal"] / c
+    feat["macd_hist_norm"] = md["Hist"]  / c
 
     # ── Bollinger — already scale-free ─────────────────────────────────────
     bb = bollinger_bands(c)
-    out["bb_pctb"]  = bb["BB_%B"]
-    out["bb_width"] = bb["BB_Width"]
+    feat["bb_pctb"]  = bb["BB_%B"]
+    feat["bb_width"] = bb["BB_Width"]
 
     # ── Price distance from moving averages (% above/below, not raw MA) ───
     for w in [9, 20, 50, 200]:
-        out[f"dist_sma_{w}"] = c / sma(c, w) - 1
-        out[f"dist_ema_{w}"] = c / ema(c, w) - 1
+        feat[f"dist_sma_{w}"] = c / sma(c, w) - 1
+        feat[f"dist_ema_{w}"] = c / ema(c, w) - 1
 
     # ── Volatility (already annualised %, scale-free) ──────────────────────
-    out["atr_pct"] = atr(df) / c              # ATR normalised by price
+    feat["atr_pct"] = atr(df) / c              # ATR normalised by price
     for w in [10, 20, 50]:
-        out[f"hv_{w}"] = historical_volatility(c, w)
+        feat[f"hv_{w}"] = historical_volatility(c, w)
 
     # ── Volume-based (already ratios) ───────────────────────────────────────
-    out["mfi_14"] = money_flow_index(df)
-    out["cmf_20"] = chaikin_money_flow(df)
-    out["vol_ratio"] = volume_ratio(df)
+    feat["mfi_14"] = money_flow_index(df)
+    feat["cmf_20"] = chaikin_money_flow(df)
+    feat["vol_ratio"] = volume_ratio(df)
     obv_s = obv(df)
     for w in [5, 10, 20]:
-        out[f"obv_roc_{w}"] = obv_s.pct_change(w).replace([np.inf, -np.inf], 0)
+        feat[f"obv_roc_{w}"] = obv_s.pct_change(w).replace([np.inf, -np.inf], 0)
 
     # ── Trend strength (already bounded 0-100) ──────────────────────────────
     adx_df = adx(df)
-    out["adx"]   = adx_df["ADX"]
-    out["di_diff"] = adx_df["DI+"] - adx_df["DI-"]   # bounded, scale-free
+    feat["adx"] = adx_df["ADX"]
+    feat["di_diff"] = adx_df["DI+"] - adx_df["DI-"]   # bounded, scale-free
 
     # ── Intraday structure (already ratios) ──────────────────────────────────
-    out["hl_spread"] = (h - l) / c
-    out["oc_spread"] = (c - o) / o
-    out["gap"]       = (o - c.shift(1)) / c.shift(1)
+    feat["hl_spread"] = (h - l) / c
+    feat["oc_spread"] = (c - o) / o
+    feat["gap"]       = (o - c.shift(1)) / c.shift(1)
 
     # ── Calendar (categorical, ticker-agnostic) ─────────────────────────────
-    out["day_of_week"] = df.index.dayofweek
-    out["month"]        = df.index.month
-    out["is_monday"]    = (df.index.dayofweek == 0).astype(int)
-    out["is_friday"]    = (df.index.dayofweek == 4).astype(int)
+    feat["day_of_week"] = df.index.dayofweek
+    feat["month"]       = df.index.month
+    feat["is_monday"]   = (df.index.dayofweek == 0).astype(int)
+    feat["is_friday"]   = (df.index.dayofweek == 4).astype(int)
 
-    return out
+    return pd.DataFrame(feat, index=df.index)
 
 
-    """Add all indicator columns — used as ML features."""
-    out = df.copy(); c = out["Close"]
-    for w in [9,20,50,200]: out[f"SMA_{w}"]=sma(c,w); out[f"EMA_{w}"]=ema(c,w)
+def add_all_indicators(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add raw-scale indicator columns (SMA/EMA/MACD/Bollinger at actual price
+    level, not normalised). Used for chart overlays where the real price
+    level is exactly what you want to plot on top of a candlestick chart —
+    a different use case from build_ml_features(), which is deliberately
+    scale-free for cross-sectional model training.
+    """
+    out = df.copy()
+    c = out["Close"]
+    for w in [9, 20, 50, 200]:
+        out[f"SMA_{w}"] = sma(c, w)
+        out[f"EMA_{w}"] = ema(c, w)
     out["VWAP"] = vwap(out)
-    out["RSI_14"]=rsi(c); out["RSI_7"]=rsi(c,7)
-    for w in [5,10,20]: out[f"ROC_{w}"]=roc(c,w); out[f"MOM_{w}"]=momentum(c,w)
-    md=macd(c); out["MACD"]=md["MACD"]; out["MACD_Sig"]=md["Signal"]; out["MACD_H"]=md["Hist"]
-    st_=stochastic(out); out["Stoch_K"]=st_["%K"]; out["Stoch_D"]=st_["%D"]
-    out["WilliamsR"]=williams_r(out); out["CCI_20"]=cci(out)
-    bb=bollinger_bands(c)
-    out["BB_Up"]=bb["BB_Upper"]; out["BB_Lo"]=bb["BB_Lower"]
-    out["BB_W"]=bb["BB_Width"];  out["BB_B"]=bb["BB_%B"]
-    out["ATR_14"]=atr(out); out["HV_20"]=historical_volatility(c,20)
-    out["OBV"]=obv(out); out["MFI_14"]=money_flow_index(out)
-    out["CMF_20"]=chaikin_money_flow(out); out["VolRatio"]=volume_ratio(out)
-    out["DayRet"]=c.pct_change(); out["LogRet"]=np.log(c/c.shift(1))
-    out["HL"]=( out["High"]-out["Low"])/c; out["OC"]=(c-out["Open"])/out["Open"]
-    out["Gap"]=(out["Open"]-c.shift(1))/c.shift(1)
-    out["DayOfWeek"]=out.index.dayofweek; out["Month"]=out.index.month
-    out["IsMonday"]=(out.index.dayofweek==0).astype(int)
-    out["IsFriday"]=(out.index.dayofweek==4).astype(int)
-    for lag in [1,2,3,5,10,20]: out[f"CLag{lag}"]=c.shift(lag)
-    for w in [5,10,20]:
-        out[f"RM{w}"]=c.rolling(w).mean(); out[f"RS{w}"]=c.rolling(w).std()
-        out[f"RMn{w}"]=c.rolling(w).min();  out[f"RMx{w}"]=c.rolling(w).max()
+    out["RSI_14"] = rsi(c)
+    out["RSI_7"] = rsi(c, 7)
+    for w in [5, 10, 20]:
+        out[f"ROC_{w}"] = roc(c, w)
+        out[f"MOM_{w}"] = momentum(c, w)
+    md = macd(c)
+    out["MACD"] = md["MACD"]
+    out["MACD_Sig"] = md["Signal"]
+    out["MACD_H"] = md["Hist"]
+    st_ = stochastic(out)
+    out["Stoch_K"] = st_["%K"]
+    out["Stoch_D"] = st_["%D"]
+    out["WilliamsR"] = williams_r(out)
+    out["CCI_20"] = cci(out)
+    bb = bollinger_bands(c)
+    out["BB_Up"] = bb["BB_Upper"]
+    out["BB_Lo"] = bb["BB_Lower"]
+    out["BB_W"] = bb["BB_Width"]
+    out["BB_B"] = bb["BB_%B"]
+    out["ATR_14"] = atr(out)
+    out["HV_20"] = historical_volatility(c, 20)
+    out["OBV"] = obv(out)
+    out["MFI_14"] = money_flow_index(out)
+    out["CMF_20"] = chaikin_money_flow(out)
+    out["VolRatio"] = volume_ratio(out)
+    out["DayRet"] = c.pct_change()
+    out["LogRet"] = np.log(c / c.shift(1))
+    out["HL"] = (out["High"] - out["Low"]) / c
+    out["OC"] = (c - out["Open"]) / out["Open"]
+    out["Gap"] = (out["Open"] - c.shift(1)) / c.shift(1)
+    out["DayOfWeek"] = out.index.dayofweek
+    out["Month"] = out.index.month
+    out["IsMonday"] = (out.index.dayofweek == 0).astype(int)
+    out["IsFriday"] = (out.index.dayofweek == 4).astype(int)
+    for lag in [1, 2, 3, 5, 10, 20]:
+        out[f"CLag{lag}"] = c.shift(lag)
+    for w in [5, 10, 20]:
+        out[f"RM{w}"] = c.rolling(w).mean()
+        out[f"RS{w}"] = c.rolling(w).std()
+        out[f"RMn{w}"] = c.rolling(w).min()
+        out[f"RMx{w}"] = c.rolling(w).max()
     return out

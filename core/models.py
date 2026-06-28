@@ -296,6 +296,23 @@ class UniversalPredictor:
             preds.append(float(self.lgb_model.predict(Xs)[0]))
         return float(np.mean(preds)) if preds else 0.0
 
+    def predict_next_return_batch(self, X_batch: np.ndarray) -> np.ndarray:
+        """Batched version: X_batch shape (n_samples, n_features) -> (n_samples,).
+        Used by Monte Carlo simulation to advance all paths in one call
+        instead of looping — XGBoost/LightGBM both predict a batch in
+        roughly the same time as a single row, so this is what makes
+        simulating many paths fast."""
+        if not self.loaded:
+            return np.zeros(X_batch.shape[0])
+        Xs = self._scale(X_batch)
+        preds = []
+        if self.xgb_model is not None:
+            d = xgb.DMatrix(Xs)
+            preds.append(self.xgb_model.predict(d))
+        if self.lgb_model is not None:
+            preds.append(self.lgb_model.predict(Xs))
+        return np.mean(preds, axis=0) if preds else np.zeros(X_batch.shape[0])
+
 
 _predictor_singleton: Optional[UniversalPredictor] = None
 
@@ -359,6 +376,12 @@ class _FallbackPredictor:
         Xs = self.scaler.transform(X_row)
         return float(self.model.predict(Xs)[0])
 
+    def predict_next_return_batch(self, X_batch: np.ndarray) -> np.ndarray:
+        if self.model is None:
+            return np.zeros(X_batch.shape[0])
+        Xs = self.scaler.transform(X_batch)
+        return self.model.predict(Xs)
+
 
 def _vol_cone(last_price: float, daily_vol: float, horizon: int, z: float = 1.28
              ) -> Tuple[np.ndarray, np.ndarray]:
@@ -369,16 +392,111 @@ def _vol_cone(last_price: float, daily_vol: float, horizon: int, z: float = 1.28
     return lo, hi
 
 
-# ─────────────────────────────────────────────────────────────────
-# PUBLIC API
-# ─────────────────────────────────────────────────────────────────
+def _simulate_paths(df: pd.DataFrame, predictor, daily_vol: float, horizon: int,
+                    n_paths: int = 30, seed: Optional[int] = None) -> np.ndarray:
+    """
+    Run an ensemble of n_paths recursive Monte Carlo simulations.
 
-def forecast_future(df: pd.DataFrame, horizon: int = 10) -> Dict:
+    Critically, this re-computes technical features and re-queries the
+    model at EVERY future day using each path's own simulated trajectory
+    so far — not just once. If a simulated run-up pushes RSI into
+    overbought territory, the model can genuinely predict a smaller (or
+    negative) next-day return in response, exactly like it would for a
+    real stock in that state. A random shock drawn from the ticker's own
+    historical volatility is added on top of the model's drift estimate,
+    since the model predicts an *expected* return, not a noise-free one.
+
+    Speed: ALL n_paths advance together at each day-step — one batched
+    feature computation (build_ml_features_batch) and one batched model
+    prediction per day, not per path. This means total cost scales with
+    `horizon`, not `horizon × n_paths`, which is what makes simulating
+    30 paths over 30 days complete in roughly the same time as computing
+    features once would for a single path, instead of 30x longer.
+
+    Returns shape (n_paths, horizon).
+    """
+    from core.indicators import build_ml_features_batch
+
+    last_date = df.index[-1]
+    last_price = float(df["Close"].iloc[-1])
+    if seed is None:
+        # Deterministic seed so re-running the same query gives the same
+        # answer (not a different random forecast every page refresh),
+        # while different tickers/dates naturally get different paths.
+        seed = abs(hash((str(last_date), round(last_price, 4)))) % (2**31)
+    rng = np.random.default_rng(seed)
+
+    buf = df.iloc[-230:].copy() if len(df) > 230 else df.copy()
+    recent_vol_mean = (float(buf["Volume"].iloc[-20:].mean())
+                       if len(buf) >= 20 else float(buf["Volume"].mean()))
+
+    path_cols = [f"p{i}" for i in range(n_paths)]
+    close_w = pd.DataFrame({col: buf["Close"] for col in path_cols})
+    open_w  = pd.DataFrame({col: buf["Open"]  for col in path_cols})
+    high_w  = pd.DataFrame({col: buf["High"]  for col in path_cols})
+    low_w   = pd.DataFrame({col: buf["Low"]   for col in path_cols})
+    vol_w   = pd.DataFrame({col: buf["Volume"] for col in path_cols})
+
+    feature_names = getattr(predictor, "feature_names", None)
+    last_closes = np.full(n_paths, last_price)
+    paths = np.zeros((n_paths, horizon))
+
+    for step in range(horizon):
+        feat = build_ml_features_batch(close_w, open_w, high_w, low_w, vol_w)
+
+        if feature_names:
+            X_batch = np.column_stack([
+                feat[name].iloc[-1].values if name in feat else np.zeros(n_paths)
+                for name in feature_names
+            ])
+        else:
+            X_batch = np.column_stack([feat[name].iloc[-1].values for name in feat])
+        X_batch = np.nan_to_num(X_batch, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+
+        drifts = predictor.predict_next_return_batch(X_batch)
+        shocks = rng.normal(0.0, daily_vol, size=n_paths)
+        new_closes = last_closes * np.exp(drifts + shocks)
+
+        new_opens = last_closes * (1 + rng.normal(0, 0.001, size=n_paths))
+        new_highs = np.maximum(new_opens, new_closes) * (1 + np.abs(rng.normal(0, 0.003, size=n_paths)))
+        new_lows  = np.minimum(new_opens, new_closes) * (1 - np.abs(rng.normal(0, 0.003, size=n_paths)))
+        new_vols  = np.maximum(recent_vol_mean * (1 + rng.normal(0, 0.15, size=n_paths)), 1.0)
+
+        next_date = close_w.index[-1] + pd.tseries.offsets.BDay(1)
+        close_w.loc[next_date] = new_closes
+        open_w.loc[next_date]  = new_opens
+        high_w.loc[next_date]  = new_highs
+        low_w.loc[next_date]   = new_lows
+        vol_w.loc[next_date]   = new_vols
+
+        if len(close_w) > 250:
+            close_w = close_w.iloc[-230:]
+            open_w  = open_w.iloc[-230:]
+            high_w  = high_w.iloc[-230:]
+            low_w   = low_w.iloc[-230:]
+            vol_w   = vol_w.iloc[-230:]
+
+        paths[:, step] = new_closes
+        last_closes = new_closes
+
+    return paths
+
+
+def forecast_future(df: pd.DataFrame, horizon: int = 10, n_paths: int = 30) -> Dict:
     """
     Forecast next `horizon` business days.
-    Fast path: loads the universal checkpoint (cached) and runs inference
-    only — typically completes in under a second.
-    Fallback path: fits a small single-ticker model if no checkpoint exists.
+
+    Runs an ensemble of `n_paths` recursive Monte Carlo simulations (see
+    _simulate_one_path) — each one re-queries the model at every future
+    day using that simulation's own evolving trajectory, so the forecast
+    can genuinely show down days, not just a monotonic ramp. The "Forecast"
+    column is the per-day MEDIAN across all simulated paths; Lower_80/
+    Upper_80 are the empirical 10th/90th percentiles across the same
+    ensemble, so the central estimate and the confidence band are built
+    from the same consistent simulation rather than two different formulas.
+
+    Loads the universal checkpoint if available (fast inference, no
+    training); falls back to a small single-ticker model otherwise.
     """
     t0 = time.time()
     predictor = get_universal_predictor()
@@ -390,8 +508,7 @@ def forecast_future(df: pd.DataFrame, horizon: int = 10) -> Dict:
     last_price = float(df["Close"].iloc[-1])
 
     if mode == "universal":
-        X_row = _latest_feature_row(df, predictor.feature_names)
-        mean_ret = predictor.predict_next_return(X_row)
+        active_predictor = predictor
         n_features = len(predictor.feature_names)
         meta = predictor.meta
         in_sample_mae = meta.get("test_mae")
@@ -404,8 +521,7 @@ def forecast_future(df: pd.DataFrame, horizon: int = 10) -> Dict:
         if len(X_train) < 40:
             raise RuntimeError("Not enough history. Use a longer training period.")
         fb = _FallbackPredictor().fit(X_train, y_train)
-        X_row = _latest_feature_row(df, fb.feature_names)
-        mean_ret = fb.predict_next_return(X_row)
+        active_predictor = fb
         n_features = len(fb.feature_names)
 
         Xs_all = fb.scaler.transform(X_train.values)
@@ -417,17 +533,22 @@ def forecast_future(df: pd.DataFrame, horizon: int = 10) -> Dict:
         universe_size = 1
 
     future_dates = pd.bdate_range(df.index[-1], periods=horizon + 1)[1:]
-    lo_cone, hi_cone = _vol_cone(last_price, daily_vol, horizon)
+    paths = _simulate_paths(df, active_predictor, daily_vol, horizon, n_paths=n_paths)
 
-    cum = 0.0
+    median_path = np.median(paths, axis=0)
+    lo_path = np.percentile(paths, 10, axis=0)
+    hi_path = np.percentile(paths, 90, axis=0)
+
     rows = []
+    prev_price = last_price
     for i, date in enumerate(future_dates):
-        cum += mean_ret
-        price = last_price * np.exp(cum)
-        rows.append({"Date": date, "Forecast": round(price, 4),
-                     "Lower_80": round(float(lo_cone[i]), 4),
-                     "Upper_80": round(float(hi_cone[i]), 4),
-                     "Log_Return": round(mean_ret, 6)})
+        day_ret = np.log(median_path[i] / prev_price) if prev_price > 0 else 0.0
+        rows.append({"Date": date, "Forecast": round(float(median_path[i]), 4),
+                     "Lower_80": round(float(lo_path[i]), 4),
+                     "Upper_80": round(float(hi_path[i]), 4),
+                     "Log_Return": round(float(day_ret), 6)})
+        prev_price = median_path[i]
+
     forecast_df = pd.DataFrame(rows).set_index("Date")
 
     elapsed = round(time.time() - t0, 2)
@@ -439,7 +560,7 @@ def forecast_future(df: pd.DataFrame, horizon: int = 10) -> Dict:
         "daily_volatility": round(daily_vol * 100, 4),
         "n_features": n_features, "n_train": n_train,
         "universe_size": universe_size, "trained_at": trained_at,
-        "elapsed_seconds": elapsed,
+        "elapsed_seconds": elapsed, "n_paths": n_paths,
         "models_available": {"xgboost": _XGB, "lightgbm": _LGB},
     }
 
