@@ -105,8 +105,10 @@ GLOBAL_CSS = """
 }
 .sp-topbar-logo {
   width: 36px; height: 36px; border-radius: 6px;
-  object-fit: contain; background: #fff;
-  padding: 2px;
+  object-fit: contain;
+  background: rgba(255,255,255,0.06);
+  padding: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
 }
 .sp-topbar-logo-placeholder {
   width: 36px; height: 36px; border-radius: 6px;
@@ -305,16 +307,25 @@ def top_bar(ticker: str, name: str, price: float, change: float,
     flag   = "🇮🇳" if market in ("NSE", "BSE") else "🇺🇸"
     initials = esc((name or ticker)[:2].upper())
 
+    # Strategy: show the initials badge immediately (never breaks),
+    # then swap to the real logo in the background only if it loads.
+    # This avoids any broken-image icon regardless of network conditions.
     if logo_url:
         logo_html = (
-            f'<img src="{logo_url}" class="sp-topbar-logo" '
-            f'onerror="this.style.display=\'none\';'
-            f'this.nextSibling.style.display=\'flex\'" />'
-            f'<div class="sp-topbar-logo-placeholder" style="display:none">'
-            f'{initials}</div>')
+            # Initials badge shown by default
+            f'<div class="sp-topbar-logo-placeholder" id="sp-logo-ph">{initials}</div>'
+            # Hidden img — swaps in on success, silently removed on failure
+            f'<img src="{logo_url}" '
+            f'style="display:none;width:36px;height:36px;border-radius:6px;'
+            f'object-fit:contain;padding:4px;'
+            f'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08)" '
+            f'onload="this.style.display=\'block\';'
+            f'var ph=document.getElementById(\'sp-logo-ph\');'
+            f'if(ph)ph.style.display=\'none\';" '
+            f'onerror="this.remove();" />'
+        )
     else:
-        logo_html = (
-            f'<div class="sp-topbar-logo-placeholder">{initials}</div>')
+        logo_html = f'<div class="sp-topbar-logo-placeholder">{initials}</div>'
 
     st.markdown(
         f'<div class="sp-topbar">'

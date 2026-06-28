@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from core.data_fetcher  import fetch_ohlcv, currency_symbol, detect_market
 from core.indicators    import rsi, generate_signals
 from core.risk_metrics  import compute_returns, annualised_volatility, var_historical
-from utils.helpers      import inject_css, section_header, kpi_row, kpi_card, fmt_pct, esc
+from utils.helpers      import inject_css, section_header, kpi_row, kpi_card, fmt_pct, esc, sidebar_brand, footer_bar
 from utils.charts       import T, BASE, COLORS
 import plotly.graph_objects as go
 inject_css()

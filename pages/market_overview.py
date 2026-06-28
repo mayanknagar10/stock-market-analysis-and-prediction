@@ -7,7 +7,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.data_fetcher import fetch_ohlcv, currency_symbol
-from utils.helpers     import inject_css, section_header, esc
+from utils.helpers     import inject_css, section_header, esc, sidebar_brand, footer_bar
 from utils.charts      import T, BASE
 import plotly.graph_objects as go
 inject_css()

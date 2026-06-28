@@ -12,7 +12,7 @@ from core.indicators    import (rsi, macd, ema, bollinger_bands, historical_vola
 from core.risk_metrics  import (full_risk_report, compute_returns, drawdown_series,
                                  annualised_volatility)
 from utils.helpers      import (inject_css, section_header, kpi_row, kpi_card,
-                                 fmt_price, fmt_pct, fmt_pct_plain, fmt_large, esc)
+                                 fmt_price, fmt_pct, fmt_pct_plain, fmt_large, esc, sidebar_brand, footer_bar)
 from utils.charts       import T, BASE, COLORS
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots

@@ -9,7 +9,7 @@ from core.data_fetcher  import fetch_ohlcv, PERIOD_MAP, detect_market, currency_
 from core.risk_metrics  import (compute_returns, annualised_return, annualised_volatility,
                                  sharpe_ratio, sortino_ratio, drawdown_analysis, var_historical)
 from utils.helpers      import (inject_css, section_header, kpi_row, kpi_card,
-                                 fmt_pct, fmt_large, esc)
+                                 fmt_pct, fmt_large, esc, sidebar_brand, footer_bar)
 from utils.charts       import correlation_heatmap, T, BASE, COLORS
 import plotly.graph_objects as go
 inject_css()
