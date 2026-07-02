@@ -10,7 +10,7 @@ from core.risk_metrics  import (full_risk_report, monte_carlo, compute_returns,
                                  var_historical, annualised_return, annualised_volatility,
                                  drawdown_series)
 from utils.helpers      import (inject_css, section_header, kpi_row, kpi_card,
-                                 fmt_pct, fmt_pct_plain, esc, sidebar_brand, footer_bar)
+                                 fmt_pct, fmt_pct_plain, esc, footer_bar, sidebar_brand)
 from utils.charts       import (returns_distribution, drawdown_chart, monte_carlo_chart, T, BASE)
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots

@@ -108,7 +108,49 @@ def get_logo_url(ticker: str, website: str = "") -> str:
 
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_ohlcv(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
-    """Fetch OHLCV from Yahoo Finance. Returns empty DataFrame on failure."""
+    """
+    Fetch OHLCV. Routes automatically:
+      - Crypto tickers (BTC-USD, ETH, etc.) -> CoinGecko (no key needed)
+      - Everything else -> Yahoo Finance, with a Stooq fallback (no key
+        needed either) if Yahoo Finance fails or rate-limits.
+    Returns empty DataFrame only if every source fails.
+    """
+    t = ticker.upper().strip()
+
+    # Route crypto tickers to CoinGecko first — no key, no login
+    try:
+        from core.external_data import is_crypto_ticker, fetch_crypto_history
+        if is_crypto_ticker(t):
+            days_map = {"1mo": 30, "3mo": 90, "6mo": 182, "1y": 365,
+                       "2y": 730, "5y": 1825, "max": 1825}
+            days = days_map.get(period, 365)
+            df = fetch_crypto_history(t, days=days)
+            if not df.empty:
+                return df
+            # fall through to Yahoo Finance below if CoinGecko has no mapping
+    except Exception:
+        pass
+
+    df = _fetch_yahoo_ohlcv(t, period, interval)
+    if not df.empty:
+        return df
+
+    # Yahoo Finance failed or returned empty — try Stooq as a free,
+    # no-login fallback (best coverage for US tickers; limited for NSE)
+    try:
+        from core.external_data import fetch_stooq_ohlcv
+        df_fallback = fetch_stooq_ohlcv(t)
+        if not df_fallback.empty:
+            return df_fallback
+    except Exception:
+        pass
+
+    return pd.DataFrame()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _fetch_yahoo_ohlcv(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
+    """Primary OHLCV source — Yahoo Finance via yfinance, no key needed."""
     try:
         df = yf.Ticker(ticker.upper().strip()).history(
             period=period, interval=interval, auto_adjust=True

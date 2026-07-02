@@ -62,6 +62,8 @@ pg = st.navigation(
                     title="Compare",           icon="⚖️"),
             st.Page("pages/market_overview.py",
                     title="Market Overview",   icon="🌍"),
+            st.Page("pages/global_data.py",
+                    title="Global Data",       icon="🔓"),
         ],
     },
     position="sidebar",

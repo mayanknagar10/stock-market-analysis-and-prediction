@@ -7,7 +7,7 @@ from core.indicators   import (rsi,macd,bollinger_bands,stochastic,atr,keltner_c
                                 chaikin_money_flow,historical_volatility,parabolic_sar,
                                 volume_ratio,ema,sma,generate_signals)
 from utils.helpers     import (inject_css,section_header,signal_badge,signals_table,
-                                esc,kpi_row,kpi_card,fmt_price,sidebar_brand,footer_bar)
+                                esc,kpi_row,kpi_card,fmt_price,footer_bar,sidebar_brand)
 from utils.charts      import multi_panel_chart, COLORS, T, BASE
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots

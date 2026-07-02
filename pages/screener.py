@@ -7,7 +7,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.data_fetcher import fetch_ohlcv, fetch_fundamentals, currency_symbol
 from core.indicators   import rsi, macd, ema, bollinger_bands, generate_signals, volume_ratio
-from utils.helpers     import inject_css, section_header, kpi_row, kpi_card, fmt_large, esc, sidebar_brand, footer_bar
+from utils.helpers     import (inject_css, section_header, kpi_row, kpi_card,
+                                fmt_large, esc, footer_bar, sidebar_brand)
 import plotly.graph_objects as go
 inject_css()
 
@@ -51,8 +52,32 @@ with st.sidebar:
         '<span style="font-size:10px;color:#8B949E;font-weight:400;display:block;'
         'letter-spacing:.1em;margin-top:2px;">ANALYTICS TERMINAL</span></div>',
         unsafe_allow_html=True)
+
+    # ── Load a previously saved screen (pre-fills filters below) ───────────
+    if "saved_screens" not in st.session_state:
+        st.session_state["saved_screens"] = {}
+    if st.session_state["saved_screens"]:
+        load_choice = st.selectbox(
+            "📂 Load saved screen",
+            ["— Start fresh —"] + list(st.session_state["saved_screens"].keys()))
+        if load_choice != "— Start fresh —":
+            _loaded = st.session_state["saved_screens"][load_choice]
+        else:
+            _loaded = {}
+    else:
+        _loaded = {}
+
+    _defaults = {
+        "market_choice": "🇮🇳 NSE — Nifty 50", "rsi_min": 0, "rsi_max": 100,
+        "req_ma": "Any", "req_sig": "Any", "pe_min": 0.0, "pe_max": 80.0,
+        "beta_max": 3.0, "div_min": 0.0,
+    }
+    _d = {**_defaults, **_loaded}
+
     market_choice = st.radio("Market", ["🇮🇳 NSE — Nifty 50", "🇺🇸 US — S&P 500", "✏️ Custom"],
-                             index=0, label_visibility="collapsed")
+                             index=["🇮🇳 NSE — Nifty 50", "🇺🇸 US — S&P 500", "✏️ Custom"].index(_d["market_choice"])
+                             if _d["market_choice"] in ["🇮🇳 NSE — Nifty 50","🇺🇸 US — S&P 500","✏️ Custom"] else 0,
+                             label_visibility="collapsed")
     if "Custom" in market_choice:
         raw = st.text_area("Tickers", value="RELIANCE.NS, TCS.NS, AAPL", height=80)
         universe = [(t.strip().upper(), t.strip().upper(), "—")
@@ -66,25 +91,54 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**Fundamental Filters**")
-    pe_max   = st.slider("Max P/E", 0.0, 200.0, 80.0, 5.0)
-    pe_min   = st.slider("Min P/E", 0.0, 50.0, 0.0, 1.0)
-    beta_max = st.slider("Max Beta", 0.0, 4.0, 3.0, 0.25)
-    div_min  = st.slider("Min Div Yield %", 0.0, 10.0, 0.0, 0.5)
+    pe_max   = st.slider("Max P/E", 0.0, 200.0, float(_d["pe_max"]), 5.0)
+    pe_min   = st.slider("Min P/E", 0.0, 50.0, float(_d["pe_min"]), 1.0)
+    beta_max = st.slider("Max Beta", 0.0, 4.0, float(_d["beta_max"]), 0.25)
+    div_min  = st.slider("Min Div Yield %", 0.0, 10.0, float(_d["div_min"]), 0.5)
 
     st.divider()
     st.markdown("**Technical Filters**")
-    rsi_max = st.slider("RSI ≤", 0, 100, 100, 5)
-    rsi_min = st.slider("RSI ≥", 0, 100, 0, 5)
-    req_ma  = st.selectbox("MA Trend",
-        ["Any", "Price > EMA20", "Price > EMA50",
-         "EMA20 > EMA50 (Bullish)", "EMA20 < EMA50 (Bearish)"])
-    req_sig = st.selectbox("Signal",
-        ["Any", "BUY only", "SELL only", "STRONG BUY", "NEUTRAL only"])
+    rsi_max = st.slider("RSI ≤", 0, 100, int(_d["rsi_max"]), 5)
+    rsi_min = st.slider("RSI ≥", 0, 100, int(_d["rsi_min"]), 5)
+    _ma_opts = ["Any", "Price > EMA20", "Price > EMA50",
+               "EMA20 > EMA50 (Bullish)", "EMA20 < EMA50 (Bearish)"]
+    req_ma  = st.selectbox("MA Trend", _ma_opts,
+        index=_ma_opts.index(_d["req_ma"]) if _d["req_ma"] in _ma_opts else 0)
+    _sig_opts = ["Any", "BUY only", "SELL only", "STRONG BUY", "NEUTRAL only"]
+    req_sig = st.selectbox("Signal", _sig_opts,
+        index=_sig_opts.index(_d["req_sig"]) if _d["req_sig"] in _sig_opts else 0)
 
     st.divider()
     max_t = st.slider("Max to scan", 5, len(universe), min(20, len(universe)), 5)
     run_scan = st.button("▶  Run Screener", type="primary", use_container_width=True)
     st.caption("More tickers = slower scan")
+
+    # ── Saved screens (session-only, no login/database needed) ────────────
+    st.divider()
+    st.markdown("**💾 Saved Screens**")
+
+    current_config = {
+        "market_choice": market_choice, "rsi_min": rsi_min, "rsi_max": rsi_max,
+        "req_ma": req_ma, "req_sig": req_sig, "pe_min": pe_min, "pe_max": pe_max,
+        "beta_max": beta_max, "div_min": div_min,
+    }
+    screen_name = st.text_input("Screen name", placeholder="e.g. Oversold Bluechips",
+                                label_visibility="collapsed")
+    col_save, col_del = st.columns(2)
+    with col_save:
+        if st.button("💾 Save", use_container_width=True) and screen_name.strip():
+            st.session_state["saved_screens"][screen_name.strip()] = current_config
+            st.success(f"Saved '{screen_name.strip()}'")
+    saved_names = list(st.session_state["saved_screens"].keys())
+    if saved_names:
+        with col_del:
+            to_delete = st.selectbox("—", ["Delete…"] + saved_names,
+                                     label_visibility="collapsed")
+            if to_delete != "Delete…":
+                if st.button("🗑️ Confirm delete", use_container_width=True):
+                    del st.session_state["saved_screens"][to_delete]
+                    st.rerun()
+        st.caption(f"{len(saved_names)} saved screen(s) — session only, resets on browser refresh")
 
 mkt_lbl = "NSE" if "NSE" in market_choice else ("US" if "US" in market_choice else "Custom")
 st.markdown(
@@ -265,5 +319,137 @@ section_header("Export Results")
 csv = pd.DataFrame([{k: r[k] for k in ["Ticker","Sector","Price","1D %","RSI","P/E","Signal"]}
                      for r in results]).to_csv(index=False)
 st.download_button("⬇  Download CSV", csv, f"screener_{s_mkt.lower()}.csv", "text/csv")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SCREEN BACKTEST — "How would this screen have performed historically?"
+# ═══════════════════════════════════════════════════════════════════════════
+section_header("📊 Backtest This Screen")
+st.caption(
+    "Simulates re-running this screen's **technical filters** (RSI, MA trend, "
+    "volume) at regular intervals in the past, holding an equal-weight basket "
+    "of matches until the next rebalance. Fundamental filters (P/E, Beta, "
+    "Dividend) are excluded from the backtest — free APIs only provide "
+    "*today's* fundamentals, so using them to judge the past would be "
+    "look-ahead bias.")
+
+col_bt1, col_bt2, col_bt3, col_bt4 = st.columns(4)
+with col_bt1:
+    bt_lookback = st.selectbox("Lookback period", ["6 Months", "1 Year", "2 Years"], index=1)
+with col_bt2:
+    bt_freq = st.selectbox("Rebalance every", ["1 Week", "1 Month", "3 Months"], index=1)
+with col_bt3:
+    bt_max_pos = st.slider("Max positions", 3, 20, 10)
+with col_bt4:
+    st.markdown("<br>", unsafe_allow_html=True)
+    run_backtest = st.button("▶  Run Backtest", use_container_width=True)
+
+if run_backtest:
+    from core.screen_backtest import run_screen_backtest, run_benchmark_comparison
+
+    lookback_months_map = {"6 Months": 6, "1 Year": 12, "2 Years": 24}
+    freq_map = {"1 Week": "1W", "1 Month": "1ME", "3 Months": "3ME"}
+    period_map = {"6 Months": "1y", "1 Year": "2y", "2 Years": "3y"}  # fetch extra history for indicator warmup
+
+    bt_lb_months = lookback_months_map[bt_lookback]
+    bt_freq_code = freq_map[bt_freq]
+    fetch_period = period_map[bt_lookback]
+
+    bt_universe = universe[:max_t]
+    with st.spinner(f"Fetching {len(bt_universe)} tickers' history for backtest…"):
+        price_data = {}
+        for sym, name, sector in bt_universe:
+            df_bt = fetch_ohlcv(sym, fetch_period, "1d")
+            if not df_bt.empty and len(df_bt) >= 80:
+                price_data[sym] = df_bt
+
+    if len(price_data) < 2:
+        st.warning("Not enough historical data loaded to run a backtest. Try a smaller universe or shorter lookback.")
+    else:
+        with st.spinner(f"Running backtest across {len(price_data)} tickers…"):
+            bt_result = run_screen_backtest(
+                price_data, rebalance_freq=bt_freq_code, lookback_months=bt_lb_months,
+                rsi_min=rsi_min, rsi_max=rsi_max, ma_trend=req_ma,
+                min_vol_ratio=0.0, max_positions=bt_max_pos,
+            )
+
+        m = bt_result["metrics"]
+        pv = bt_result["portfolio_value"]
+
+        if not m or pv.empty:
+            st.info(
+                "This screen matched nothing across the entire backtest window — "
+                "try relaxing the RSI range or MA trend filter."
+            )
+        else:
+            kpi_row([
+                kpi_card("Total Return", f"{m['total_return_pct']:+.2f}%", bt_lookback,
+                         "pos" if m['total_return_pct'] >= 0 else "neg"),
+                kpi_card("CAGR", f"{m['cagr_pct']:+.2f}%", "Annualised",
+                         "pos" if m['cagr_pct'] >= 0 else "neg"),
+                kpi_card("Sharpe Ratio", f"{m['sharpe_ratio']:.2f}", ">1 = good",
+                         "pos" if m['sharpe_ratio'] >= 1 else ""),
+                kpi_card("Max Drawdown", f"{m['max_drawdown_pct']:.2f}%", "", "neg"),
+                kpi_card("Win Rate", f"{m['win_rate_pct']:.1f}%", "of rebalance periods"),
+                kpi_card("Rebalances", str(m['n_rebalances']), bt_freq),
+                kpi_card("Avg Matches", str(m['avg_matches_per_rebalance']), "per rebalance"),
+            ])
+
+            # Benchmark comparison
+            bench_sym = "^NSEI" if "NSE" in market_choice else "^GSPC"
+            bench_df = fetch_ohlcv(bench_sym, fetch_period, "1d")
+            bench_indexed = run_benchmark_comparison(bench_df, pv) if not bench_df.empty else pd.Series(dtype=float)
+
+            fig_bt = go.Figure()
+            fig_bt.add_trace(go.Scatter(
+                x=pv.index, y=pv.values, name="Screen Portfolio",
+                line=dict(color="#3FB950", width=2.2)))
+            if not bench_indexed.empty:
+                fig_bt.add_trace(go.Scatter(
+                    x=bench_indexed.index, y=bench_indexed.values,
+                    name=f"Benchmark ({bench_sym})",
+                    line=dict(color="#8B949E", width=1.5, dash="dot")))
+            fig_bt.add_hline(y=100, line_color="#30363D", line_dash="dot", line_width=1)
+            fig_bt.update_layout(
+                plot_bgcolor="#0D1117", paper_bgcolor="#0D1117", height=380,
+                font=dict(family="IBM Plex Mono, monospace", color="#C9D1D9", size=11),
+                margin=dict(l=8, r=8, t=36, b=8),
+                xaxis=dict(gridcolor="#21262D"), yaxis=dict(gridcolor="#21262D"),
+                title=dict(text=f"Screen Backtest — {bt_lookback}, rebalanced {bt_freq.lower()}", font_size=12),
+                legend=dict(bgcolor="rgba(0,0,0,0)"),
+            )
+            st.plotly_chart(fig_bt, use_container_width=True, config={"displayModeBar": False})
+
+            with st.expander("📋 Rebalance-by-rebalance detail"):
+                log_rows = ""
+                td = "border-bottom:1px solid #21262D;font-family:'IBM Plex Mono',monospace"
+                for entry in bt_result["rebalance_log"]:
+                    tickers_str = ", ".join(entry["matched_tickers"][:8])
+                    if entry["n_matched"] > 8:
+                        tickers_str += f" +{entry['n_matched']-8} more"
+                    log_rows += (
+                        f'<tr><td style="padding:6px 10px;{td};font-size:11px;color:#8B949E">'
+                        f'{entry["date"].strftime("%d %b %Y")}</td>'
+                        f'<td style="padding:6px 10px;{td};font-size:11px;color:#C9D1D9">'
+                        f'{entry["n_matched"]}</td>'
+                        f'<td style="padding:6px 10px;{td};font-size:10px;color:#8B949E">'
+                        f'{esc(tickers_str) if tickers_str else "—"}</td></tr>')
+                th_ = ("padding:7px 10px;text-align:left;font-family:'IBM Plex Mono',monospace;"
+                       "font-size:9px;color:#8B949E;text-transform:uppercase")
+                st.markdown(
+                    f'<table style="width:100%;border-collapse:collapse">'
+                    f'<thead><tr style="background:#21262D">'
+                    f'<th style="{th_}">Date</th><th style="{th_}">Matched</th>'
+                    f'<th style="{th_}">Tickers</th></tr></thead>'
+                    f'<tbody>{log_rows}</tbody></table>',
+                    unsafe_allow_html=True)
+
+            st.markdown(
+                '<div style="background:#161B22;border:1px solid #30363D;border-radius:6px;'
+                'padding:10px 14px;margin-top:12px;font-size:11px;color:#8B949E;'
+                'font-family:\'IBM Plex Mono\',monospace;line-height:1.6">'
+                '⚠️ Historical backtest — technical filters only, equal-weighted, no '
+                'transaction costs or slippage modelled. Past performance of a rules-'
+                'based screen does not predict future results. <b>Not financial advice.</b>'
+                '</div>', unsafe_allow_html=True)
 
 footer_bar()
