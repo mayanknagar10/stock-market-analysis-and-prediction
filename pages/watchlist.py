@@ -105,11 +105,33 @@ kpi_row([
 ])
 
 # ── Alert banners ──────────────────────────────────────────────────────────
+from core.notifications import push_notification, browser_notify, notification_permission_prompt
+
+with st.expander("🔔 Enable desktop alerts for this watchlist", expanded=False):
+    st.caption("Fires a real browser notification while this tab is open — no account, no email needed.")
+    notification_permission_prompt()
+
 for r in live:
     if r["at_tgt"]:
         st.markdown(f'<div style="background:rgba(63,185,80,0.12);border:1px solid #3FB950;border-radius:6px;padding:10px 14px;margin-bottom:6px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#3FB950">🎯 <b>{r["flag"]} {esc(r["ticker"])}</b> — {r["sym"]}{r["last"]:,.2f} reached target {r["sym"]}{r["target"]:,.2f}</div>',unsafe_allow_html=True)
+        dedup = f"target_hit:{r['ticker']}:{r['target']}"
+        was_new = push_notification(
+            f"🎯 {r['ticker']} hit target",
+            f"{r['sym']}{r['last']:,.2f} reached target {r['sym']}{r['target']:,.2f}",
+            level="success", dedup_key=dedup)
+        if was_new:
+            browser_notify(f"🎯 {r['ticker']} hit target",
+                           f"{r['sym']}{r['last']:,.2f} reached your target", tag=dedup)
     if r["at_stop"]:
         st.markdown(f'<div style="background:rgba(248,81,73,0.12);border:1px solid #F85149;border-radius:6px;padding:10px 14px;margin-bottom:6px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#F85149">🛑 <b>{r["flag"]} {esc(r["ticker"])}</b> — {r["sym"]}{r["last"]:,.2f} breached stop {r["sym"]}{r["stop"]:,.2f}</div>',unsafe_allow_html=True)
+        dedup = f"stop_hit:{r['ticker']}:{r['stop']}"
+        was_new = push_notification(
+            f"🛑 {r['ticker']} hit stop-loss",
+            f"{r['sym']}{r['last']:,.2f} breached stop {r['sym']}{r['stop']:,.2f}",
+            level="danger", dedup_key=dedup)
+        if was_new:
+            browser_notify(f"🛑 {r['ticker']} hit stop-loss",
+                           f"{r['sym']}{r['last']:,.2f} breached your stop", tag=dedup)
 
 # ── Watchlist table ────────────────────────────────────────────────────────
 section_header("Live Watchlist")

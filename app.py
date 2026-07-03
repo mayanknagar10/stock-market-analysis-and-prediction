@@ -23,12 +23,14 @@ st.set_page_config(
     menu_items={"About": "Professional Stock Market Analysis Platform · v6"},
 )
 
-from utils.helpers import inject_css, sidebar_brand, sidebar_user
+from utils.helpers import inject_css, sidebar_brand, sidebar_user, auth_widget
+from core.notifications import notification_bell
 inject_css()
 
-# ── Sidebar: brand + user section ────────────────────────────────────────────
+# ── Sidebar: brand + notifications ────────────────────────────────────────────
 with st.sidebar:
     sidebar_brand()
+    notification_bell()
     st.divider()
 
 # ── Navigation (clean labels, grouped sections, emoji icons) ─────────────────
@@ -74,28 +76,23 @@ pg.run()
 # ── Sidebar: user / login (rendered AFTER pg.run() so it appears below nav) ──
 with st.sidebar:
     st.divider()
-    # ── Auth integration point ──────────────────────────────────────────────
-    # To add real authentication, replace sidebar_user() with your chosen
-    # provider (Streamlit-Authenticator, Auth0, Google OAuth, etc.) and
-    # store the user object in st.session_state["user"].
-    #
-    # Example with streamlit-authenticator:
-    #   import streamlit_authenticator as stauth
-    #   authenticator = stauth.Authenticate(credentials, ...)
-    #   name, auth_status, username = authenticator.login('Login', 'sidebar')
-    #   if auth_status:
-    #       sidebar_user(name=name, role="Pro", initials=name[:2].upper())
-    #   else:
-    #       sidebar_user()  # shows guest login button
-    # ────────────────────────────────────────────────────────────────────────
+    # ── Local auth — zero external accounts, zero API keys ─────────────────
+    # Credentials live in data/users.json (hashlib-based, see core/auth.py).
+    # Streamlit Cloud's filesystem is ephemeral: self-registered accounts
+    # persist only until the app restarts, unless you commit data/users.json
+    # to git (same pattern as the ML checkpoint in models/). See core/auth.py
+    # module docstring for details and the upgrade path to a real database.
     user = st.session_state.get("user")
     if user:
         sidebar_user(
             name=user.get("name", "User"),
-            role=user.get("role", "Pro"),
+            role=user.get("role", "Free tier"),
             initials=(user.get("name", "U")[:2].upper()),
         )
+        if st.button("🚪  Logout", use_container_width=True):
+            del st.session_state["user"]
+            st.rerun()
     else:
-        sidebar_user()   # Guest view with Login placeholder button
+        auth_widget()
 
     st.caption("Data via Yahoo Finance · Not financial advice")

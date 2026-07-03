@@ -268,10 +268,7 @@ def sidebar_brand():
 
 def sidebar_user(name: str = "Guest", role: str = "Free tier",
                  initials: str = "G", on_login=None):
-    """
-    Renders a user card at the bottom of the sidebar.
-    Pass on_login callback (or leave None for a placeholder Login button).
-    """
+    """Renders the logged-in user card at the bottom of the sidebar."""
     st.markdown(
         f'<div class="sp-user-card">'
         f'<div class="sp-user-avatar">{esc(initials)}</div>'
@@ -279,13 +276,57 @@ def sidebar_user(name: str = "Guest", role: str = "Free tier",
         f'<div class="sp-user-role">{esc(role)}</div></div>'
         f'</div>',
         unsafe_allow_html=True)
-    if on_login:
-        if st.button("🔐  Login / Sign up", use_container_width=True):
-            on_login()
-    else:
-        # Placeholder — wire up your auth provider here
-        st.button("🔐  Login / Sign up", use_container_width=True,
-                  help="Auth integration point — connect your provider here")
+
+
+def auth_widget():
+    """
+    Full login/signup widget for the sidebar. Zero external accounts —
+    uses core.auth (local hashlib-based auth). Sets
+    st.session_state["user"] = {"username","name","role"} on success.
+
+    Call this in the "else" branch when st.session_state.get("user") is
+    None; call sidebar_user(...) with the logged-in details otherwise.
+    """
+    from core.auth import verify_login, create_user
+
+    tab_login, tab_signup = st.tabs(["Login", "Sign up"])
+
+    with tab_login:
+        with st.form("login_form", clear_on_submit=False):
+            u = st.text_input("Username", key="login_u")
+            p = st.text_input("Password", type="password", key="login_p")
+            submitted = st.form_submit_button("🔐 Login", use_container_width=True)
+        if submitted:
+            user = verify_login(u.strip(), p)
+            if user:
+                st.session_state["user"] = user
+                st.rerun()
+            else:
+                st.error("Incorrect username or password.")
+        st.caption("Try the demo: `demo` / `demo1234`")
+
+    with tab_signup:
+        with st.form("signup_form", clear_on_submit=False):
+            su_name = st.text_input("Display name", key="signup_name")
+            su_u    = st.text_input("Username (3-20 chars, a-z/0-9/_)", key="signup_u")
+            su_p    = st.text_input("Password (8+ chars)", type="password", key="signup_p")
+            su_p2   = st.text_input("Confirm password", type="password", key="signup_p2")
+            su_submitted = st.form_submit_button("✨ Create Account", use_container_width=True)
+        if su_submitted:
+            if su_p != su_p2:
+                st.error("Passwords don't match.")
+            else:
+                ok, msg = create_user(su_u.strip(), su_p, su_name)
+                if ok:
+                    st.success(f"{msg} You can log in now.")
+                else:
+                    st.error(msg)
+
+    st.markdown(
+        '<div style="font-size:9px;color:#8B949E;font-family:\'IBM Plex Mono\','
+        'monospace;line-height:1.5;margin-top:6px">'
+        '🔓 No external account — credentials stored locally, never sent '
+        'anywhere.</div>', unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────

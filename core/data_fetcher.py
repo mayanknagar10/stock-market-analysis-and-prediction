@@ -110,12 +110,26 @@ def get_logo_url(ticker: str, website: str = "") -> str:
 def fetch_ohlcv(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
     """
     Fetch OHLCV. Routes automatically:
+      - If a premium key (Polygon/Tiingo) is configured -> tries that
+        first for better data quality (see core/premium_providers.py).
+        Completely inert — zero cost — if no key is set, which is the
+        default state.
       - Crypto tickers (BTC-USD, ETH, etc.) -> CoinGecko (no key needed)
       - Everything else -> Yahoo Finance, with a Stooq fallback (no key
         needed either) if Yahoo Finance fails or rate-limits.
     Returns empty DataFrame only if every source fails.
     """
     t = ticker.upper().strip()
+
+    # Premium provider (Polygon/Tiingo) — only attempted if a key exists
+    try:
+        from core.premium_providers import has_premium_provider, fetch_premium_ohlcv
+        if has_premium_provider():
+            df = fetch_premium_ohlcv(t, period)
+            if df is not None and not df.empty:
+                return df
+    except Exception:
+        pass
 
     # Route crypto tickers to CoinGecko first — no key, no login
     try:
@@ -150,7 +164,18 @@ def fetch_ohlcv(ticker: str, period: str = "1y", interval: str = "1d") -> pd.Dat
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _fetch_yahoo_ohlcv(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
-    """Primary OHLCV source — Yahoo Finance via yfinance, no key needed."""
+    """
+    Primary OHLCV source — Yahoo Finance via yfinance, no key needed.
+    Wrapped in a disk cache (see core/cache_layer.py) beneath Streamlit's
+    own st.cache_data, so repeat requests are fast even across a full
+    app restart — not just within one running session.
+    """
+    from core.cache_layer import cached_call
+    return cached_call("yahoo_ohlcv", 300, _fetch_yahoo_ohlcv_uncached,
+                       ticker, period, interval)
+
+
+def _fetch_yahoo_ohlcv_uncached(ticker: str, period: str, interval: str) -> pd.DataFrame:
     try:
         df = yf.Ticker(ticker.upper().strip()).history(
             period=period, interval=interval, auto_adjust=True
@@ -168,6 +193,17 @@ def _fetch_yahoo_ohlcv(ticker: str, period: str = "1y", interval: str = "1d") ->
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_fundamentals(ticker: str) -> Dict:
+    """
+    Fetch fundamentals — public entry point. Adds a disk-cache layer
+    beneath Streamlit's own st.cache_data (see core/cache_layer.py) so
+    fundamentals survive an app restart, not just the current session.
+    See _fetch_fundamentals_uncached for the actual 3-strategy fetch logic.
+    """
+    from core.cache_layer import cached_call
+    return cached_call("fundamentals", 3600, _fetch_fundamentals_uncached, ticker)
+
+
+def _fetch_fundamentals_uncached(ticker: str) -> Dict:
     """
     Fetch fundamentals using three strategies in order of reliability:
 
