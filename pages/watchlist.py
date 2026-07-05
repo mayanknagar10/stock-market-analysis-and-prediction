@@ -42,6 +42,9 @@ with st.sidebar:
         if new_t in existing: st.warning(f"{new_t} already in watchlist.")
         else:
             st.session_state["watchlist"].append({"ticker":new_t,"name":new_n or new_t,"qty":new_q,"avg_buy":new_b,"target":new_tg,"stop":new_sl})
+            from core.personalization import track_watchlist_add
+            _wl_user = st.session_state.get("user")
+            track_watchlist_add(_wl_user.get("username") if _wl_user else None, new_t)
             st.success(f"✓ Added {new_t}")
     st.divider()
     if st.button("🔄  Reset defaults", use_container_width=True):

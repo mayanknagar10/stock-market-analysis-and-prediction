@@ -3,7 +3,9 @@
 Local, zero-external-account storage for this app.
 
 ## `users.json`
-Login credentials (username, salted+hashed password, display name, role).
+Login credentials (username, salted+hashed password, display name, role)
+**plus** personalization data (`view_history`, `watchlist_adds` — used
+for sector-based recommendations, see `core/personalization.py`).
 Created automatically on first run with a demo account (`demo` / `demo1234`).
 
 **Persistence on Streamlit Cloud:** the free tier's filesystem is

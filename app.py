@@ -51,6 +51,14 @@ pg = st.navigation(
             st.Page("pages/risk_analysis.py",
                     title="Risk Analysis",       icon="⚠️"),
         ],
+        "Quant": [
+            st.Page("pages/backtester.py",
+                    title="Strategy Backtester", icon="📊"),
+            st.Page("pages/factor_analysis.py",
+                    title="Factor Analysis",     icon="🧮"),
+            st.Page("pages/insights.py",
+                    title="Insights",            icon="🤖"),
+        ],
         "Portfolio": [
             st.Page("pages/portfolio.py",
                     title="Portfolio Tracker", icon="💼"),

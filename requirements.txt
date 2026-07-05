@@ -11,3 +11,6 @@ statsmodels>=0.14.1
 requests>=2.31.0
 matplotlib>=3.7.0
 diskcache>=5.6.3
+vectorbt>=0.26.0
+vaderSentiment>=3.3.2
+pandas_datareader>=0.10.0

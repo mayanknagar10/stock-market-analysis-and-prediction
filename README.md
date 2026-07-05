@@ -30,6 +30,30 @@ Opens at **http://localhost:8501**
 | **⚖️ Compare** | Side-by-side price, spread, indicators, risk table (green = winner), drawdown overlay |
 | **🌍 Market Overview** | Global indices strip, NSE/US top movers, sector heatmaps, VIX |
 | **⭐ Watchlist** | Add positions with targets & stop-loss, live P&L, alerts, sparklines |
+| **📊 Strategy Backtester** | Vectorized backtesting (vectorbt) — MA crossover, RSI reversion, MACD, Bollinger, Donchian — full metrics + trade log |
+| **🧮 Factor Analysis** | Fama-French factor exposures (free public data) + quant factor screening (Value/Momentum/Quality/Low-Vol) |
+| **🤖 Insights** | News sentiment (offline NLP), SEC filing sentiment, rule-based Q&A assistant, personalized recommendations |
+
+---
+
+## 🧠 Mid-Term Features (Phase 3)
+
+All built with **zero external accounts, zero API keys** — same philosophy as every prior phase.
+
+**Strategy Backtester** — `core/strategy_backtest.py`, powered by `vectorbt`. Six built-in strategies (MA Crossover, RSI Mean Reversion, MACD Signal Cross, Bollinger Band Bounce, Donchian Breakout, Buy & Hold benchmark), each with tunable parameters and a brute-force grid-search optimizer. Reports CAGR, Sharpe, Sortino, Calmar, max drawdown, win rate, profit factor, and a full downloadable trade log — with realistic fees and slippage applied per trade.
+
+**Factor Analysis** — `core/factor_models.py`. Two tools:
+- *Factor exposures*: regresses a stock's monthly returns against Fama-French factors (Market, Size, Value, Profitability, Investment) using free public data from Kenneth French's Dartmouth data library (via `pandas_datareader`, no key needed). Reports annualised alpha, factor betas, t-stats, and R². Verified against synthetic data with known true betas — the regression recovers them within a few percentage points.
+- *Quant factor screening*: ranks a universe of stocks by Value (inverse P/E), Momentum (12-1 month return), Quality (ROE + margins), and Low-Volatility — the standard building blocks of quantitative equity investing — using data already fetched elsewhere in the app.
+
+**Insights** — sentiment + alternative data + assistant, three features in one page:
+- *News sentiment*: `core/sentiment.py` uses VADER (lexicon-based, fully offline — no API, no rate limit) with a finance-specific vocabulary extension (upgrade/downgrade/beat/miss/etc.) layered on top of the general-purpose base dictionary.
+- *SEC filing sentiment*: same VADER engine applied to EDGAR filing excerpts (US tickers only — NSE/BSE file with SEBI, not the SEC).
+- *Rule-based assistant*: `core/assistant.py` — explicitly **not** an LLM. Pattern-matches question intent (price, RSI, MACD, signal, risk, forecast, sentiment) and answers using the exact same computations the rest of the app already trusts, so there's zero hallucination risk. Trades off open-ended flexibility for that guarantee. The `INTENT_HANDLERS` structure is designed to map directly onto LLM function-calling/tool-use patterns if you add a real LLM API key later.
+
+**Personalization** — `core/personalization.py` extends the local auth system (`data/users.json`) with per-user view history. Logged-in users get sector-based recommendations ("you often view IT stocks — here are others you haven't seen") computed from their own behavior, no collaborative filtering or external ML service required.
+
+**What's intentionally NOT built** (from the original mid-term roadmap): REST/GraphQL API server, broker integrations (Zerodha/IBKR), Twitter/Reddit sentiment (need developer accounts), and microservices/autoscaling infrastructure. These genuinely require either a paid account, a separate backend service, or an infrastructure decision that doesn't fit inside a Streamlit app's architecture — building a fake version would be misleading rather than useful.
 
 ---
 
