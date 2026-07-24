@@ -17,13 +17,12 @@ from core.data_fetcher import fetch_ohlcv, validate_ticker, PERIOD_MAP, detect_m
 from core.strategy_backtest import (run_strategy_backtest, optimize_strategy,
                                     list_strategies)
 from utils.helpers import (inject_css, section_header, kpi_row, kpi_card,
-                           fmt_price, esc, footer_bar, sidebar_brand)
+                           fmt_price, esc, footer_bar, top_bar_simple)
 from utils.charts import T, BASE, safe_layout
 import plotly.graph_objects as go
 inject_css()
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
     ticker = st.text_input("Ticker Symbol", value="AAPL",
                            placeholder="AAPL · RELIANCE.NS").upper().strip()
@@ -61,12 +60,7 @@ mkt = detect_market(ticker) if ticker else "US"
 _sym = currency_symbol("INR" if mkt in ("NSE", "BSE") else "USD")
 _flag = "🇮🇳" if mkt in ("NSE", "BSE") else "🇺🇸"
 
-st.markdown(
-    f'<div style="font-family:\'IBM Plex Mono\',monospace;padding:10px 0 6px;'
-    f'border-bottom:1px solid #30363D;margin-bottom:16px">'
-    f'<span style="font-size:20px;font-weight:600;color:#C9D1D9">Strategy Backtester</span>'
-    f'&nbsp;&nbsp;<span style="font-size:13px;color:#8B949E">{_flag} {esc(ticker)} · {strategy_name}</span>'
-    f'</div>', unsafe_allow_html=True)
+top_bar_simple("Strategy Backtester", f"{_flag} {ticker} · {strategy_name}")
 
 if not run_btn and not optimize_btn and "bt_strategy_result" not in st.session_state:
     st.markdown(

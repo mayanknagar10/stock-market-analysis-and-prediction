@@ -12,7 +12,7 @@ from core.indicators    import generate_signals, ema, sma, bollinger_bands
 from utils.helpers      import (inject_css, kpi_card, kpi_row, signal_badge,
                                  section_header, signals_table, esc,
                                  fmt_price, fmt_pct, fmt_large, fmt_pct_plain,
-                                 top_bar, footer_bar, sidebar_brand)
+                                 top_bar, footer_bar)
 from utils.charts import candlestick_chart
 import pandas as pd
 import plotly.graph_objects as go

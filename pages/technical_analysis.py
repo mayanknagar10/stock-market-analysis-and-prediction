@@ -1,22 +1,20 @@
 """Page 1 — Technical Analysis: 25+ indicators, multi-panel charts, pivot levels."""
 import streamlit as st, pandas as pd, numpy as np, sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__),".."))
-from core.data_fetcher import fetch_ohlcv,validate_ticker,PERIOD_MAP,detect_market,currency_symbol
+from core.data_fetcher import fetch_ohlcv,fetch_fundamentals,validate_ticker,PERIOD_MAP,detect_market,currency_symbol
 from core.indicators   import (rsi,macd,bollinger_bands,stochastic,atr,keltner_channels,
                                 donchian_channels,adx,williams_r,cci,obv,money_flow_index,
                                 chaikin_money_flow,historical_volatility,parabolic_sar,
                                 volume_ratio,ema,sma,generate_signals)
 from utils.helpers     import (inject_css,section_header,signal_badge,signals_table,
-                                esc,kpi_row,kpi_card,fmt_price,footer_bar,sidebar_brand)
+                                esc,kpi_row,kpi_card,fmt_price,footer_bar,top_bar)
 from utils.charts      import multi_panel_chart, COLORS, T, BASE
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 inject_css()
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
-    st.markdown('<div style="font-family:\'IBM Plex Mono\',monospace;font-size:16px;font-weight:600;color:#3FB950;padding:8px 0 16px;">📈 StockPro<span style="font-size:10px;color:#8B949E;font-weight:400;display:block;letter-spacing:.1em;margin-top:2px;">ANALYTICS TERMINAL</span></div>',unsafe_allow_html=True)
     ticker=st.text_input("Ticker Symbol",value="AAPL",placeholder="AAPL · RELIANCE.NS").upper().strip()
     period_label=st.selectbox("Time Period",list(PERIOD_MAP.keys()),index=3)
     period,interval=PERIOD_MAP[period_label]
@@ -37,8 +35,12 @@ with st.spinner(f"Loading {ticker}…"):
     df=fetch_ohlcv(ticker,period,interval)
 if df.empty: st.error("No data returned."); st.stop()
 
-mkt=detect_market(ticker); flag="🇮🇳" if mkt in ("NSE","BSE") else "🇺🇸"; c=df["Close"]
-st.markdown(f'<div style="font-family:\'IBM Plex Mono\',monospace;padding:10px 0 6px;border-bottom:1px solid #30363D;margin-bottom:16px"><span style="font-size:20px;font-weight:600;color:#C9D1D9">{esc(ticker)}</span>&nbsp;<span style="font-size:11px;color:#E3B341">{flag} {mkt}</span>&nbsp;&nbsp;<span style="font-size:13px;color:#8B949E">Technical Analysis</span><span style="float:right;font-size:12px;color:#3FB950">{len(df)} sessions · {df.index[0].strftime("%d %b %Y")} → {df.index[-1].strftime("%d %b %Y")}</span></div>',unsafe_allow_html=True)
+mkt=detect_market(ticker); c=df["Close"]
+info = fetch_fundamentals(ticker)
+last = float(c.iloc[-1]); prev = float(c.iloc[-2]) if len(c) > 1 else last
+chg = last - prev; chg_pct = (chg / prev * 100) if prev else 0.0
+curr_s = currency_symbol(info.get("currency", "INR" if mkt in ("NSE","BSE") else "USD"))
+top_bar(ticker, info.get("name", ticker), last, chg, chg_pct, curr_s, mkt, info.get("logo_url", ""))
 
 # KPIs
 section_header("Current Indicators")

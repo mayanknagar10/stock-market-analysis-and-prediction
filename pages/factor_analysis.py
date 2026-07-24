@@ -20,7 +20,7 @@ from core.factor_models import (fetch_fama_french_factors, compute_factor_exposu
                                 interpret_factor_betas, compute_composite_factor_scores,
                                 FF_FACTOR_SETS)
 from utils.helpers import (inject_css, section_header, kpi_row, kpi_card,
-                           esc, footer_bar, sidebar_brand)
+                           esc, footer_bar, top_bar_simple)
 from utils.charts import T, BASE, safe_layout
 import plotly.graph_objects as go
 inject_css()
@@ -41,7 +41,6 @@ SP500_UNIVERSE = [
 ]
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
     mode = st.radio("Analysis Type", ["📈 Factor Exposures (single stock)",
                                       "🔍 Quant Factor Screening (universe)"])
@@ -57,12 +56,7 @@ with st.sidebar:
         run_btn = st.button("▶  Run Screening", type="primary", use_container_width=True)
     st.caption("Fama-French data: free public download, no API key.")
 
-st.markdown(
-    f'<div style="font-family:\'IBM Plex Mono\',monospace;padding:10px 0 6px;'
-    f'border-bottom:1px solid #30363D;margin-bottom:16px">'
-    f'<span style="font-size:20px;font-weight:600;color:#C9D1D9">Factor Analysis</span>'
-    f'&nbsp;&nbsp;<span style="font-size:13px;color:#8B949E">{mode}</span></div>',
-    unsafe_allow_html=True)
+top_bar_simple("Factor Analysis", mode)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # MODE 1 — SINGLE-STOCK FACTOR EXPOSURES

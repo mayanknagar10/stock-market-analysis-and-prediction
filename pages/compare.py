@@ -13,7 +13,7 @@ from core.risk_metrics  import (full_risk_report, compute_returns, drawdown_seri
                                  annualised_volatility)
 from utils.helpers      import (inject_css, section_header, kpi_row, kpi_card,
                                  fmt_price, fmt_pct, fmt_pct_plain, fmt_large, esc,
-                                 footer_bar, sidebar_brand)
+                                 footer_bar)
 from utils.charts       import T, BASE, COLORS
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -23,9 +23,7 @@ inject_css()
 C1, C2 = "#3FB950", "#58A6FF"
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
-    st.markdown('<div style="font-family:\'IBM Plex Mono\',monospace;font-size:16px;font-weight:600;color:#3FB950;padding:8px 0 16px;">📈 StockPro<span style="font-size:10px;color:#8B949E;font-weight:400;display:block;letter-spacing:.1em;margin-top:2px;">ANALYTICS TERMINAL</span></div>', unsafe_allow_html=True)
     st.markdown("**Stocks to Compare**")
     ticker1 = st.text_input("Stock A", value="RELIANCE.NS", help="US: AAPL | NSE: RELIANCE.NS").upper().strip()
     ticker2 = st.text_input("Stock B", value="TCS.NS",      help="US: MSFT | NSE: TCS.NS").upper().strip()

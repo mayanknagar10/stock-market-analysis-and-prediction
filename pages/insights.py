@@ -23,7 +23,7 @@ from core.assistant import answer_question, SUGGESTED_QUESTIONS
 from core.personalization import (track_view, get_favorite_sectors,
                                   recommend_similar_stocks, get_user_stats)
 from utils.helpers import (inject_css, section_header, kpi_row, kpi_card,
-                           esc, footer_bar, sidebar_brand)
+                           esc, footer_bar, top_bar_simple)
 from utils.charts import T, BASE, safe_layout
 import plotly.graph_objects as go
 inject_css()
@@ -42,7 +42,6 @@ NIFTY50_SAMPLE = [
 ]
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
     ticker = st.text_input("Ticker Symbol", value="AAPL",
                            placeholder="AAPL · RELIANCE.NS").upper().strip()
@@ -53,13 +52,7 @@ mkt = detect_market(ticker) if ticker else "US"
 _sym = currency_symbol("INR" if mkt in ("NSE", "BSE") else "USD")
 _flag = "🇮🇳" if mkt in ("NSE", "BSE") else "🇺🇸"
 
-st.markdown(
-    f'<div style="font-family:\'IBM Plex Mono\',monospace;padding:10px 0 6px;'
-    f'border-bottom:1px solid #30363D;margin-bottom:16px">'
-    f'<span style="font-size:20px;font-weight:600;color:#C9D1D9">Insights</span>'
-    f'&nbsp;&nbsp;<span style="font-size:13px;color:#8B949E">{_flag} {esc(ticker)} · '
-    f'Sentiment · Assistant · Recommendations</span></div>',
-    unsafe_allow_html=True)
+top_bar_simple("Insights", f"{_flag} {ticker} · Sentiment · Assistant · Recommendations")
 
 if not ticker:
     st.info("Enter a ticker symbol in the sidebar.")

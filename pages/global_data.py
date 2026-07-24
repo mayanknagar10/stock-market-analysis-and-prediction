@@ -21,13 +21,12 @@ from core.external_data import (
     _COINGECKO_IDS,
 )
 from utils.helpers import (inject_css, section_header, kpi_row, kpi_card,
-                            esc, top_bar_simple, footer_bar, sidebar_brand)
+                            esc, top_bar_simple, footer_bar)
 from utils.charts import T, BASE
 import plotly.graph_objects as go
 inject_css()
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
     st.markdown(
         '<div style="background:rgba(63,185,80,0.08);border:1px solid #3FB950;'

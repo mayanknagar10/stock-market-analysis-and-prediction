@@ -9,7 +9,7 @@ from core.data_fetcher  import fetch_ohlcv, currency_symbol, detect_market
 from core.indicators    import rsi, generate_signals
 from core.risk_metrics  import compute_returns, annualised_volatility, var_historical
 from utils.helpers      import (inject_css, section_header, kpi_row, kpi_card,
-                                fmt_pct, esc, footer_bar, sidebar_brand)
+                                fmt_pct, esc, footer_bar, top_bar_simple)
 from utils.charts       import T, BASE, COLORS
 import plotly.graph_objects as go
 inject_css()
@@ -27,9 +27,7 @@ if "watchlist" not in st.session_state:
     st.session_state["watchlist"] = DEFAULT_WL.copy()
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
-    st.markdown('<div style="font-family:\'IBM Plex Mono\',monospace;font-size:16px;font-weight:600;color:#3FB950;padding:8px 0 16px;">📈 StockPro<span style="font-size:10px;color:#8B949E;font-weight:400;display:block;letter-spacing:.1em;margin-top:2px;">ANALYTICS TERMINAL</span></div>', unsafe_allow_html=True)
     st.markdown("**Add Position**")
     new_t  = st.text_input("Ticker",     placeholder="RELIANCE.NS · AAPL").upper().strip()
     new_n  = st.text_input("Label",      placeholder="Display name")
@@ -53,12 +51,7 @@ with st.sidebar:
     st.caption("NSE: add .NS  |  BSE: add .BO  |  US: plain symbol")
 
 wl = st.session_state["watchlist"]
-st.markdown(
-    f'<div style="font-family:\'IBM Plex Mono\',monospace;padding:10px 0 6px;'
-    f'border-bottom:1px solid #30363D;margin-bottom:16px">'
-    f'<span style="font-size:20px;font-weight:600;color:#C9D1D9">Watchlist</span>'
-    f'&nbsp;&nbsp;<span style="font-size:13px;color:#8B949E">{len(wl)} positions tracked</span>'
-    f'</div>', unsafe_allow_html=True)
+top_bar_simple("Watchlist", f"{len(wl)} positions tracked")
 
 if not wl:
     st.info("Your watchlist is empty. Add tickers using the sidebar.")

@@ -12,26 +12,17 @@ import numpy as np
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.data_fetcher import fetch_ohlcv, validate_ticker, PERIOD_MAP, detect_market, currency_symbol
+from core.data_fetcher import fetch_ohlcv, fetch_fundamentals, validate_ticker, PERIOD_MAP, detect_market, currency_symbol
 from core.models import (forecast_future, walk_forward_backtest,
                           universal_model_available, universal_model_metadata,
                           train_universal_model, reload_universal_predictor,
                           DEFAULT_TRAIN_UNIVERSE)
-from utils.helpers import inject_css, section_header, kpi_row, kpi_card, fmt_price, fmt_pct, esc, footer_bar, sidebar_brand
+from utils.helpers import inject_css, section_header, kpi_row, kpi_card, fmt_price, fmt_pct, esc, footer_bar, top_bar
 from utils.charts import prediction_chart, safe_layout, T
 import plotly.graph_objects as go
 inject_css()
 
-SIDEBAR_LOGO = (
-    '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:16px;font-weight:600;'
-    'color:#3FB950;padding:8px 0 16px;">📈 StockPro'
-    '<span style="font-size:10px;color:#8B949E;font-weight:400;display:block;'
-    'letter-spacing:.1em;margin-top:2px;">ANALYTICS TERMINAL</span></div>')
-
 with st.sidebar:
-    sidebar_brand()
-    st.divider()
-    st.markdown(SIDEBAR_LOGO, unsafe_allow_html=True)
     ticker = st.text_input("Ticker Symbol", value="AAPL",
                            placeholder="AAPL · RELIANCE.NS").upper().strip()
     period_label = st.selectbox("Data Period", list(PERIOD_MAP.keys()), index=3,
@@ -190,16 +181,17 @@ mode_badge = (
     'border-radius:4px;padding:2px 8px;font-size:10px;margin-left:8px">⚠️ Fallback (per-ticker)</span>'
 )
 
+info = fetch_fundamentals(tkr)
+prev_p = float(df["Close"].iloc[-2]) if len(df) > 1 else last_p
+day_chg = last_p - prev_p
+day_chg_pct = (day_chg / prev_p * 100) if prev_p else 0.0
+top_bar(tkr, info.get("name", tkr), last_p, day_chg, day_chg_pct, _sym, _mkt, info.get("logo_url", ""))
 st.markdown(
-    f'<div style="font-family:\'IBM Plex Mono\',monospace;padding:10px 0 6px;'
-    f'border-bottom:1px solid #30363D;margin-bottom:16px">'
-    f'<span style="font-size:20px;font-weight:600;color:#C9D1D9">{esc(tkr)}</span>'
-    f'&nbsp;<span style="font-size:11px;color:#E3B341">{_flag} {_mkt}</span>'
-    f'&nbsp;&nbsp;<span style="font-size:13px;color:#8B949E">'
-    f'Price Forecast — {horizon}-Day Horizon</span>{mode_badge}'
+    f'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;'
+    f'color:#8B949E;margin:-10px 0 16px">'
+    f'Price Forecast — {horizon}-Day Horizon {mode_badge}'
     f'<span style="float:right;font-size:11px;color:#3FB950">'
-    f'Inference time: {elapsed}s'
-    f'</span></div>', unsafe_allow_html=True)
+    f'Inference time: {elapsed}s</span></div>', unsafe_allow_html=True)
 
 if mode == "fallback":
     st.warning(

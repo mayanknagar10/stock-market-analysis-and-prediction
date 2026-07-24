@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from core.data_fetcher import fetch_ohlcv, fetch_fundamentals, currency_symbol
 from core.indicators   import rsi, macd, ema, bollinger_bands, generate_signals, volume_ratio
 from utils.helpers     import (inject_css, section_header, kpi_row, kpi_card,
-                                fmt_large, esc, footer_bar, sidebar_brand)
+                                fmt_large, esc, footer_bar, top_bar_simple)
 import plotly.graph_objects as go
 inject_css()
 
@@ -44,14 +44,7 @@ SIG_COLS = {"STRONG BUY": "#3FB950", "BUY": "#3FB950", "NEUTRAL": "#8B949E",
             "SELL": "#F85149", "STRONG SELL": "#F85149"}
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
-    st.markdown(
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:16px;font-weight:600;'
-        'color:#3FB950;padding:8px 0 16px;">📈 StockPro'
-        '<span style="font-size:10px;color:#8B949E;font-weight:400;display:block;'
-        'letter-spacing:.1em;margin-top:2px;">ANALYTICS TERMINAL</span></div>',
-        unsafe_allow_html=True)
 
     # ── Load a previously saved screen (pre-fills filters below) ───────────
     if "saved_screens" not in st.session_state:
@@ -141,13 +134,7 @@ with st.sidebar:
         st.caption(f"{len(saved_names)} saved screen(s) — session only, resets on browser refresh")
 
 mkt_lbl = "NSE" if "NSE" in market_choice else ("US" if "US" in market_choice else "Custom")
-st.markdown(
-    f'<div style="font-family:\'IBM Plex Mono\',monospace;padding:10px 0 6px;'
-    f'border-bottom:1px solid #30363D;margin-bottom:16px">'
-    f'<span style="font-size:20px;font-weight:600;color:#C9D1D9">Stock Screener</span>'
-    f'&nbsp;&nbsp;<span style="font-size:13px;color:#8B949E">'
-    f'{mkt_lbl} · {len(universe[:max_t])} tickers in scope</span></div>',
-    unsafe_allow_html=True)
+top_bar_simple("Stock Screener", f"{mkt_lbl} · {len(universe[:max_t])} tickers in scope")
 
 if not run_scan and "screener_results" not in st.session_state:
     st.markdown(

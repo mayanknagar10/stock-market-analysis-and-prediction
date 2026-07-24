@@ -7,7 +7,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.data_fetcher import fetch_ohlcv, currency_symbol
-from utils.helpers     import inject_css, section_header, esc, footer_bar, sidebar_brand
+from utils.helpers     import inject_css, section_header, esc, footer_bar, top_bar_simple
 from utils.charts      import T, BASE
 import plotly.graph_objects as go
 inject_css()
@@ -54,9 +54,7 @@ NSE_SECTORS = ["IT","Banking","FMCG","Pharma","Auto","Energy","Industrials","NBF
 US_SECTORS  = ["Technology","Financials","Healthcare","Consumer","Communication","Energy","Industrials","Staples"]
 
 with st.sidebar:
-    sidebar_brand()
     st.divider()
-    st.markdown('<div style="font-family:\'IBM Plex Mono\',monospace;font-size:16px;font-weight:600;color:#3FB950;padding:8px 0 16px;">📈 StockPro<span style="font-size:10px;color:#8B949E;font-weight:400;display:block;letter-spacing:.1em;margin-top:2px;">ANALYTICS TERMINAL</span></div>', unsafe_allow_html=True)
     market_focus = st.radio("Market Focus", ["🌍 Global","🇮🇳 India (NSE)","🇺🇸 US"], index=0)
     period_label = st.selectbox("Chart Period", ["1 Month","3 Months","6 Months","1 Year"], index=2)
     period_map   = {"1 Month":"1mo","3 Months":"3mo","6 Months":"6mo","1 Year":"1y"}
@@ -66,14 +64,7 @@ with st.sidebar:
     st.caption("Data via Yahoo Finance · Not financial advice")
 
 now_str = datetime.utcnow().strftime("%d %b %Y  %H:%M UTC")
-st.markdown(
-    f'<div style="font-family:\'IBM Plex Mono\',monospace;padding:10px 0 6px;'
-    f'border-bottom:1px solid #30363D;margin-bottom:16px;display:flex;'
-    f'align-items:baseline;justify-content:space-between">'
-    f'<div><span style="font-size:20px;font-weight:600;color:#C9D1D9">Market Overview</span>'
-    f'&nbsp;&nbsp;<span style="font-size:13px;color:#8B949E">{market_focus}</span></div>'
-    f'<span style="font-size:11px;color:#8B949E">Updated: {now_str}</span>'
-    f'</div>', unsafe_allow_html=True)
+top_bar_simple("Market Overview", f"{market_focus} · Updated {now_str}")
 
 # ── Index cards ────────────────────────────────────────────────────────────
 section_header("Global Indices")
