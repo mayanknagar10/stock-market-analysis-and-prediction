@@ -1,9 +1,17 @@
-undefined
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.DS_Store
+.streamlit/secrets.toml
+*.log
+data/cache/
+
 # Local development dependencies and evaluation data
 .deps/
 .venv/
 .pytest_cache/
-__pycache__/
 data/snapshots/
 data/evaluations/
 data/v5/
