@@ -1,0 +1,35 @@
+{
+  "sources": {
+    "market_india": "^NSEI",
+    "market_us": "^GSPC",
+    "sector_india_Energy": "^CNXENERGY",
+    "sector_india_IT": "^CNXIT",
+    "sector_india_Bank": "^NSEBANK",
+    "sector_us_Technology": "XLK",
+    "sector_us_Financials": "XLF",
+    "sector_us_Energy": "XLE",
+    "nasdaq": "^IXIC",
+    "vix": "^VIX",
+    "india_vix": "^INDIAVIX",
+    "usd_inr": "INR=X",
+    "dxy": "DX-Y.NYB",
+    "brent": "BZ=F",
+    "wti": "CL=F",
+    "gold": "GC=F",
+    "us_yield": "^TNX",
+    "nikkei": "^N225",
+    "hang_seng": "^HSI"
+  },
+  "sector_map": {
+    "RELIANCE.NS": "sector_india_Energy",
+    "TCS.NS": "sector_india_IT",
+    "HDFCBANK.NS": "sector_india_Bank",
+    "AAPL": "sector_us_Technology",
+    "JPM": "sector_us_Financials",
+    "XOM": "sector_us_Energy"
+  },
+  "limitations": [
+    "Current-universe/sector mapping; not a historical membership archive",
+    "Free Yahoo reference series can be revised; PIT certification false"
+  ]
+}

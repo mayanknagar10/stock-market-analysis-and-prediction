@@ -173,3 +173,8 @@ def test_microsecond_and_nanosecond_timestamps_join_without_rounding():
     assert align_available(predictions,source).value.iloc[0]==1.
     before=pd.DatetimeIndex(['2024-01-01T10:00:00Z']).as_unit('us')
     assert pd.isna(align_available(before,source).value.iloc[0])
+
+
+def test_weekend_special_session_uses_conservative_information_cutoff():
+    cutoff=session_cutoffs(pd.DatetimeIndex(['2024-11-03']),'india_equity')
+    assert cutoff[0]==pd.Timestamp('2024-11-04T00:00Z')

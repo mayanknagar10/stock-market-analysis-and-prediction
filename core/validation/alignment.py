@@ -26,7 +26,16 @@ def session_cutoffs(sessions,family,phase='eod'):
     zone,close,preopen = choices[family]
     clock = close if phase=='eod' else preopen
     dates = [str(day.date())+' '+clock for day in days]
-    return pd.DatetimeIndex(dates).tz_localize(zone,ambiguous='raise',nonexistent='raise').tz_convert('UTC')
+    cutoffs=pd.DatetimeIndex(dates).tz_localize(zone,ambiguous='raise',nonexistent='raise').tz_convert('UTC').as_unit('ns')
+    # A dated weekend special session has no certified standard-hours schedule.
+    # Research uses a conservative next-UTC-day cutoff rather than an earlier invented close.
+    if phase=='eod':
+        values=cutoffs.asi8.copy()
+        for i,day in enumerate(days):
+            if day.dayofweek>=5:
+                values[i]=(pd.Timestamp(str(day.date()),tz='UTC')+pd.Timedelta('1D')).value
+        cutoffs=pd.DatetimeIndex(values,tz='UTC')
+    return cutoffs
 
 def align_available(prediction_times,source,max_age=None):
     """Latest state for one source/entity, then latest eligible vintage.
