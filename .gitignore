@@ -15,3 +15,7 @@ data/cache/
 data/snapshots/
 data/evaluations/
 data/v5/
+
+# Private mutable user/runtime data
+data/users.json
+reports/screenshots/

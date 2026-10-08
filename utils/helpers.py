@@ -203,12 +203,9 @@ GLOBAL_CSS = """
 
 
 def inject_css():
-    st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+    from utils.ui_v5 import inject_theme
+    inject_theme()
 
-
-# ─────────────────────────────────────────────────────────────────
-# FORMATTERS
-# ─────────────────────────────────────────────────────────────────
 
 def esc(text: str) -> str:
     return _html.escape(str(text), quote=False)

@@ -20,7 +20,7 @@ st.set_page_config(
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={"About": "Professional Stock Market Analysis Platform · v6"},
+    menu_items={"About": "StockPro Analytics V5 · Research only"},
 )
 
 from utils.helpers import inject_css, sidebar_brand, sidebar_user, auth_widget
@@ -29,7 +29,8 @@ inject_css()
 
 # ── Sidebar: brand + notifications ────────────────────────────────────────────
 with st.sidebar:
-    sidebar_brand()
+    st.markdown("**StockPro Analytics**")
+    st.caption("V5 · Research only")
     notification_bell()
     st.divider()
 
@@ -39,44 +40,25 @@ with st.sidebar:
 # caused garbled labels like "≡ƒô⌐ Technical Analysis" is gone.
 pg = st.navigation(
     {
-        "Overview": [
-            st.Page("pages/overview.py",
-                    title="Dashboard", icon="📊", default=True),
+        'Dashboard': [st.Page('pages/dashboard.py',title='Dashboard',default=True,url_path='dashboard')],
+        'Research': [
+            st.Page('pages/overview.py',title='Overview & Fundamentals'),
+            st.Page('pages/technical_analysis.py',title='Technical Analysis'),
+            st.Page('pages/factor_analysis.py',title='Factor Analysis'),
+            st.Page('pages/compare.py',title='Compare'),
+            st.Page('pages/screener.py',title='Screener'),
+            st.Page('pages/insights.py',title='News & Insights'),
         ],
-        "Analysis": [
-            st.Page("pages/technical_analysis.py",
-                    title="Technical Analysis", icon="📈"),
-            st.Page("pages/price_prediction.py",
-                    title="Price Prediction",   icon="🔮"),
-            st.Page("pages/risk_analysis.py",
-                    title="Risk Analysis",       icon="⚠️"),
-        ],
-        "Quant": [
-            st.Page("pages/backtester.py",
-                    title="Strategy Backtester", icon="📊"),
-            st.Page("pages/factor_analysis.py",
-                    title="Factor Analysis",     icon="🧮"),
-            st.Page("pages/insights.py",
-                    title="Insights",            icon="🤖"),
-        ],
-        "Portfolio": [
-            st.Page("pages/portfolio.py",
-                    title="Portfolio Tracker", icon="💼"),
-            st.Page("pages/watchlist.py",
-                    title="Watchlist",         icon="⭐"),
-        ],
-        "Markets": [
-            st.Page("pages/screener.py",
-                    title="Screener",          icon="🔍"),
-            st.Page("pages/compare.py",
-                    title="Compare",           icon="⚖️"),
-            st.Page("pages/market_overview.py",
-                    title="Market Overview",   icon="🌍"),
-            st.Page("pages/global_data.py",
-                    title="Global Data",       icon="🔓"),
-        ],
+        'Forecast': [st.Page('pages/forecast.py',title='Research Forecast',url_path='forecast')],
+        'Validate': [st.Page('pages/validate.py',title='Model Evidence',url_path='validate'),
+                     st.Page('pages/backtester.py',title='Strategy Research')],
+        'Risk & Portfolio': [st.Page('pages/risk_analysis.py',title='Risk Analysis'),
+                             st.Page('pages/portfolio.py',title='Portfolio'),
+                             st.Page('pages/watchlist.py',title='Watchlist')],
+        'Markets': [st.Page('pages/market_overview.py',title='Market Overview'),
+                    st.Page('pages/global_data.py',title='Global & Macro Data')],
     },
-    position="sidebar",
+    position='sidebar',
 )
 
 pg.run()
