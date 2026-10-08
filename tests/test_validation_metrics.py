@@ -44,3 +44,19 @@ def test_constant_predictions_have_no_defined_information_coefficient():
     result = forecast_metrics([-.1,.1,.2], [0,0,0])
     assert result['pearson_ic'] is None
     assert result['spearman_ic'] is None
+
+
+def test_classifier_metrics_do_not_mislabel_regression_direction():
+    result=forecast_metrics([-.1,.1],[.1,.1],probability=[.1,.9])
+    assert result['directional_accuracy']==.5
+    assert result['classifier_directional_accuracy']==1.
+    assert result['classifier_balanced_accuracy']==1.
+    assert result['classifier_recall_down']==1.
+
+
+def test_grouped_rows_with_unavailable_distributions_do_not_invent_coverage():
+    rows=pd.DataFrame({'ticker':['A','A'],'actual':[.01,-.01],'predicted':[0.,0.],
+        'probability':[None,None],'q10':[None,None],'q25':[None,None],'q50':[None,None],'q75':[None,None],'q90':[None,None]})
+    result=grouped_metrics(rows,['ticker'])['ticker']['A']
+    assert result['brier'] is None
+    assert result['coverage_80'] is None

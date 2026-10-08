@@ -14,7 +14,7 @@ def _vector(value, name, n=None):
     return result
 
 def _corr(a,b,rank=False):
-    if len(a)<3 or np.std(a)==0 or np.std(b)==0: return None
+    if len(a)<3 or np.ptp(a)==0 or np.ptp(b)==0: return None
     result = spearmanr(a,b).statistic if rank else np.corrcoef(a,b)[0,1]
     return float(result) if np.isfinite(result) else None
 
@@ -45,6 +45,17 @@ def forecast_metrics(actual, predicted, probability=None, quantiles=None):
     if probability is not None:
         prob = _vector(probability,'probability',len(y))
         if np.any((prob<0)|(prob>1)): raise ValueError('Probabilities must be in [0,1]')
+        class_decision=prob>=.5
+        result['classifier_directional_accuracy']=float(np.mean(class_decision==truth))
+        class_recalls=[]
+        for positive,name in [(True,'up'),(False,'down')]:
+            chosen=class_decision==positive
+            observed=truth==positive
+            hits=np.sum(chosen&observed)
+            result['classifier_precision_'+name]=float(hits/chosen.sum()) if chosen.any() else None
+            result['classifier_recall_'+name]=float(hits/observed.sum()) if observed.any() else None
+            if observed.any(): class_recalls.append(hits/observed.sum())
+        result['classifier_balanced_accuracy']=float(np.mean(class_recalls)) if len(class_recalls)==2 else None
         result['brier'] = float(np.mean((prob-truth)**2))
         safe = np.clip(prob,1e-12,1-1e-12)
         result['log_loss'] = float(-np.mean(truth*np.log(safe)+(1-truth)*np.log(1-safe)))
@@ -78,7 +89,7 @@ def grouped_metrics(rows: pd.DataFrame, dimensions):
         groups = {}
         for key,group in rows.groupby(dimension,dropna=False,sort=True):
             probs = group['probability'].to_numpy() if 'probability' in group and group['probability'].notna().all() else None
-            quantiles = group[['q10','q25','q50','q75','q90']].to_numpy() if all(c in group for c in ['q10','q25','q50','q75','q90']) else None
+            quantiles = group[['q10','q25','q50','q75','q90']].to_numpy() if all(c in group for c in ['q10','q25','q50','q75','q90']) and not group[['q10','q25','q50','q75','q90']].isna().all().all() else None
             groups[str(key)] = forecast_metrics(group['actual'],group['predicted'],probs,quantiles)
         result[dimension] = groups
     return result
