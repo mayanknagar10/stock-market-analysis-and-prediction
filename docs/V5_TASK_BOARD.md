@@ -1,38 +1,36 @@
 # StockPro V5 — master task board
 
-Updated: 08 October 2026. This is the single progress checklist for the V5 upgrade.
+Updated: 08 October 2026. This is the single progress checklist for the upgrade, also displayed on Dashboard.
 
-**Current task: final regression, the one-time frozen comparison, and completion documentation.**
+**Current task: research closeout complete. Next dependent task: obtain verified historical data and define a new untouched holdout before further model development.**
 
-**Release state: RESEARCH ONLY.** Historical point-in-time certification and production promotion remain blocked because availability/revision archives are absent. The final test period remains sealed.
+**Release state: RESEARCH ONLY — final performance gate FAILED; production promotion BLOCKED.** The final period has been consumed once. It is closed to further model tuning.
 
-| Task | Status | Evidence / next action |
+| Task | Status | Evidence / remaining action |
 |---|---|---|
-| 0. Repository audit and source inventory | COMPLETE | Repository audit, 20 source families, frozen V4 hashes |
-| 0. Repeatable V4 baseline | COMPLETE | Six equities; 1/5/10/20D diagnostics and cost-adjusted strategy reports; synthetic checkpoint limitations disclosed |
-| 1. Leakage-safe validation infrastructure | COMPLETE | Purging, horizons, availability/vintage joins, timezone/precision, snapshot and schema guards; 78 tests passed at phase exit |
-| 2. Direct market-specific return regressors | COMPLETE — RESEARCH CORE | XGB + LGB per horizon; three purged development folds; results persisted; no consistent baseline advantage |
-| 3. Central data layer and context | COMPLETE — RESEARCH | Provider calls centralized; contextual snapshots and pre-calibration ablation evidence persisted |
-| 4. Direction and quantile forecasts | COMPLETE — RESEARCH | Independent direction and conditional quantile heads trained for all eight family/horizon pairs |
-| 5. Calibration, confidence, OOD, abstention | COMPLETE — RESEARCH | Four disjoint purged blocks; unsupported calibrations rejected; all forecasts remain LOW/abstained |
-| 6. Regimes and relative/alpha forecasts | COMPLETE — RESEARCH | Market/volatility regime breakdowns and market/sector excess-return heads persisted where available |
-| 7. Immutable prediction ledger | COMPLETE — CORE | Append-only forecasts/outcomes, source hashes, known origins and independent maturity calendars tested |
-| 8. Scenarios, invalidation, analogues | COMPLETE — CORE | Source perturbations rebuild features; native SHAP and matured historical analogues tested |
-| 9. News and corporate events | NOT STARTED / PERFORMANCE GATED | Existing VADER preserved; enhancements follow validated forecasting evidence |
-| 10. Model registry and hardening | COMPLETE — RESEARCH | Native registry, complete checksums and quarantine implemented; end-to-end hardening continues |
-| 11. Forecast, Validate, navigation/UI | COMPLETE — FUNCTIONAL | Forecast/Validate/Dashboard connected; source/semantic review passed; browser visual QA unavailable |
-| 12. Final regression, comparison and docs | IN PROGRESS | Regression checks and protocol preflight underway; execute the final period once after locking |
-| Point-in-time certification | BLOCKED | No historical availability/revision archives; user confirmed absence |
-| Production promotion | BLOCKED | Requires verified data plus successful untouched-test evidence |
+| 0. Repository audit and source inventory | DONE | Audit; 20 source/call families; frozen V4 hashes |
+| 0. Repeatable V4 baseline | DONE | Six equities; four horizons; separate synthetic-checkpoint diagnostics and cost-adjusted strategy reports |
+| 1. Temporal validation infrastructure | DONE — RESEARCH | Availability/vintage joins, session/timezone guards, purged splits, snapshots and schema tests |
+| 2. Direct market-specific regressors | DONE — RESEARCH | Independent XGB/LGB 1/5/10/20-session models; no final superiority demonstrated |
+| 3. Central data layer and context | DONE — RESEARCH | Source governance, reference snapshots, development-only ablations; historical availability unverified |
+| 4. Direction and quantile heads | DONE — RESEARCH | Eight family/horizon pairs; native five-quantile heads; 50%/80% bands |
+| 5. Calibration, OOD, confidence, abstention | DONE — RESEARCH | Four disjoint purged blocks; 3/8 calibrations accepted on development; all forecasts LOW/abstained |
+| 6. Regimes and relative forecasts | DONE — RESEARCH | Descriptive regimes, benchmark/sector heads where references support them; final breakdowns persisted |
+| 7. Immutable ledger and outcomes | DONE — CORE | Atomic append-only batches; hashes; known origins and independent maturity calendars; optional reference alpha |
+| 8. Scenarios, invalidation, analogues | DONE — CORE | Source perturbations rebuild features; native SHAP; only matured analogue outcomes |
+| 9. News/events/NLP enhancement | NOT DONE — PERFORMANCE GATED | Existing VADER preserved; event interface implemented; expansion deferred because core failed its gate |
+| 10. Registry and research hardening | DONE — RESEARCH | Native artifacts, complete checksums, source identity, cutoff enforcement and quarantine history; production disabled |
+| 11. Navigation and Forecast/Validate UI | DONE — FUNCTIONAL | Source/semantic and AppTest checks; desktop/mobile/accessibility browser QA remains NOT DONE |
+| 12. Final regression, comparison and docs | DONE | 122 tests passed; locked one-shot comparison; README, architecture, deployment and completion reports |
+| Verified historical availability/revisions | BLOCKED | User confirmed no archives; structural data health does not establish PIT eligibility |
+| Verified exchange calendar | BLOCKED FOR CERTIFICATION | Independent observed calendars are research proxies |
+| Production promotion | BLOCKED | Failed numerical gate plus unverified historical lineage; no production inference path |
+| Wider universe / 60D / crypto/index/FX | NOT DONE — SEPARATE GATES | Six-stock research universe; equity families only; dated memberships needed |
 
-Task order follows the supplied specification. Native registry and evidence persistence are implemented; final verification does not promote a checkpoint or weaken the production gate.
+No implementation task is currently in progress. The remaining work above is explicitly deferred, unsupported or blocked; it has not been marked complete.
 
-Detailed phase records: [V5_IMPLEMENTATION_STATUS.md](V5_IMPLEMENTATION_STATUS.md).
+Final gate: MAE improvements 1/8 (required 6), RMSE 0/8 (6), Brier below 0.25 2/8 (6), 80% coverage tolerance 7/8 (6), accepted calibration 3/8 (8). Actionable forecast coverage 0%; research abstention 100%. These results do not support real-world decision reliance.
 
-Review finding retained for audit: research-20261007T170953 was quarantined for blending/calibration row reuse. Replacement research-20261007T173345 uses separate purged blocks; original artifacts/reports remain visible and no final-test rows were evaluated.
+Candidate research-20261008T190859 is retained as the final research artifact. Earlier candidates remain visible, including quarantined research-20261007T170953 (blend/calibration row reuse) and research-20261007T173345 (placeholder/session-source quality). Raw snapshots and failed reports were preserved.
 
-Current data-quality finding: Yahoo equity histories include flat zero-volume placeholder bars on dates absent from independent positive-volume session evidence. Those rows are explicitly quarantined while raw snapshots remain unchanged; unresolved real-session rows block affected input windows/labels. Candidate research-20261007T173345 is retained and quarantined; replacement research-20261008T190859 is active. All eight artifacts share one frozen training-source hash.
-
-Resumed verification: 115 tests passed; Forecast route initialized without errors. Source-level UI review required explicit 50%/80% bands and calibration/source/OOD status before values; those corrections are implemented. Browser-based visual/accessibility checks remain unavailable and are not claimed as passed.
-
-Final source/semantic UI review: both interval bands, calibration state and source/OOD warnings now precede outputs; accepted/rejected fixtures render without errors. Browser visual/accessibility QA remains unavailable. Candidate research-20261008T190859 is the final research candidate; protocol locking/evaluation is the current task.
+[Comparison](../reports/V4_VS_V5.md) · [Completion report](V5_COMPLETION_REPORT.md) · [Detailed phase record](V5_IMPLEMENTATION_STATUS.md) · [Verification](../reports/validation/V5_VERIFICATION.json).

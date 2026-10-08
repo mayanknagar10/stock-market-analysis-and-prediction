@@ -1,1 +1,8 @@
-models/v5/** -text
+# Preserve exact bytes used by frozen code/artifact and result hashes.
+# Do not normalize these files during checkout on another platform.
+core/** -text
+models/** -text
+config/context_sources.json -text
+config/v5_validation.json -text
+scripts/evaluate_final.py -text
+reports/validation/** -text

@@ -69,9 +69,8 @@ with st.sidebar:
     # ── Local auth — zero external accounts, zero API keys ─────────────────
     # Credentials live in data/users.json (hashlib-based, see core/auth.py).
     # Streamlit Cloud's filesystem is ephemeral: self-registered accounts
-    # persist only until the app restarts, unless you commit data/users.json
-    # to git (same pattern as the ML checkpoint in models/). See core/auth.py
-    # module docstring for details and the upgrade path to a real database.
+    # need private durable storage across restarts. Never commit data/users.json
+    # to Git. See docs/V5_DEPLOYMENT.md for storage and backup guidance.
     user = st.session_state.get("user")
     if user:
         sidebar_user(

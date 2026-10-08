@@ -1,0 +1,10 @@
+{
+  "recorded_at": "2026-10-08T19:37:26.728Z",
+  "command": "python -m pytest -q",
+  "exit_code": 0,
+  "passed": 122,
+  "warnings": 8,
+  "elapsed_seconds": 33.54,
+  "output_summary": "122 passed, 8 warnings in 33.54s",
+  "environment": "Windows; Python 3.12; isolated .deps dependencies"
+}

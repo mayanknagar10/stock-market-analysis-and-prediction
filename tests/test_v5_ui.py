@@ -21,3 +21,11 @@ def test_ui_formatting_does_not_turn_missing_values_into_zero():
     assert percent(float('nan'))=='Unavailable'
     assert percent(.025)=='+2.5%'
     assert price(None)=='Unavailable'
+
+
+def test_forecast_route_registers_validation_link():
+    root=Path(__file__).resolve().parents[1]
+    app=AppTest.from_file(str(root/'app.py'),default_timeout=30).run()
+    app.switch_page('pages/forecast.py').run()
+    assert not app.exception,[e.message for e in app.exception]
+    assert any('Choose an equity' in e.value for e in app.info)
