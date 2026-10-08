@@ -1,0 +1,48 @@
+{
+  "study_id": "prospective-india-20261008-v1",
+  "v5_commit": "26c09e0",
+  "frozen_model": "research-20261008T190859",
+  "development_cutoff": "2025-10-01T00:00:00Z",
+  "horizons": [
+    1,
+    5,
+    10,
+    20
+  ],
+  "folds": [
+    [
+      "2024-10-01",
+      "2024-12-31"
+    ],
+    [
+      "2025-01-01",
+      "2025-03-31"
+    ],
+    [
+      "2025-04-01",
+      "2025-06-30"
+    ],
+    [
+      "2025-07-01",
+      "2025-09-30"
+    ]
+  ],
+  "seed": 42,
+  "final_origin_start": "2027-10-11T00:00:00Z",
+  "final_origin_end": "2028-10-10T23:59:59Z",
+  "candidate_freeze_before": "2027-10-11T00:00:00Z",
+  "earliest_final_evaluation": "2028-11-10T00:00:00Z",
+  "scope": "research_only",
+  "round_trip_cost": 0.003,
+  "baseline_parameters": {
+    "ridge_alpha": 10,
+    "elastic_net_alpha": 0.001,
+    "elastic_net_l1_ratio": 0.5,
+    "shallow_trees": 50,
+    "shallow_depth": 2,
+    "shallow_min_leaf": 100,
+    "learning_rate": 0.03
+  },
+  "stopping_rule": "No final candidate fit until all eight immediate deliverables complete; no production path",
+  "max_protocol_revisions_before_candidate_freeze": 2
+}

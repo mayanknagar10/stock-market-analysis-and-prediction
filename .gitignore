@@ -19,3 +19,7 @@ data/v5/
 # Private mutable user/runtime data
 data/users.json
 reports/screenshots/
+
+# Post-V5 private prospective inputs and shadow ledgers
+data/research/
+.superpowers/

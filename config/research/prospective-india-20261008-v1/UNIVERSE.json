@@ -1,0 +1,934 @@
+{
+  "study_id": "prospective-india-20261008-v1",
+  "frozen_at": "2026-10-08T20:54:25.067343+00:00",
+  "membership_date": "2026-10-08",
+  "source_url": "https://www.niftyindices.com/IndexConstituent/ind_nifty100list.csv",
+  "source_page": "https://www.niftyindices.com/indices/equity/broad-based-indices/nifty-100",
+  "raw_membership_sha256": "0a53ad14c15e9ec258dc72117a8c0699546ec25f2d283c47d53412e2de8a06fc",
+  "raw_file": "NIFTY100_AT_FREEZE.csv",
+  "selection_rule": "All securities in official Nifty 100 constituent CSV retrieved at freeze; no performance or provider-success filtering",
+  "retention_rule": "Keep failed/suspended/delisted/renamed members; append mapping/status events, never rewrite membership",
+  "historical_survivorship_bias_resolved": false,
+  "members": [
+    {
+      "ticker": "ABB.NS",
+      "exchange_symbol": "ABB",
+      "isin": "INE117A01022",
+      "company": "ABB India Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ADANIENSOL.NS",
+      "exchange_symbol": "ADANIENSOL",
+      "isin": "INE931S01010",
+      "company": "Adani Energy Solutions Ltd.",
+      "industry": "Power",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ADANIENT.NS",
+      "exchange_symbol": "ADANIENT",
+      "isin": "INE423A01024",
+      "company": "Adani Enterprises Ltd.",
+      "industry": "Metals & Mining",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ADANIGREEN.NS",
+      "exchange_symbol": "ADANIGREEN",
+      "isin": "INE364U01010",
+      "company": "Adani Green Energy Ltd.",
+      "industry": "Power",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ADANIPORTS.NS",
+      "exchange_symbol": "ADANIPORTS",
+      "isin": "INE742F01042",
+      "company": "Adani Ports and Special Economic Zone Ltd.",
+      "industry": "Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ADANIPOWER.NS",
+      "exchange_symbol": "ADANIPOWER",
+      "isin": "INE814H01029",
+      "company": "Adani Power Ltd.",
+      "industry": "Power",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "AMBUJACEM.NS",
+      "exchange_symbol": "AMBUJACEM",
+      "isin": "INE079A01024",
+      "company": "Ambuja Cements Ltd.",
+      "industry": "Construction Materials",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "APOLLOHOSP.NS",
+      "exchange_symbol": "APOLLOHOSP",
+      "isin": "INE437A01024",
+      "company": "Apollo Hospitals Enterprise Ltd.",
+      "industry": "Healthcare",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "exchange_symbol": "ASIANPAINT",
+      "isin": "INE021A01026",
+      "company": "Asian Paints Ltd.",
+      "industry": "Consumer Durables",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "exchange_symbol": "AXISBANK",
+      "isin": "INE238A01034",
+      "company": "Axis Bank Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BAJAJ-AUTO.NS",
+      "exchange_symbol": "BAJAJ-AUTO",
+      "isin": "INE917I01010",
+      "company": "Bajaj Auto Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BAJAJFINSV.NS",
+      "exchange_symbol": "BAJAJFINSV",
+      "isin": "INE918I01026",
+      "company": "Bajaj Finserv Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BAJAJHLDNG.NS",
+      "exchange_symbol": "BAJAJHLDNG",
+      "isin": "INE118A01012",
+      "company": "Bajaj Holdings & Investment Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "exchange_symbol": "BAJFINANCE",
+      "isin": "INE296A01032",
+      "company": "Bajaj Finance Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BANKBARODA.NS",
+      "exchange_symbol": "BANKBARODA",
+      "isin": "INE028A01039",
+      "company": "Bank of Baroda",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BEL.NS",
+      "exchange_symbol": "BEL",
+      "isin": "INE263A01024",
+      "company": "Bharat Electronics Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "exchange_symbol": "BHARTIARTL",
+      "isin": "INE397D01024",
+      "company": "Bharti Airtel Ltd.",
+      "industry": "Telecommunication",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BOSCHLTD.NS",
+      "exchange_symbol": "BOSCHLTD",
+      "isin": "INE323A01026",
+      "company": "Bosch Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BPCL.NS",
+      "exchange_symbol": "BPCL",
+      "isin": "INE029A01011",
+      "company": "Bharat Petroleum Corporation Ltd.",
+      "industry": "Oil Gas & Consumable Fuels",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BRITANNIA.NS",
+      "exchange_symbol": "BRITANNIA",
+      "isin": "INE216A01030",
+      "company": "Britannia Industries Ltd.",
+      "industry": "Fast Moving Consumer Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "BSE.NS",
+      "exchange_symbol": "BSE",
+      "isin": "INE118H01025",
+      "company": "BSE Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "CANBK.NS",
+      "exchange_symbol": "CANBK",
+      "isin": "INE476A01022",
+      "company": "Canara Bank",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "CGPOWER.NS",
+      "exchange_symbol": "CGPOWER",
+      "isin": "INE067A01029",
+      "company": "CG Power and Industrial Solutions Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "CHOLAFIN.NS",
+      "exchange_symbol": "CHOLAFIN",
+      "isin": "INE121A01024",
+      "company": "Cholamandalam Investment and Finance Company Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "exchange_symbol": "CIPLA",
+      "isin": "INE059A01026",
+      "company": "Cipla Ltd.",
+      "industry": "Healthcare",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "COALINDIA.NS",
+      "exchange_symbol": "COALINDIA",
+      "isin": "INE522F01014",
+      "company": "Coal India Ltd.",
+      "industry": "Oil Gas & Consumable Fuels",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "CUMMINSIND.NS",
+      "exchange_symbol": "CUMMINSIND",
+      "isin": "INE298A01020",
+      "company": "Cummins India Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "DIVISLAB.NS",
+      "exchange_symbol": "DIVISLAB",
+      "isin": "INE361B01024",
+      "company": "Divi's Laboratories Ltd.",
+      "industry": "Healthcare",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "DLF.NS",
+      "exchange_symbol": "DLF",
+      "isin": "INE271C01023",
+      "company": "DLF Ltd.",
+      "industry": "Realty",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "DMART.NS",
+      "exchange_symbol": "DMART",
+      "isin": "INE192R01011",
+      "company": "Avenue Supermarts Ltd.",
+      "industry": "Consumer Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "exchange_symbol": "DRREDDY",
+      "isin": "INE089A01031",
+      "company": "Dr. Reddy's Laboratories Ltd.",
+      "industry": "Healthcare",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "EICHERMOT.NS",
+      "exchange_symbol": "EICHERMOT",
+      "isin": "INE066A01021",
+      "company": "Eicher Motors Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ENRIN.NS",
+      "exchange_symbol": "ENRIN",
+      "isin": "INE1NPP01017",
+      "company": "Siemens Energy India Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ETERNAL.NS",
+      "exchange_symbol": "ETERNAL",
+      "isin": "INE758T01015",
+      "company": "Eternal Ltd.",
+      "industry": "Consumer Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "GAIL.NS",
+      "exchange_symbol": "GAIL",
+      "isin": "INE129A01019",
+      "company": "GAIL (India) Ltd.",
+      "industry": "Oil Gas & Consumable Fuels",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "GODREJCP.NS",
+      "exchange_symbol": "GODREJCP",
+      "isin": "INE102D01028",
+      "company": "Godrej Consumer Products Ltd.",
+      "industry": "Fast Moving Consumer Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "GRASIM.NS",
+      "exchange_symbol": "GRASIM",
+      "isin": "INE047A01021",
+      "company": "Grasim Industries Ltd.",
+      "industry": "Construction Materials",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HAL.NS",
+      "exchange_symbol": "HAL",
+      "isin": "INE066F01020",
+      "company": "Hindustan Aeronautics Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "exchange_symbol": "HCLTECH",
+      "isin": "INE860A01027",
+      "company": "HCL Technologies Ltd.",
+      "industry": "Information Technology",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HDFCAMC.NS",
+      "exchange_symbol": "HDFCAMC",
+      "isin": "INE127D01025",
+      "company": "HDFC Asset Management Company Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HDFCBANK.NS",
+      "exchange_symbol": "HDFCBANK",
+      "isin": "INE040A01034",
+      "company": "HDFC Bank Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HDFCLIFE.NS",
+      "exchange_symbol": "HDFCLIFE",
+      "isin": "INE795G01014",
+      "company": "HDFC Life Insurance Company Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HINDALCO.NS",
+      "exchange_symbol": "HINDALCO",
+      "isin": "INE038A01020",
+      "company": "Hindalco Industries Ltd.",
+      "industry": "Metals & Mining",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "exchange_symbol": "HINDUNILVR",
+      "isin": "INE030A01027",
+      "company": "Hindustan Unilever Ltd.",
+      "industry": "Fast Moving Consumer Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HINDZINC.NS",
+      "exchange_symbol": "HINDZINC",
+      "isin": "INE267A01025",
+      "company": "Hindustan Zinc Ltd.",
+      "industry": "Metals & Mining",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "HYUNDAI.NS",
+      "exchange_symbol": "HYUNDAI",
+      "isin": "INE0V6F01027",
+      "company": "Hyundai Motor India Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "exchange_symbol": "ICICIBANK",
+      "isin": "INE090A01021",
+      "company": "ICICI Bank Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "IDEA.NS",
+      "exchange_symbol": "IDEA",
+      "isin": "INE669E01016",
+      "company": "Vodafone Idea Ltd.",
+      "industry": "Telecommunication",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "INDIGO.NS",
+      "exchange_symbol": "INDIGO",
+      "isin": "INE646L01027",
+      "company": "InterGlobe Aviation Ltd.",
+      "industry": "Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "INFY.NS",
+      "exchange_symbol": "INFY",
+      "isin": "INE009A01021",
+      "company": "Infosys Ltd.",
+      "industry": "Information Technology",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "IOC.NS",
+      "exchange_symbol": "IOC",
+      "isin": "INE242A01010",
+      "company": "Indian Oil Corporation Ltd.",
+      "industry": "Oil Gas & Consumable Fuels",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "IRFC.NS",
+      "exchange_symbol": "IRFC",
+      "isin": "INE053F01010",
+      "company": "Indian Railway Finance Corporation Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ITC.NS",
+      "exchange_symbol": "ITC",
+      "isin": "INE154A01025",
+      "company": "ITC Ltd.",
+      "industry": "Fast Moving Consumer Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "JINDALSTEL.NS",
+      "exchange_symbol": "JINDALSTEL",
+      "isin": "INE749A01030",
+      "company": "Jindal Steel Ltd.",
+      "industry": "Metals & Mining",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "JIOFIN.NS",
+      "exchange_symbol": "JIOFIN",
+      "isin": "INE758E01017",
+      "company": "Jio Financial Services Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "exchange_symbol": "JSWSTEEL",
+      "isin": "INE019A01038",
+      "company": "JSW Steel Ltd.",
+      "industry": "Metals & Mining",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "exchange_symbol": "KOTAKBANK",
+      "isin": "INE237A01036",
+      "company": "Kotak Mahindra Bank Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "LT.NS",
+      "exchange_symbol": "LT",
+      "isin": "INE018A01030",
+      "company": "Larsen & Toubro Ltd.",
+      "industry": "Construction",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "LTM.NS",
+      "exchange_symbol": "LTM",
+      "isin": "INE214T01019",
+      "company": "LTM Ltd.",
+      "industry": "Information Technology",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "M&M.NS",
+      "exchange_symbol": "M&M",
+      "isin": "INE101A01026",
+      "company": "Mahindra & Mahindra Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "exchange_symbol": "MARUTI",
+      "isin": "INE585B01010",
+      "company": "Maruti Suzuki India Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "MAXHEALTH.NS",
+      "exchange_symbol": "MAXHEALTH",
+      "isin": "INE027H01010",
+      "company": "Max Healthcare Institute Ltd.",
+      "industry": "Healthcare",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "MAZDOCK.NS",
+      "exchange_symbol": "MAZDOCK",
+      "isin": "INE249Z01020",
+      "company": "Mazagoan Dock Shipbuilders Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "MOTHERSON.NS",
+      "exchange_symbol": "MOTHERSON",
+      "isin": "INE775A01035",
+      "company": "Samvardhana Motherson International Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "MUTHOOTFIN.NS",
+      "exchange_symbol": "MUTHOOTFIN",
+      "isin": "INE414G01012",
+      "company": "Muthoot Finance Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "exchange_symbol": "NESTLEIND",
+      "isin": "INE239A01024",
+      "company": "Nestle India Ltd.",
+      "industry": "Fast Moving Consumer Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "NTPC.NS",
+      "exchange_symbol": "NTPC",
+      "isin": "INE733E01010",
+      "company": "NTPC Ltd.",
+      "industry": "Power",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ONGC.NS",
+      "exchange_symbol": "ONGC",
+      "isin": "INE213A01029",
+      "company": "Oil & Natural Gas Corporation Ltd.",
+      "industry": "Oil Gas & Consumable Fuels",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "PFC.NS",
+      "exchange_symbol": "PFC",
+      "isin": "INE134E01011",
+      "company": "Power Finance Corporation Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "PIDILITIND.NS",
+      "exchange_symbol": "PIDILITIND",
+      "isin": "INE318A01026",
+      "company": "Pidilite Industries Ltd.",
+      "industry": "Chemicals",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "PNB.NS",
+      "exchange_symbol": "PNB",
+      "isin": "INE160A01022",
+      "company": "Punjab National Bank",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "POLYCAB.NS",
+      "exchange_symbol": "POLYCAB",
+      "isin": "INE455K01017",
+      "company": "Polycab India Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "exchange_symbol": "POWERGRID",
+      "isin": "INE752E01010",
+      "company": "Power Grid Corporation of India Ltd.",
+      "industry": "Power",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "POWERINDIA.NS",
+      "exchange_symbol": "POWERINDIA",
+      "isin": "INE07Y701011",
+      "company": "Hitachi Energy India Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "exchange_symbol": "RELIANCE",
+      "isin": "INE002A01018",
+      "company": "Reliance Industries Ltd.",
+      "industry": "Oil Gas & Consumable Fuels",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "SBILIFE.NS",
+      "exchange_symbol": "SBILIFE",
+      "isin": "INE123W01016",
+      "company": "SBI Life Insurance Company Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "SBIN.NS",
+      "exchange_symbol": "SBIN",
+      "isin": "INE062A01020",
+      "company": "State Bank of India",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "SHRIRAMFIN.NS",
+      "exchange_symbol": "SHRIRAMFIN",
+      "isin": "INE721A01047",
+      "company": "Shriram Finance Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "SIEMENS.NS",
+      "exchange_symbol": "SIEMENS",
+      "isin": "INE003A01024",
+      "company": "Siemens Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "SOLARINDS.NS",
+      "exchange_symbol": "SOLARINDS",
+      "isin": "INE343H01029",
+      "company": "Solar Industries India Ltd.",
+      "industry": "Chemicals",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "exchange_symbol": "SUNPHARMA",
+      "isin": "INE044A01036",
+      "company": "Sun Pharmaceutical Industries Ltd.",
+      "industry": "Healthcare",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TATACAP.NS",
+      "exchange_symbol": "TATACAP",
+      "isin": "INE976I01016",
+      "company": "Tata Capital Ltd.",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TATACONSUM.NS",
+      "exchange_symbol": "TATACONSUM",
+      "isin": "INE192A01025",
+      "company": "Tata Consumer Products Ltd.",
+      "industry": "Fast Moving Consumer Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TATAPOWER.NS",
+      "exchange_symbol": "TATAPOWER",
+      "isin": "INE245A01021",
+      "company": "Tata Power Co. Ltd.",
+      "industry": "Power",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TATASTEEL.NS",
+      "exchange_symbol": "TATASTEEL",
+      "isin": "INE081A01020",
+      "company": "Tata Steel Ltd.",
+      "industry": "Metals & Mining",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TCS.NS",
+      "exchange_symbol": "TCS",
+      "isin": "INE467B01029",
+      "company": "Tata Consultancy Services Ltd.",
+      "industry": "Information Technology",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TECHM.NS",
+      "exchange_symbol": "TECHM",
+      "isin": "INE669C01036",
+      "company": "Tech Mahindra Ltd.",
+      "industry": "Information Technology",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TITAN.NS",
+      "exchange_symbol": "TITAN",
+      "isin": "INE280A01028",
+      "company": "Titan Company Ltd.",
+      "industry": "Consumer Durables",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TMCV.NS",
+      "exchange_symbol": "TMCV",
+      "isin": "INE1TAE01010",
+      "company": "Tata Motors Ltd.",
+      "industry": "Capital Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TMPV.NS",
+      "exchange_symbol": "TMPV",
+      "isin": "INE155A01022",
+      "company": "Tata Motors Passenger Vehicles Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TORNTPHARM.NS",
+      "exchange_symbol": "TORNTPHARM",
+      "isin": "INE685A01028",
+      "company": "Torrent Pharmaceuticals Ltd.",
+      "industry": "Healthcare",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TRENT.NS",
+      "exchange_symbol": "TRENT",
+      "isin": "INE849A01020",
+      "company": "Trent Ltd.",
+      "industry": "Consumer Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "TVSMOTOR.NS",
+      "exchange_symbol": "TVSMOTOR",
+      "isin": "INE494B01023",
+      "company": "TVS Motor Company Ltd.",
+      "industry": "Automobile and Auto Components",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "exchange_symbol": "ULTRACEMCO",
+      "isin": "INE481G01011",
+      "company": "UltraTech Cement Ltd.",
+      "industry": "Construction Materials",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "UNIONBANK.NS",
+      "exchange_symbol": "UNIONBANK",
+      "isin": "INE692A01016",
+      "company": "Union Bank of India",
+      "industry": "Financial Services",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "VAML.NS",
+      "exchange_symbol": "VAML",
+      "isin": "INE1CDF01017",
+      "company": "Vedanta Aluminium Metal Ltd.",
+      "industry": "Metals & Mining",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "VBL.NS",
+      "exchange_symbol": "VBL",
+      "isin": "INE200M01039",
+      "company": "Varun Beverages Ltd.",
+      "industry": "Fast Moving Consumer Goods",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "VEDL.NS",
+      "exchange_symbol": "VEDL",
+      "isin": "INE205A01025",
+      "company": "Vedanta Ltd.",
+      "industry": "Metals & Mining",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "exchange_symbol": "WIPRO",
+      "isin": "INE075A01022",
+      "company": "Wipro Ltd.",
+      "industry": "Information Technology",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    },
+    {
+      "ticker": "ZYDUSLIFE.NS",
+      "exchange_symbol": "ZYDUSLIFE",
+      "isin": "INE010B01027",
+      "company": "Zydus Lifesciences Ltd.",
+      "industry": "Healthcare",
+      "series": "EQ",
+      "status": "included_at_freeze"
+    }
+  ],
+  "n_securities": 100,
+  "industries": [
+    "Automobile and Auto Components",
+    "Capital Goods",
+    "Chemicals",
+    "Construction",
+    "Construction Materials",
+    "Consumer Durables",
+    "Consumer Services",
+    "Fast Moving Consumer Goods",
+    "Financial Services",
+    "Healthcare",
+    "Information Technology",
+    "Metals & Mining",
+    "Oil Gas & Consumable Fuels",
+    "Power",
+    "Realty",
+    "Services",
+    "Telecommunication"
+  ]
+}
