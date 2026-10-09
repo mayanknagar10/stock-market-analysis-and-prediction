@@ -23,3 +23,6 @@ reports/screenshots/
 # Post-V5 private prospective inputs and shadow ledgers
 data/research/
 .superpowers/
+
+# Private canonical automation ledger, snapshots and operational logs
+data/prospective_automation/

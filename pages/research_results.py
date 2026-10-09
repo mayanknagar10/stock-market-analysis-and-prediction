@@ -21,6 +21,16 @@ protocol=json.loads((ROOT/'config/research'/STUDY/'PROTOCOL.json').read_text(enc
 universe=json.loads((ROOT/'config/research'/STUDY/'UNIVERSE.json').read_text(encoding='utf-8'))
 st.write('Fixed universe: '+str(universe['n_securities'])+' securities · '+str(len(universe['industries']))+' industries · Frozen '+universe['frozen_at'])
 st.caption('Membership is retained through source failures, suspensions, delistings and index changes. This does not repair historical survivorship bias.')
+from application.services.prospective import ProspectiveService
+canonical_service=ProspectiveService()
+canonical_status=canonical_service.collection_status()
+canonical_validation=canonical_service.validation()
+st.subheader('Automatic canonical collection')
+st.caption('Delayed after-close origin: 06:30 Asia/Kolkata on the day after the NSE session. Page views never collect or issue forecasts.')
+st.write('Collection health: '+canonical_status.health+' · Forward evidence: '+canonical_validation.evidence_state)
+with st.expander('Canonical batch health and matured forward validation',expanded=True):
+    st.json(canonical_status.model_dump(mode='json'),expanded=False)
+    st.json(canonical_validation.model_dump(mode='json'),expanded=False)
 tabs=st.tabs(['Live prospective study','Development comparisons','Targets & signal','Reports & protocol'])
 with tabs[0]:
     captures=[]
@@ -32,7 +42,7 @@ with tabs[0]:
         st.caption('A captured payload can still have invalid/missing prices or insufficient history. Payload capture does not establish forecast eligibility or historical publication certification.')
     else:st.info('No prospective inputs recorded yet.')
     ledger_file=DIRECTORY/'shadow_predictions.sqlite'
-    all_records=PredictionLedger(ledger_file).rows() if ledger_file.exists() else []
+    all_records=canonical_service.rows("legacy") if ledger_file.exists() else []
     final_boundary=pd.Timestamp(protocol['final_origin_start'])
     from research.post_v5.reporting import visible_shadow_records
     visible,sealed=visible_shadow_records(all_records,final_boundary)
@@ -63,23 +73,12 @@ with tabs[0]:
         st.download_button('Export open warm-up shadow records',json.dumps(visible,indent=2),file_name='prospective_warmup_forecasts.json',mime='application/json')
         st.caption('Input existence at the prediction cutoff is archived. Frozen model training vintages and exchange calendars remain unverified. Outside-universe requests are listed but do not enter fixed-universe primary metrics.')
     if matured:
-        observations=pd.DataFrame([{'ticker':r['ticker'],'industry':r['industry_at_freeze'],'horizon':r['horizon'],'regime':r['regime'],
-            'confidence':r['confidence'],'asof':r['forecast_as_of'],'actual':r['outcome']['actual_log_return'],
-            'predicted':r['central_log_return'],'probability':r['p_positive'],**dict(zip(['q10','q25','q50','q75','q90'],r['quantiles']))} for r in matured])
-        selected_horizon=st.selectbox('Prospective metric horizon',[1,5,10,20])
-        selected_rows=observations[observations.horizon==selected_horizon]
-        if not selected_rows.empty:
-            metrics=forecast_metrics(selected_rows.actual,selected_rows.predicted,selected_rows.probability,selected_rows[['q10','q25','q50','q75','q90']])
-            st.json(metrics,expanded=False)
-            for dimension in ['ticker','industry','regime','confidence']:
-                summaries=[]
-                for value,group in selected_rows.groupby(dimension):
-                    scores=forecast_metrics(group.actual,group.predicted,group.probability,group[['q10','q25','q50','q75','q90']])
-                    summaries.append({dimension:value,**{key:scores[key] for key in ['n','mae','rmse','brier','coverage_50','coverage_80']}})
-                with st.expander('Prospective '+dimension+' performance'):st.dataframe(pd.DataFrame(summaries),width='stretch',hide_index=True)
-            ordered=selected_rows.sort_values('asof').copy();ordered['Absolute log error']=(ordered.actual-ordered.predicted).abs()
-            ordered['Rolling mean (63 recorded rows, overlapping/dependent)']=ordered['Absolute log error'].rolling(63,min_periods=10).mean()
-            st.plotly_chart(chart_layout(px.line(ordered,x='asof',y='Rolling mean (63 recorded rows, overlapping/dependent)')),width='stretch')
+        shared_metrics=canonical_service.validation("legacy")
+        st.caption('Legacy/manual origin metrics remain separate; raw probability diagnostics and timestamp amendments follow the shared backend contract.')
+        st.json(shared_metrics.model_dump(mode='json'),expanded=False)
+        for dimension in ['horizon','stock','industry','regime','confidence_bucket']:
+            with st.expander('Prospective '+dimension+' performance'):
+                st.dataframe(pd.DataFrame([{'group':key,**value} for key,value in shared_metrics.groups[dimension].items()]),width='stretch',hide_index=True)
 with tabs[1]:
     studies=[p for p in (ROOT/'reports/post_v5').glob('development-*') if (p/'OUTPUT_HASHES.json').exists() and (p/'SUMMARY.json').exists() and not (p/'REVIEW_INVALIDATION.json').exists()]
     if not studies:st.info('Development experiments are in progress; no completed comparison is claimed.')

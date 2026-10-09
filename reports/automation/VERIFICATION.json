@@ -1,0 +1,26 @@
+{
+  "python": "3.12.10",
+  "packages": {
+    "fastapi": "0.143.0",
+    "pydantic": "2.14.0",
+    "starlette": "1.7.0",
+    "uvicorn": "0.54.0",
+    "httpx": "0.28.1",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.9.1",
+    "xgboost": "3.4.1",
+    "lightgbm": "4.7.0",
+    "streamlit": "1.65.0"
+  },
+  "model_version": "research-20261008T190859",
+  "protocol_version": "india-delayed-eod-0630-v1",
+  "legacy_forecasts": 388,
+  "legacy_matured": 97,
+  "legacy_invalid": 0,
+  "canonical_forecasts": 0,
+  "evidence_state": "INSUFFICIENT_FORWARD_EVIDENCE",
+  "model_logic_changed": false,
+  "thresholds_changed": false,
+  "successor_trained": false
+}

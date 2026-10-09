@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 inject_theme()
 st.title('Forecast')
 st.caption('RESEARCH MODEL · Direct horizon-specific forecasts · India and US equities')
-st.caption('New explicit requests archive prediction-time inputs and outputs in the isolated prospective shadow study. V5 training lineage remains historically unverified.')
+st.caption('Inspect saved immutable forecasts. Daily acquisition runs independently through scheduled jobs; viewing this page does not issue predictions.')
 st.warning('Point-in-time certification and production promotion are blocked. Research forecasts abstain from actionable confidence.')
 
 @st.cache_resource
@@ -29,23 +29,24 @@ except Exception as error:
 
 with st.form('v5_forecast'):
     left,right=st.columns([3,1])
-    ticker=left.text_input('Equity ticker',value='AAPL',help='India: .NS or .BO · US: plain equity symbol').strip().upper()
+    ticker=left.text_input('Equity ticker',value='ABB.NS',help='India: .NS or .BO · US: plain equity symbol').strip().upper()
     right.caption('Models load from saved research checkpoints. Ordinary requests never train a model.')
-    run=st.form_submit_button('Generate research forecast',type='primary')
+    group=st.selectbox('Saved origin group',['canonical','legacy'],help='Canonical delayed after-close and legacy manual intraday predictions are separate experiments.')
+    run=st.form_submit_button('Inspect saved forecast',type='primary')
 
 if run:
     try:
         family=equity_family(ticker)
-        with st.spinner('Validating source snapshots and computing research evidence…'):
-            from research.post_v5.shadow import forecast_request
-            data=forecast_request(ticker,bundles=models(pointer['model_version'],pointer['models'],family))
+        with st.spinner('Reading archived forecast evidence…'):
+            from application.services.workspace import load_workspace
+            data=load_workspace(ticker,group)
         st.session_state['v5_forecast']=data
     except Exception as error:
         st.error('Forecast unavailable: '+str(error)); st.stop()
 
 data=st.session_state.get('v5_forecast')
 if data is None:
-    st.info('Choose an equity to inspect direct 1/5/10/20-session estimates, uncertainty and evidence. Each explicit request archives observed inputs and either an immutable shadow prediction or a visible failure.')
+    st.info('Choose an equity to inspect direct 1/5/10/20-session estimates, uncertainty and evidence. Choose the legacy group to inspect the preserved 388 manual forecasts; canonical batches arrive through the scheduler.')
     st.page_link('pages/validate.py',label='Inspect validation evidence before forecasting')
     st.stop()
 
@@ -57,7 +58,7 @@ item=next(i for i in data['forecasts'] if i['forecast']['horizon']==horizon)
 forecast=item['forecast']; metadata=item['metadata']; record=item['record']
 calibration_state='Accepted on disjoint development validation' if forecast['p_positive_calibrated'] is not None else 'Rejected; uncalibrated raw score only'
 st.warning(forecast['trust']['status']+' · '+', '.join(forecast['trust']['reasons']))
-st.write('**Data & model health:** Price '+data['health']['price_data_status']+' · Historical source vintages UNVERIFIED · Calendar UNVERIFIED research proxy · OOD ratio '+f'{forecast["ood_score"]:.2f}')
+st.write('**Data & model health:** Price '+data['health']['price_data_status']+' · Historical source vintages UNVERIFIED · Saved origin group '+data.get('origin_group','legacy')+'; historical feature calendar remains an unverified research proxy · OOD ratio '+f'{forecast["ood_score"]:.2f}')
 st.write('**Calibration:** '+calibration_state+' · **Confidence:** '+forecast['trust']['confidence'])
 stale=[key for key,status in data['context_health'].get('source_statuses',{}).items() if status=='STALE']
 if stale: st.warning('Stale captured context sources: '+', '.join(stale)+'. Source freshness limits this research estimate.')

@@ -12,3 +12,14 @@ config/research/** -text
 reports/post_v5/** -text
 research/** -text
 scripts/post_v5* -text
+
+# Canonical issuance fingerprints must survive cross-platform checkouts.
+application/** -text
+api/** -text
+jobs/** -text
+config/collection/** -text
+reports/automation/** -text
+scripts/*schedule*.ps1 -text
+scripts/export_openapi.py -text
+scripts/measure_backend.py -text
+scripts/verify_automation_preservation.py -text
