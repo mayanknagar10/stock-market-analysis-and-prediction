@@ -1,0 +1,1 @@
+{"horizon": 5, "fold": 1, "model": "elastic_net", "train_n": 59718, "test_n": 5629, "train_dates": 680, "test_dates": 62, "status": "started"}

@@ -1,0 +1,1 @@
+{"status":"stopped","reason":"Support regression failed: sector excess/decomposition scored unsupported sector-label rows. Corrected to finite reference-label cohorts only. No outcome-based configuration selection or protocol change.","session_id":1663,"protocol_revision":0,"implementation_correction":2,"time":"2026-10-08T21:14:07.622Z","final_data_used":false}

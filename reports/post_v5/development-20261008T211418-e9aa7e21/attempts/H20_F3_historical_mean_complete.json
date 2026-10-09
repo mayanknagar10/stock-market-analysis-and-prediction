@@ -1,0 +1,1 @@
+{"horizon": 20, "fold": 3, "model": "historical_mean", "train_n": 73787, "test_n": 4794, "train_dates": 789, "test_dates": 61, "status": "complete", "feature_count": 0, "train_metrics": null, "validation_metrics": {"n": 4794, "mae": 0.046775466278040356, "rmse": 0.06336944179081658, "direction_accuracy": 0.6420525657071339, "ic": null}, "target": "cumulative_log"}

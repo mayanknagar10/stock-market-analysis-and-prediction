@@ -1,0 +1,29 @@
+{
+  "verified_at": "2026-10-09T10:18:43.593741+00:00",
+  "tests": {
+    "passed": 165,
+    "warnings": 8,
+    "elapsed_seconds": 27.72,
+    "command": "python -m pytest -q"
+  },
+  "compileall": "PASS",
+  "source_and_metric_hashes": "PASS",
+  "active_study": "development-20261009T083921-00e775cf",
+  "metric_files_verified": 39,
+  "source_files_verified": 11,
+  "v5_preservation": {
+    "verified_files": 1052,
+    "commit": "26c09e0",
+    "model_version": "research-20261008T190859"
+  },
+  "prospective_predictions": 388,
+  "prospective_members_with_predictions": 97,
+  "matured_outcomes": 0,
+  "pending_outcomes": 388,
+  "all_low_abstained": true,
+  "production_promotion": "BLOCKED",
+  "next_final_candidate_trained": false,
+  "documentation_links": "PASS",
+  "browser_visual_accessibility_qa": "NOT DONE: runtime unavailable",
+  "automatic_scheduling": "NOT INSTALLED: explicit UI/CLI collection"
+}

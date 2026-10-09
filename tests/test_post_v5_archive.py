@@ -42,3 +42,14 @@ def test_preservation_detects_any_protected_file_change(tmp_path):
     assert verify(tmp_path,target)['verified_files']==1
     file.write_text('rewritten')
     with pytest.raises(ValueError,match='modified'): verify(tmp_path,target)
+
+
+def test_missing_prices_are_preserved_exactly_and_snapshot_tampering_fails(tmp_path):
+    import numpy as np
+    from research.post_v5.archive import RunArchive
+    snapshot=source();frame=snapshot.frame;frame.iloc[-1,frame.columns.get_loc('Close')]=np.nan
+    dirty=DataSnapshot(frame,snapshot.metadata);archive=RunArchive(tmp_path)
+    identifier=archive.save_snapshot(dirty)
+    assert np.isnan(archive.load_snapshot(identifier).frame.Close.iloc[-1])
+    file=tmp_path/'snapshots'/f'{identifier}.json';file.write_bytes(b'{}')
+    with pytest.raises(ValueError,match='integrity'):archive.load_snapshot(identifier)

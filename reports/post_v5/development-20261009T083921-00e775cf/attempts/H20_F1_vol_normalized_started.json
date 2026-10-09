@@ -1,0 +1,1 @@
+{"horizon": 20, "fold": 1, "model": "vol_normalized", "train_n": 58251, "test_n": 5629, "train_dates": 665, "test_dates": 62, "status": "started"}

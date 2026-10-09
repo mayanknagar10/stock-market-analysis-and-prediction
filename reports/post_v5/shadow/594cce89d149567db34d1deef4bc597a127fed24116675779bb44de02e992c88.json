@@ -1,0 +1,597 @@
+{
+  "study_id": "prospective-india-20261008-v1",
+  "run_id": "14cb34861247c6639469cbdc7d9cd921c2184812d226a9a3ebc06923a9b7883b",
+  "issued_at": "2026-10-09T09:10:53.768958+00:00",
+  "successes": {
+    "ABB.NS": [
+      "96f3a28a-9f0e-4b16-b2ae-5074452d577d",
+      "f2c4abeb-e32e-4e40-b6a9-46e13d96fe80",
+      "3fc5ac93-49d4-4613-89f4-370ded68f23d",
+      "840f6905-35c4-4487-8ad1-b13e9c7d381a"
+    ],
+    "ADANIENSOL.NS": [
+      "5f5bfd8f-992d-49aa-8cf2-e823483bae68",
+      "9899a0d9-8e0a-445a-a85a-53e1e50b7e0e",
+      "695b2256-67cd-47f4-9232-5ee6fec7704d",
+      "e0ffb990-5615-4e5c-a229-c4e11f2b947a"
+    ],
+    "ADANIENT.NS": [
+      "489b8aca-865c-40e1-9bf6-51538d67277b",
+      "7a6fd19c-769f-47ff-9267-d3cf9f768633",
+      "67bc4ae3-7847-49b8-b23e-f8a20577907d",
+      "4413f5cb-2253-40b0-be23-a923a8d6a89a"
+    ],
+    "ADANIGREEN.NS": [
+      "224fd1a2-6162-4076-b5f4-2e43078d91b3",
+      "b2c05ae9-4cac-4150-96d0-3b8f3ff25cb7",
+      "bfddf6c9-37c5-4ce7-bb02-5203f0b93b33",
+      "5115223c-8622-4e9f-ac2a-8e924209cca4"
+    ],
+    "ADANIPORTS.NS": [
+      "507c220d-d5ba-4616-bd40-a24613eb8358",
+      "1b14473c-8fed-48a8-b79d-9c58575b8ed6",
+      "cdbafe7b-5c01-447a-9037-fd31db2e6339",
+      "76a6607a-1c42-4de2-bc2c-8e958c3765d5"
+    ],
+    "ADANIPOWER.NS": [
+      "bcc483b6-9677-42ce-bcfc-336f202b7b82",
+      "7ec761ca-e622-46a2-b776-b61655c1749d",
+      "dbdda750-35f5-4172-9dbd-bab46f456ed3",
+      "af99c723-4773-476b-8c49-0228b36e14c2"
+    ],
+    "AMBUJACEM.NS": [
+      "9039c0b6-b600-4a14-83b6-20a7d99186fe",
+      "ba3cad4b-1296-429d-b763-deac1caa85b0",
+      "90684b39-241a-454e-8cda-a6091f723695",
+      "292e50c8-9c25-42da-aee0-d125f31f4a48"
+    ],
+    "APOLLOHOSP.NS": [
+      "ee0c8051-1c57-4cb7-848b-ad1fcc5f580d",
+      "a439b6d3-6756-491c-aba4-5b60116913fb",
+      "03d3ab0b-b7d8-4632-b7d3-c4000c63bf3f",
+      "65b5b207-f567-4e0c-acd3-2224f8972bbc"
+    ],
+    "ASIANPAINT.NS": [
+      "07d38a44-16ad-48f2-a8c8-be80064e901e",
+      "461f0976-0d5f-4353-93ae-7f1c1552c7fe",
+      "f68ea224-b529-46cb-9281-ebdda4ca46a4",
+      "cd083971-6547-46aa-a492-d56c78f8ba7f"
+    ],
+    "AXISBANK.NS": [
+      "8216b01c-a9e5-4964-8232-3563003baf2e",
+      "3805f98c-5429-465f-b199-2c721317bb48",
+      "e94bcd71-db2b-49c3-995a-9964feb9e4b3",
+      "6769e702-4767-4d80-85e8-a772d2fe3d2d"
+    ],
+    "BAJAJ-AUTO.NS": [
+      "2d74c772-dafa-4762-9778-ba6b15ebd7bd",
+      "e2a64fe6-86fd-4fd2-89a6-fe76ad453a29",
+      "afcd7a91-3378-4e94-ae86-612180a887e2",
+      "5df315c4-bdc7-40c2-8852-ab3ebf61661b"
+    ],
+    "BAJAJFINSV.NS": [
+      "9d6f9a5f-b0d3-4499-925c-09a61c8702ac",
+      "c51cfc7a-9a06-45da-87ed-1b6bc6e1841e",
+      "a75f90e5-d467-4213-870f-5c0387ff78d3",
+      "e694806a-58e4-481a-87e0-85b1c5260338"
+    ],
+    "BAJAJHLDNG.NS": [
+      "aa639c77-d83a-4922-88c0-4fe3eab0a297",
+      "d7c3730d-2185-4ca3-accf-57802f5242d2",
+      "ade7ae8e-496c-421b-bdb4-c3a0870c4bd5",
+      "6dd80add-bf6a-4c43-b58e-24475a7da39a"
+    ],
+    "BAJFINANCE.NS": [
+      "65865f36-b7fe-414d-bb2a-8ca2d75ef2a2",
+      "5d34c3c4-4786-4e5c-85d2-8c5b4026ed0c",
+      "5a1998bb-2818-4ccc-9e08-800e8851e475",
+      "95ac3df1-469d-49cf-b9a5-c091f27dfca9"
+    ],
+    "BANKBARODA.NS": [
+      "60eb0b1f-c541-4cef-b0a8-17d7264fba19",
+      "d53e4cf5-cc08-4d17-94f2-e68680eb2f84",
+      "4a3b8780-5a46-449e-8dad-d4cc4144782a",
+      "4fcc93e7-1446-4b97-a11e-7cd2c9674747"
+    ],
+    "BEL.NS": [
+      "cb613b69-7be8-446a-b17b-143e913a03d9",
+      "0d57d485-49ba-480e-be7a-abdc3aeb699a",
+      "b0160cbc-122a-44f8-9ba1-22779ffc9e7b",
+      "18992e13-3e0a-4d79-a224-a5e670fd4705"
+    ],
+    "BHARTIARTL.NS": [
+      "d52aad9e-6836-4386-a63c-8d1b4faacef7",
+      "a615c33b-9a6e-406d-94b1-32a37604ec08",
+      "c54d8bf3-4aaa-4403-af36-806019ff634e",
+      "407a74a8-0f0f-4e22-a7ee-00661e258c45"
+    ],
+    "BOSCHLTD.NS": [
+      "335160bd-ef90-4a48-bd32-cb8af692c073",
+      "f5c8d1c3-28fc-4127-8c57-c05fd31a301e",
+      "4e156d6f-a541-484f-90bb-1a56f99e88c1",
+      "31db9984-a6ef-4c75-abac-6a0904ad1a18"
+    ],
+    "BPCL.NS": [
+      "2866ba1d-f1ce-4c48-9706-9a71f4e1723e",
+      "7bee9f3d-685e-4af9-a213-e9c5f87dc12e",
+      "7da637cc-5012-4669-9b79-26135ff96443",
+      "9ff3b40d-7617-4402-a5e9-3382bfb17361"
+    ],
+    "BRITANNIA.NS": [
+      "28ccb046-886c-4113-a11e-bb121e96b7b0",
+      "0cf74dd7-bbe9-4917-977b-cc01638e4ecd",
+      "11c21b11-459c-4f31-9f69-c5621b6e7b89",
+      "133c9a5a-75e3-4a11-bee3-38e8b2556eef"
+    ],
+    "BSE.NS": [
+      "49688bb1-c65a-4b5e-a120-d32002ad8171",
+      "ac734137-46a3-4f2b-82ca-a545702104a8",
+      "63fada1d-c630-49cf-916f-f6956b120f0e",
+      "18df109d-962b-4b41-bef5-304e66b41b2c"
+    ],
+    "CANBK.NS": [
+      "b475cebf-f1ad-4880-967e-0dad5286fdbd",
+      "cc192b5a-53e6-4aa1-b4af-42658c2f09d6",
+      "f04140d7-3f24-4511-95bb-4f2923b73e46",
+      "f9e36287-99e4-4f0d-b9f6-d5e6f4c9fc8b"
+    ],
+    "CGPOWER.NS": [
+      "6616ce90-c044-41ee-97e3-368fc9ef47ff",
+      "9e84671a-36de-478c-ae61-1ae64d03d4f4",
+      "850fa9f3-69d3-433f-93f3-59d32a9b9105",
+      "55316be5-cd52-42bf-962a-8e467db66cfd"
+    ],
+    "CHOLAFIN.NS": [
+      "794108ff-18b5-443f-845c-7bc183058e06",
+      "4c50eb87-a5fa-4439-aeaf-603898c3970f",
+      "120b3ef1-4af3-4303-9d0a-eb3dfafaa7d6",
+      "8be53a9f-ffa5-4693-b618-aafd46f6f6bf"
+    ],
+    "CIPLA.NS": [
+      "71582f48-bc5b-41cd-b805-33ba83f2bb11",
+      "7e6d0081-32c4-4694-8c44-fb2d05f31c8e",
+      "9ee09627-f0d7-4eb0-81a9-cb37972b2454",
+      "69f588d6-1596-4647-b8f2-75e3f6f55401"
+    ],
+    "COALINDIA.NS": [
+      "c495dc3d-2bf7-45ef-b83b-c0e7c907332c",
+      "9341aab8-4d67-442c-a1f5-5a9a561f686d",
+      "4a20be09-98dc-4c7f-bd55-43ba00314786",
+      "1807e3bc-59bc-45d2-99bf-a12bb697d3f4"
+    ],
+    "CUMMINSIND.NS": [
+      "bd6b6ecb-7bae-4179-82dd-a1d94e240449",
+      "906655bd-50e0-499f-b815-a226eda9f588",
+      "afe4e139-199b-474d-b6ec-b1d0b7b4aac8",
+      "6499dee9-5a57-43a9-ae0b-ba67d086000f"
+    ],
+    "DIVISLAB.NS": [
+      "361299cb-103c-408d-8d0b-a4c0bbe94b37",
+      "876f5c0a-8eac-4d91-8446-f0fef04c5f6e",
+      "271e5775-958c-4008-8e32-2656fa38eef0",
+      "8e606473-8b71-4834-bf22-34c6bb4405bc"
+    ],
+    "DLF.NS": [
+      "daca066a-b215-4b0d-b44d-594c550d2c8e",
+      "6b8c9fdb-1a93-4c5a-9bd6-6d0ae93cc11b",
+      "30987a91-4a8e-4d5d-ab58-134a2cd430d9",
+      "44b65fd5-acb4-46bd-90db-a9526411a265"
+    ],
+    "DMART.NS": [
+      "6f68b859-63b1-417b-b61e-85673c7efef6",
+      "814a3f2c-f9e4-4de3-bdc9-3b98c36fbc19",
+      "4f111734-57fe-4d58-849f-84601df8f673",
+      "4adfb9b1-51df-4d5e-a468-05a4b750f83a"
+    ],
+    "DRREDDY.NS": [
+      "c31919e0-7adb-46cb-8583-9903f7c4bb92",
+      "b87ab07c-e68b-41fa-af9a-8adce5a15834",
+      "c39bb693-6065-4f8e-bdad-8174c059a1e4",
+      "06f1f87c-116d-4ea3-8425-5eb7ce434158"
+    ],
+    "EICHERMOT.NS": [
+      "685cb03c-2304-4551-8e24-4adf4ae34625",
+      "188f0e3b-c0e3-4fff-a84b-1bed549b9528",
+      "a4bd1df1-1f8f-4f24-a7ed-b60a0eb3af04",
+      "669100d4-943a-4045-9915-d7ec355ed1fd"
+    ],
+    "ENRIN.NS": [
+      "dc6b0551-024f-4fc0-9c40-273fe9167a2d",
+      "890764ad-2188-4e91-93d4-5c079e605887",
+      "b39e8cf9-5f95-45a2-b778-0f26206ac398",
+      "1bcdc753-329c-4c35-a17f-2b1e19182360"
+    ],
+    "ETERNAL.NS": [
+      "1de7ff61-9c25-4bef-be0d-7c6342fb838d",
+      "7b31cabf-7472-4349-a242-ad07be4c209e",
+      "5be38b6f-6add-477e-8041-8631a8e3eddd",
+      "bb1cfc8a-105f-49cd-91d2-9f9b92151e20"
+    ],
+    "GAIL.NS": [
+      "0cea9985-b3f8-4c4f-bce1-7c8dbe284704",
+      "63eb7799-7bdf-49c4-83c8-cd4f8cb537eb",
+      "db7fdf61-28db-4430-8451-5cfcb56305ee",
+      "bdd06e02-f0e5-4f19-81c1-e6e0627149be"
+    ],
+    "GODREJCP.NS": [
+      "1e333386-5f19-45f9-993d-04ee80ef5d5b",
+      "bd21a6d5-14f5-4100-b76d-784d08e4466e",
+      "8e4cdbcc-5423-447d-bc5c-4456064c9c47",
+      "66c74106-0030-43ce-82f5-1c254f0f30df"
+    ],
+    "GRASIM.NS": [
+      "1d24fe1f-f6ee-4f7d-8d1c-0dfcdc01df6b",
+      "55e302e9-5a0c-4e2e-9514-68f8dc4aec0e",
+      "3bedf7af-47c3-4a11-8e32-aefb592d174c",
+      "91cb9d48-e753-44e9-a5de-0cc81314db5a"
+    ],
+    "HAL.NS": [
+      "59aacd72-4137-4949-a8c9-b62ecc1b1d22",
+      "91294c29-1718-440d-8293-fc068eaf333e",
+      "5c195b5a-b28b-4861-a8df-968c4c248acd",
+      "8e7c9aca-5669-48af-aae9-13303709fba6"
+    ],
+    "HCLTECH.NS": [
+      "119cf666-1662-4729-939c-ff14a3380730",
+      "e3cf6a07-161e-4d59-b8d1-76a8676f87f2",
+      "7a42673e-7c5b-4245-b2fc-f738899d096b",
+      "a5779986-3ce2-4183-8e2d-ecc53d86570c"
+    ],
+    "HDFCAMC.NS": [
+      "978d28ba-83b4-45bb-a89d-3e1d4aeb8e15",
+      "06f2b685-542a-41ce-a3f0-76a8c13d450e",
+      "7794d807-6069-4f7e-8db9-e2f64ba9b57b",
+      "e732fd85-9ac9-4525-ba0a-f351c69c2170"
+    ],
+    "HDFCBANK.NS": [
+      "9d6f7bcf-4371-4451-9016-d7b094c57ae0",
+      "c42a8a42-ce1e-4075-b549-42b170e5739d",
+      "d1403f87-090b-4277-8376-7d8e3e9c9c80",
+      "6e41757e-04e5-4122-92a8-1941ec24aa5d"
+    ],
+    "HDFCLIFE.NS": [
+      "74a79045-f1fb-4bf9-b1d0-0baebd04ec57",
+      "7de7905f-4745-4333-86c2-5112ea648962",
+      "862ec109-a82f-47a3-93d1-f9387d977695",
+      "653920d4-e0d3-4aae-895d-ae0065f7b373"
+    ],
+    "HINDALCO.NS": [
+      "b9927e32-3fc3-4ab3-96e8-17c67fa5be7a",
+      "4f7640c3-51f2-48e1-9379-0054557fc0f8",
+      "a2db0a30-1d01-4568-9f2b-fd606f14bf4d",
+      "7b54943c-24d0-4b97-813a-f87e42a19b7c"
+    ],
+    "HINDUNILVR.NS": [
+      "fd6c2c52-395f-4273-9c34-d60c5bf6a82f",
+      "db6bcf44-f6ba-4dcc-b99a-b4b248f9f118",
+      "e4058d6a-fa9c-4ff6-81a2-20b139252dad",
+      "83508c11-f65c-44ed-8951-38d81288729f"
+    ],
+    "HINDZINC.NS": [
+      "a20c61cb-a76a-49c0-b3a1-73fe5b84488f",
+      "3c1d565d-7b3f-4a30-885e-8d7bedb6e8e9",
+      "90760628-ab71-4984-aac8-6083c3f1393f",
+      "e348b48f-de91-4f75-a950-9a56d841adc3"
+    ],
+    "HYUNDAI.NS": [
+      "d70a5b35-ee47-4b2c-8261-be7104d7172c",
+      "6683ec2d-3a12-497c-bb75-a91e9539eb3d",
+      "a7c1b3b4-d75a-497b-9771-8e5e72486132",
+      "d91a68b0-86cc-4fcd-b88f-9e162b2d8329"
+    ],
+    "ICICIBANK.NS": [
+      "7d2ef312-a7c9-48dd-9a30-fbb1c977eed8",
+      "23c985df-22dc-40fe-a06f-e6b07a935253",
+      "62d74b18-3bdc-46fb-993e-aca63472356e",
+      "0c0f5cc2-58fc-41db-ada1-d81e891876b5"
+    ],
+    "IDEA.NS": [
+      "684f7d7d-831d-4daa-8e8d-f4953c8a664b",
+      "66045f0a-89ca-4526-9a8e-62ac56de09bf",
+      "f7411fa4-92f0-4ce7-a524-d7255eb17cc6",
+      "3879670e-be9b-49d7-8d83-0681907ac48e"
+    ],
+    "INDIGO.NS": [
+      "ee1d1077-61c4-4393-a9ce-0f5b18d9a4b3",
+      "d52fa65b-16c5-4709-8438-f1fd6c23f0c6",
+      "afd229fe-f971-4dab-a0df-6913835259d9",
+      "7db5d71c-f799-4ee8-8b1e-a761851ae00d"
+    ],
+    "INFY.NS": [
+      "bd2ab17d-5d30-4075-b8e8-875f3477169d",
+      "b363c9ce-fb07-4bce-b6e7-8675efb77918",
+      "38eca9b0-8b99-42e3-be8e-2457ae75f081",
+      "9dd625cf-feef-4d22-81c9-c1b2dc7960b9"
+    ],
+    "IOC.NS": [
+      "a3323d39-0469-448f-b517-f480bbfa1a9c",
+      "1931e153-e5e0-409f-8f71-52deabd7bfe6",
+      "1947243d-e254-4058-9ebb-746cca6b1b0d",
+      "fce8ff6c-bd85-4363-b9b8-4dfa37d72d6b"
+    ],
+    "IRFC.NS": [
+      "66c978fb-b3d8-4e35-b0e5-44e2ef02ff95",
+      "f622ec83-5f47-4552-b578-b4e3a78e95b8",
+      "2f8f8f5d-5be4-4fbc-aceb-89235200a138",
+      "92f5c513-f913-4120-a1f7-b911d19ab655"
+    ],
+    "JINDALSTEL.NS": [
+      "468788b4-25c6-4956-b3a4-33cd621900f2",
+      "2670adbe-8d41-45fd-91cf-bbb186bb2bde",
+      "7b20011a-6444-44df-8810-3307ad0a7e2c",
+      "305f75a7-541b-41ce-a204-3fae63a0e2d4"
+    ],
+    "JIOFIN.NS": [
+      "d73b1d60-0ece-4551-8de8-ed91dca0bf85",
+      "0a500304-02bf-4836-8975-a1c17b95f8ec",
+      "8eaa74de-bd08-4462-ad4e-abcda398a68b",
+      "b321f25b-c0f9-4d2e-b050-7beada708fe8"
+    ],
+    "JSWSTEEL.NS": [
+      "e56a3b0c-a013-451a-add0-375924586126",
+      "48479a0a-1855-4416-8682-524906e6e761",
+      "7c9e1051-127f-4894-84b7-a10763e0ed6f",
+      "aad67ffe-eda2-417f-886a-62f561b86370"
+    ],
+    "KOTAKBANK.NS": [
+      "ade4d0b5-43c5-4964-b899-6d3e9f4389d4",
+      "d16bdeba-dc1d-4514-924d-598d3e721397",
+      "6e13e932-c82e-42d2-9d26-40a756cd7c52",
+      "7f954084-c256-4b0f-849c-9f1ecc1de646"
+    ],
+    "LT.NS": [
+      "080180e2-7e60-4b6c-b36c-98af5b5db506",
+      "33bfc2bd-cbc9-4f42-9d27-cb2b137c950d",
+      "ca2b14ad-b8f2-427c-8030-8341ad57e13a",
+      "989e35ba-12ab-49bd-9640-e9c8b767bae5"
+    ],
+    "LTM.NS": [
+      "9b5a3870-df68-4f57-817d-ffde6c493b74",
+      "97752111-8f6e-4c12-b6a7-500cb5cfe4c6",
+      "bec3010f-1fc2-4514-9bd1-be382d28d150",
+      "7775caeb-2c88-4567-8ddd-6ffa91e9751a"
+    ],
+    "M&M.NS": [
+      "03843bca-3c75-47ee-b339-e848c3563688",
+      "e944eb29-c0cd-4879-9b1f-91247285781b",
+      "fb1e1a2a-3c92-41d4-bf9c-378677b2db43",
+      "2865249d-3504-4d37-babf-311b3d3d0046"
+    ],
+    "MARUTI.NS": [
+      "1d56682e-2b9c-4802-98b8-bf97747459f0",
+      "dac544fb-12c3-4862-9295-2bc68622625b",
+      "58cc7ab1-4a97-4925-ad09-a53b4eebfe63",
+      "46987be0-6eb4-4011-a6e5-7e1b4b86e951"
+    ],
+    "MAXHEALTH.NS": [
+      "378c3b8c-4831-4d00-acbf-743163330194",
+      "49f95314-4cb3-4450-9a14-4a284e84a3d8",
+      "7e46bb11-97ff-41d3-9f33-ce2f2a0f9310",
+      "c0a6c092-3857-434d-912d-39542854d773"
+    ],
+    "MAZDOCK.NS": [
+      "20dbed95-51ce-47df-8816-d5d41200447a",
+      "ba49c63a-4fc6-47a2-a3dd-f9c36d995197",
+      "c8f87d96-4234-44ac-ba82-0ab4f9ffe2d0",
+      "b6379cf0-6a27-4000-b7dd-097d616b4173"
+    ],
+    "MOTHERSON.NS": [
+      "93bcead8-20a7-436f-b881-9f4ef02e573e",
+      "6a2943cd-444c-4468-b3d6-fccd74d10027",
+      "73ff8191-2cc6-4714-bd89-26cdfa3e11d6",
+      "bac3d22b-907b-4f39-b3c9-759b6ece0469"
+    ],
+    "MUTHOOTFIN.NS": [
+      "e41e0a7d-d84c-4d99-9259-9b021f38cfb8",
+      "566a9e5e-b470-4429-a1d0-b4da8b67474a",
+      "1281010f-1c7b-42c0-9102-9da44b8461f9",
+      "8721a2f9-540e-412c-abc4-9ac40ec0071d"
+    ],
+    "NESTLEIND.NS": [
+      "85c5f034-c17b-4ae7-b192-8fd7837df987",
+      "03cf7d0e-ebef-4186-a3e1-f8a056b05fed",
+      "11b4d26b-6758-4c57-9ac6-dd89a8fecdc1",
+      "af72c596-a848-4978-8b0b-0015fdd1cc25"
+    ],
+    "NTPC.NS": [
+      "02df7b54-d068-4e15-98df-34db1c1bb630",
+      "706e76da-d523-498b-bb2c-4c6f0cea4e40",
+      "fefc6b52-8452-46d8-8cb6-808b97837326",
+      "585fc18d-1289-4a53-b4c4-04f2b91aeb44"
+    ],
+    "ONGC.NS": [
+      "d5ea0e32-bd79-47d5-9794-e7ca7db37ce5",
+      "ad56098f-0901-4cbd-93d2-05f191d2482a",
+      "cb5e193d-7a0b-46db-941a-008b453612a7",
+      "40f3560b-e6e8-4225-a797-bf81a9e2f2ea"
+    ],
+    "PFC.NS": [
+      "4e33067f-e7f4-48d2-b9fb-5e63018d98ea",
+      "ab7ad23a-7d13-4378-be46-a0bd44aeea02",
+      "1035d3f9-249c-4e25-bb05-dd334435b45f",
+      "bafb7df1-9976-4cd9-840f-fc83a707db3f"
+    ],
+    "PIDILITIND.NS": [
+      "58b9667e-5b26-4101-b455-182c481fa3fe",
+      "facdf7f6-e807-4101-89d3-1147467dc6f8",
+      "bb3763e5-827b-41aa-8a08-2f53d8669ae4",
+      "70a89553-7a34-4a9f-964c-2231932287bf"
+    ],
+    "PNB.NS": [
+      "3b095173-d636-4201-a63c-7116a04b5320",
+      "b6f806ee-7d39-4999-a330-563d897dde94",
+      "87fe6b50-de25-4d57-98cb-b0a032fc41f8",
+      "1210d9cc-36e3-4abf-aaf6-318d046fb050"
+    ],
+    "POLYCAB.NS": [
+      "5cf9ac1b-86ac-4ade-8b18-2932d3065f67",
+      "b4bb1d25-3000-4dea-ac6c-6d9afaf6dfd0",
+      "510ddea6-d1dc-4e93-8005-0212e26e473b",
+      "54b91a7a-423d-43f4-be59-3eda6c0aa940"
+    ],
+    "POWERGRID.NS": [
+      "7fa5ef12-4445-4e44-888b-f80ea422373c",
+      "27b07c5c-75e0-48c5-8425-5c3543e216dc",
+      "99d627b8-37e8-45ed-90f7-2fab7a4f218b",
+      "a1cfb6d2-4c2c-41e6-9c24-836e8c952d6d"
+    ],
+    "POWERINDIA.NS": [
+      "7ca161c3-806f-46fb-91a8-6157719206e2",
+      "f2305905-71c8-4b07-8682-f2b7939f0437",
+      "c6a18d38-6e94-48aa-9725-e2ead46ee879",
+      "6bec3555-bffe-4f36-a754-1269f5d20bf0"
+    ],
+    "RELIANCE.NS": [
+      "165aefee-d2a2-44d1-9b88-044595b8f4f7",
+      "e49ee024-fddd-4686-b05d-176a4c51aa11",
+      "b28b8217-9d70-4cbe-8732-c9afb36beeaf",
+      "bf72a925-1347-4ba1-93a5-6daa9c67ba00"
+    ],
+    "SBILIFE.NS": [
+      "acaaa412-b0f7-4761-9f23-96aea7bf5739",
+      "ee26701d-2d00-412f-ba21-5d25a28ec8c5",
+      "63b5ac7b-9747-46cb-b248-5fd3fe0ffb54",
+      "b6276344-8d54-456a-b912-8e8e423fa202"
+    ],
+    "SBIN.NS": [
+      "9758cfc0-c2d3-42b6-8559-3cbb4a78a137",
+      "b9028dbf-178b-47fe-b3a1-400822efb20f",
+      "7e181819-b221-4847-a226-a8527862143f",
+      "0d36f9ba-7467-46f9-af20-9f562e12de2c"
+    ],
+    "SHRIRAMFIN.NS": [
+      "4a0b0ddb-559a-43bf-abce-88725f70bcba",
+      "a9fb5079-70ea-404e-9d68-316a5a084814",
+      "74b43342-d032-497b-8ce6-ac6270b9bf82",
+      "8c327065-31ee-4720-8a4f-db770aea2724"
+    ],
+    "SIEMENS.NS": [
+      "77f7e125-04f2-4617-a7d0-152b18131f78",
+      "d3888ae3-33e6-4126-bc9f-a339d610fd54",
+      "bb517a37-2a8c-4085-8cbb-efe19d74753c",
+      "c4721233-8d85-4035-9ca7-0382e85d17be"
+    ],
+    "SOLARINDS.NS": [
+      "ebcf69c5-5661-45bd-b95c-7420ea923ad2",
+      "4cbf2897-236f-40d1-b612-cc73abb0617f",
+      "9fcebc33-5bfa-4710-8bec-9f8292644818",
+      "d318a8db-3077-4f3e-b9f8-76b500532df4"
+    ],
+    "SUNPHARMA.NS": [
+      "96714cd5-c515-425c-bf27-9705edd4666b",
+      "83c7eaba-2642-43f8-931f-99b4d7910b8e",
+      "383a0ce6-70d0-4dd0-a94f-d430ecef2daf",
+      "732bea86-fad1-4062-bce2-abda1225a918"
+    ],
+    "TATACAP.NS": [
+      "f6603900-ae07-4af9-8c60-15b6706c2d2b",
+      "b684317e-9ac3-4498-82d1-7c4cfa6c8c97",
+      "691cd67f-b546-49ee-8af7-b1ff43477587",
+      "55899fca-4bd5-4d32-873c-31a3e3c54043"
+    ],
+    "TATACONSUM.NS": [
+      "85791a1c-eca5-42c6-89ee-de5046612fd3",
+      "eb13c42d-1f22-489c-910c-09999b5bf8b5",
+      "cc8c698b-0828-4927-b52f-52c1585aad07",
+      "3ea8f91f-7718-4e46-b3c4-41d2a83739f2"
+    ],
+    "TATAPOWER.NS": [
+      "18baebc3-51ab-4f2b-ab69-58039969c300",
+      "ae810aaa-ce67-4e1d-9a74-c60e715330ad",
+      "d5a7a56e-406a-4a76-9ca2-9633ba2a3820",
+      "415aa699-843a-4bd1-aadc-ce72b58263ce"
+    ],
+    "TATASTEEL.NS": [
+      "7c8644a7-52d9-427e-a704-5c81f4c6d1e5",
+      "76791ea8-9899-41ca-9a3e-4fe628a1ea61",
+      "ecb1786a-316b-4ce5-8f8e-374a41c80d24",
+      "32cf3be7-62e8-4173-b07e-518ec835a8e2"
+    ],
+    "TCS.NS": [
+      "98aeb350-8f4c-4c71-9ae1-a852531ccbbf",
+      "604c9178-91e1-4563-887b-3231b2252a7c",
+      "96a7d819-dc76-4708-9d2c-dd1889fca88d",
+      "86c56bda-236f-4b12-8ff0-559fa1eba5d9"
+    ],
+    "TECHM.NS": [
+      "fe986965-a057-4ff8-8980-0d46ccad92c4",
+      "1286f193-d8d8-44a2-86e1-5c4bc0417846",
+      "6d6d1458-a4b9-48cc-a9e8-f838b5ae8c0c",
+      "262b9698-e2d3-4bb7-b1df-1d97da858804"
+    ],
+    "TITAN.NS": [
+      "7c756ad8-fb1f-4afd-acf6-8fe435364229",
+      "cb0d2546-17ce-43a4-b1b3-ac603ba4f357",
+      "6727caa0-8b42-4a6c-b998-70845a6364cf",
+      "d3bf9da3-a9d5-4df8-9ff2-42a0d2e8ab0b"
+    ],
+    "TMCV.NS": [
+      "19e37963-a331-4354-b3f2-1004af29f289",
+      "7d141f01-c901-41b8-9665-7170b4fc8048",
+      "c09f8c7b-f7e4-46cb-868a-15db5592cbfa",
+      "8624bd0e-fdf0-4a38-bf83-112b47dd80d4"
+    ],
+    "TORNTPHARM.NS": [
+      "8932bf68-8fab-4653-a140-bf9fabe2c04f",
+      "3e4ceb0e-6d36-483c-9486-2cf538c7ad9c",
+      "00432f09-c911-477e-858d-42dd01b2bcfe",
+      "28f69cd6-4be4-477d-ac83-916d512bd8be"
+    ],
+    "TRENT.NS": [
+      "3a51c87d-e3f0-4ebb-8736-f3e2fefbf0c3",
+      "487df832-7bde-4aa5-93a3-1ccc3b3e88d9",
+      "07384348-2cdb-47a2-a29b-90af180ead95",
+      "a9eef0c6-4364-4843-87a7-6a22245d383e"
+    ],
+    "TVSMOTOR.NS": [
+      "afcd50b3-7c11-41bd-bca5-dd30e614f4f6",
+      "c91e1c7d-5c81-4cef-ad8c-cdbec40b0660",
+      "53e68bcf-4c23-4a20-a7d4-6c9768aea885",
+      "71fb8060-f5d4-478a-890f-dee49c1fa0b7"
+    ],
+    "ULTRACEMCO.NS": [
+      "8e90acdd-55bb-41dc-8934-190391f45498",
+      "10291b60-f1e1-4191-9391-b4d6d59a39ee",
+      "0f9b593a-54da-42c4-8a9b-e34029c4b1bf",
+      "c3c406cc-81b8-49dd-b25b-79ec02ff1eb9"
+    ],
+    "UNIONBANK.NS": [
+      "4f471fc8-49f4-4584-89e6-79b73979be47",
+      "2724fa3e-7cd2-40f4-98c3-78b6b7bbec3f",
+      "e595ffa9-0a53-459f-b4a9-f66e1443ead0",
+      "5898b4cb-c13c-45b5-8dbd-315653751890"
+    ],
+    "VAML.NS": [
+      "8b42f973-1220-4648-ae68-a312125ebef8",
+      "76978f89-089c-4488-9182-94777c203473",
+      "dc1d6f21-a2d1-423e-8042-6307bf5ee2eb",
+      "83dc84c3-3d91-4295-8e1c-570f663f432c"
+    ],
+    "VBL.NS": [
+      "c54b7f4f-bd6d-4cff-b170-a8fb815de086",
+      "e91e71fc-2e27-4d05-90c0-92458749b7d9",
+      "6ef9c3a8-8509-4693-a3c3-9a070c810f00",
+      "10ace465-0e7f-4c5d-a802-b3eece77bf7b"
+    ],
+    "WIPRO.NS": [
+      "35d9a82b-c2c1-4c21-a45d-6be29de23a5d",
+      "50b861c2-612b-4844-b241-fc743e1284ea",
+      "1944ca44-cb5e-4796-867e-9315304bcbea",
+      "76770bba-6f1e-44a8-931e-57e4c4b3e7f6"
+    ],
+    "ZYDUSLIFE.NS": [
+      "794392e6-014a-48fc-9e39-1a147ff6b1a2",
+      "7b3fe389-9bda-40fb-944d-b5762c8e9e3a",
+      "c8b3b925-2585-49ec-9bd2-dd1527a0d2ec",
+      "ebccb809-dcad-4eb0-aca5-653cd452baca"
+    ]
+  },
+  "failures": {
+    "ITC.NS": "Critical price data failed: missing_or_extra_sessions",
+    "TMPV.NS": "Critical price data failed: abnormal_adjusted_jump,unresolved_corporate_action",
+    "VEDL.NS": "Critical price data failed: abnormal_adjusted_jump,unresolved_corporate_action"
+  },
+  "model_version": "research-20261008T190859",
+  "research_only": true,
+  "new_final_candidate_trained": false
+}

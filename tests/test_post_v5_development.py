@@ -26,3 +26,14 @@ def test_forbidden_fold_or_development_row_rejects():
     from research.post_v5.development import fixed_folds
     metadata=pd.DataFrame({'feature_time':pd.to_datetime(['2025-10-01'],utc=True),'label_end':pd.to_datetime(['2025-10-03'],utc=True)})
     with pytest.raises(ValueError,match='consumed'): list(fixed_folds(metadata,[['2025-07-01','2025-09-30']]))
+
+
+def test_zero_volume_session_excludes_forward_label_and_200_session_features():
+    from research.post_v5.development import design_frame
+    frame=fixture_frame();bad_day=pd.Timestamp('2024-07-01');frame.loc[bad_day,'Volume']=0.
+    result=design_frame(frame,5)
+    dates=pd.to_datetime(result.origin_session)
+    bad_location=frame.index.get_loc(bad_day)
+    excluded=frame.index[bad_location-5:bad_location+200]
+    assert not dates.isin(excluded).any()
+    assert (dates<bad_day).any() and (dates>excluded[-1]).any()

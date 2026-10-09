@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from core.data_fetcher import fetch_ohlcv, fetch_news, validate_ticker, currency_symbol, detect_market
 from core.external_data import fetch_sec_filings, fetch_sec_cik
 from core.sentiment import analyze_news_sentiment, analyze_filing_sentiment, sentiment_time_series
-from core.assistant import answer_question, SUGGESTED_QUESTIONS
+from research.post_v5.assistant import answer_question, SUGGESTED_QUESTIONS
 from core.personalization import (track_view, get_favorite_sectors,
                                   recommend_similar_stocks, get_user_stats)
 from utils.helpers import (inject_css, section_header, kpi_row, kpi_card,

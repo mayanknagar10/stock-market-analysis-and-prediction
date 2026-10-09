@@ -1,0 +1,1 @@
+{"horizon": 10, "fold": 2, "model": "sector_excess", "train_n": 64742, "test_n": 4145, "train_dates": 737, "test_dates": 62, "status": "complete", "feature_count": 139, "train_metrics": null, "validation_metrics": {"n": 3711, "mae": 0.050656049739511266, "rmse": 0.06573926194993963, "direction_accuracy": 0.39342495284289947, "ic": -0.01919580891950136}, "target": "sector_excess"}

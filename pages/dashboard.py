@@ -51,9 +51,10 @@ if st.session_state.get('v5_market_snapshot'):
     st.caption('Provider observations may be delayed. These quotes are not certified live or exchange-grade.')
 else: st.caption('Refresh to inspect a dated market snapshot. Portfolio and watchlist tools remain under Risk & Portfolio.')
 
-st.subheader('Upgrade progress')
+st.subheader('Research progress')
 with st.expander('One master task board — completed, active, pending and blocked',expanded=True):
-    st.markdown((ROOT/'docs/V5_TASK_BOARD.md').read_text(encoding='utf-8'))
+    board=ROOT/'docs/NEXT_RESEARCH_TASK_BOARD.md'
+    st.markdown((board if board.exists() else ROOT/'docs/V5_TASK_BOARD.md').read_text(encoding='utf-8'))
 if records:
     st.subheader('Recent research predictions')
     st.dataframe(pd.DataFrame([{'Ticker':r['ticker'],'Horizon':r['horizon'],'As of':r['forecast_as_of'],

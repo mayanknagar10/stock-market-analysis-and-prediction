@@ -1,0 +1,1 @@
+{"horizon": 1, "fold": 2, "model": "positive_direction", "train_n": 65741, "test_n": 5000, "train_dates": 746, "test_dates": 62, "status": "complete", "feature_count": 139, "train_metrics": null, "validation_metrics": {"n": 5000, "mae": 0.47985993921051556, "rmse": 0.48799541860919615, "direction_accuracy": 0.3878, "ic": 0.021667279329933942}, "target": "positive_direction"}

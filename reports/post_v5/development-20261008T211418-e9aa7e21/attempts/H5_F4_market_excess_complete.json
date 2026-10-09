@@ -1,0 +1,1 @@
+{"horizon": 5, "fold": 4, "model": "market_excess", "train_n": 79166, "test_n": 5667, "train_dates": 865, "test_dates": 59, "status": "complete", "feature_count": 139, "train_metrics": null, "validation_metrics": {"n": 5667, "mae": 0.02584666263914801, "rmse": 0.034064011971696825, "direction_accuracy": 0.49602964531498145, "ic": 0.22641605513135343}, "target": "market_excess"}

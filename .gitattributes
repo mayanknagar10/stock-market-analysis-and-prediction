@@ -6,3 +6,9 @@ config/context_sources.json -text
 config/v5_validation.json -text
 scripts/evaluate_final.py -text
 reports/validation/** -text
+
+# Preserve new registered membership and research evidence bytes.
+config/research/** -text
+reports/post_v5/** -text
+research/** -text
+scripts/post_v5* -text

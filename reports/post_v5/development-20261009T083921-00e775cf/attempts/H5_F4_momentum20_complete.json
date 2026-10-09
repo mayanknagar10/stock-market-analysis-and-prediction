@@ -1,0 +1,1 @@
+{"horizon": 5, "fold": 4, "model": "momentum20", "train_n": 70448, "test_n": 76, "train_dates": 865, "test_dates": 59, "status": "complete", "feature_count": 1, "train_metrics": null, "validation_metrics": {"n": 76, "mae": 0.017416097625517185, "rmse": 0.021032307062040102, "direction_accuracy": 0.34210526315789475, "ic": -0.19125085440874914}, "target": "cumulative_log"}

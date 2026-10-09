@@ -1,0 +1,1 @@
+{"horizon": 10, "fold": 4, "model": "without_commodity", "train_n": 78686, "test_n": 5187, "train_dates": 860, "test_dates": 54, "status": "started"}

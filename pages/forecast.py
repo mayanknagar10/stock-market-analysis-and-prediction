@@ -10,7 +10,8 @@ import plotly.graph_objects as go
 
 inject_theme()
 st.title('Forecast')
-st.caption('Direct horizon-specific forecasts · India and US equities · Research only')
+st.caption('RESEARCH MODEL · Direct horizon-specific forecasts · India and US equities')
+st.caption('New explicit requests archive prediction-time inputs and outputs in the isolated prospective shadow study. V5 training lineage remains historically unverified.')
 st.warning('Point-in-time certification and production promotion are blocked. Research forecasts abstain from actionable confidence.')
 
 @st.cache_resource
@@ -36,15 +37,15 @@ if run:
     try:
         family=equity_family(ticker)
         with st.spinner('Validating source snapshots and computing research evidence…'):
-            references,reference_manifest=load_reference_snapshots()
-            data=research_forecast(capture(ticker),models(pointer['model_version'],pointer['models'],family),references)
+            from research.post_v5.shadow import forecast_request
+            data=forecast_request(ticker,bundles=models(pointer['model_version'],pointer['models'],family))
         st.session_state['v5_forecast']=data
     except Exception as error:
         st.error('Forecast unavailable: '+str(error)); st.stop()
 
 data=st.session_state.get('v5_forecast')
 if data is None:
-    st.info('Choose an equity to inspect direct 1/5/10/20-session estimates, uncertainty and evidence. Each explicit request is recorded in the research ledger.')
+    st.info('Choose an equity to inspect direct 1/5/10/20-session estimates, uncertainty and evidence. Each explicit request archives observed inputs and either an immutable shadow prediction or a visible failure.')
     st.page_link('pages/validate.py',label='Inspect validation evidence before forecasting')
     st.stop()
 
