@@ -20,6 +20,12 @@ def hosted_mode():
     return os.environ.get("STOCKPRO_HOSTED_READ_ONLY") == "1"
 
 
+def tunnel_local_evidence():
+    """Use the authoritative local ledger behind a temporary read-only tunnel."""
+    return (hosted_mode() and os.environ.get("STOCKPRO_ENV") == "development"
+            and os.environ.get("STOCKPRO_TUNNEL_LOCAL_EVIDENCE") == "1")
+
+
 class ReadyResponse(BaseModel):
     state: str
     model_version: str
@@ -74,12 +80,13 @@ def ready(prospective):
         if any(actual.get(identity) != digest for identity, digest in expected.items()):
             raise ValueError("Original forecasts")
         if hosted_mode():
-            manifest = os.environ.get("STOCKPRO_EVIDENCE_MANIFEST")
-            if not manifest or not Path(manifest).is_file():
-                raise ValueError("Evidence manifest")
-            if Path(manifest).resolve() != (ROOT / "data/EVIDENCE_MIRROR_MANIFEST.json").resolve():
-                raise ValueError("Unexpected evidence manifest")
-            _verify_hosted_mirror()
+            if not tunnel_local_evidence():
+                manifest = os.environ.get("STOCKPRO_EVIDENCE_MANIFEST")
+                if not manifest or not Path(manifest).is_file():
+                    raise ValueError("Evidence manifest")
+                if Path(manifest).resolve() != (ROOT / "data/EVIDENCE_MIRROR_MANIFEST.json").resolve():
+                    raise ValueError("Unexpected evidence manifest")
+                _verify_hosted_mirror()
             _verify_model_bundles()
         return ReadyResponse(state="READY", model_version=MODEL, evidence="VERIFIED_LOCAL")
     except Exception:

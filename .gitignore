@@ -29,6 +29,7 @@ data/prospective_automation/
 
 # Web platform dependencies, local operations and private configuration
 .npm-cache/
+.local-tools/
 frontend/node_modules/
 frontend/.next/
 # Next rewrites this generated declaration for dev versus production builds.

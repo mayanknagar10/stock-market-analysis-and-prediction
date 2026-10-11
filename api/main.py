@@ -1,10 +1,10 @@
 """Versioned read API. Collection/training are explicit jobs, never request handlers."""
 from datetime import datetime,timezone
+import asyncio
 import json
 import logging
 import os
 import secrets
-from threading import BoundedSemaphore
 from time import perf_counter
 import uuid
 from fastapi import FastAPI,Query,Request
@@ -36,9 +36,8 @@ def create_app(prospective=None,analytics=None,web_analytics=None,archived_forec
     app.state.operator_auth=OperatorAuth()
     app.state.operator_jobs=operator_jobs if operator_jobs is not None else None if hosted_mode() else OperatorJobs()
     app.state.public_rate_limit=PublicRateLimit()
-    app.state.provider_slots=BoundedSemaphore(2)
-    origins=[x.strip() for x in os.environ.get("STOCKPRO_CORS_ORIGINS","").split(",") if x.strip() and x.strip()!="*"]
-    if origins:app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=["GET","POST","DELETE"],allow_headers=["Authorization","Content-Type"],allow_credentials=True)
+    app.state.provider_slots=asyncio.Semaphore(2)
+    app.state.provider_wait_seconds=30.0
     def failure(request,code,status):
         messages={"INVALID_TICKER":"Unsupported equity ticker.","PROVIDER_FAILURE":"Market provider is unavailable.",
             "DATA_UNAVAILABLE":"Required data are unavailable.","STALE_DATA":"Data freshness requirement failed.",
@@ -70,8 +69,11 @@ def create_app(prospective=None,analytics=None,web_analytics=None,archived_forec
                        and not path.endswith(("/forecast","/forecast/history","/forecast/explanation"))))
             if heavy:
                 if not app.state.public_rate_limit.allow():return failure(request,"RATE_LIMITED",429)
-                slot=app.state.provider_slots.acquire(blocking=False)
-                if not slot:return failure(request,"RATE_LIMITED",429)
+                try:
+                    await asyncio.wait_for(app.state.provider_slots.acquire(), timeout=app.state.provider_wait_seconds)
+                    slot=True
+                except TimeoutError:
+                    return failure(request,"RATE_LIMITED",429)
         token=None if hosted_mode() else os.environ.get("STOCKPRO_API_TOKEN")
         operator_path=request.url.path.startswith(("/api/v1/operations/","/api/v1/analysis/")) or (request.method=="POST" and request.url.path.endswith("/scenario"))
         if token and request.url.path!="/api/v1/health" and not operator_path and request.method!="OPTIONS":
@@ -89,6 +91,10 @@ def create_app(prospective=None,analytics=None,web_analytics=None,archived_forec
         analytics.telemetry.record("api."+getattr(route,"path","UNMATCHED"),perf_counter()-start)
         response.headers["X-Request-ID"]=request.state.request_id
         return response
+    # Keep CORS outside instrumentation so early 403/429/503 replies remain
+    # readable as structured errors by the explicitly allowed browser origin.
+    origins=[x.strip() for x in os.environ.get("STOCKPRO_CORS_ORIGINS","").split(",") if x.strip() and x.strip()!="*"]
+    if origins:app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=["GET","POST","DELETE"],allow_headers=["Authorization","Content-Type"],allow_credentials=True)
     @app.exception_handler(ServiceError)
     async def service_error(request,error):return failure(request,error.code,error.status)
     @app.exception_handler(RequestValidationError)
