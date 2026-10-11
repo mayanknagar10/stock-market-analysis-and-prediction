@@ -2,12 +2,11 @@
 import { api } from '@/lib/api';
 import { useData } from '@/lib/query';
 import { number, timestamp } from '@/lib/format';
-import { DataTable, EmptyState, Notice, QueryState, Section } from '@/components/ui';
+import { DataTable, EmptyState, QueryState, Section } from '@/components/ui';
 export function CompanyNews({ ticker, compact = false }: { ticker: string; compact?: boolean }) {
     const news = useData(['news', ticker], signal => api.news(ticker, signal), true, 300000);
     return <Section title="Company news & sentiment" description="Provider headlines · descriptive VADER finance-lexicon sentiment">
         <QueryState pending={news.isPending} error={news.error} retry={() => news.refetch()}>{news.data && <>
-            {news.data.error_code && <Notice>{news.data.error_code}</Notice>}
             {news.data.items.length ? <><p className="chart-note">Overall VADER score: {number(news.data.overall_score, 3)} · retrieved {timestamp(news.data.retrieved_at)}</p><div className="news-list">{news.data.items.slice(0, compact ? 3 : undefined).map((n, i) => <article className="news-item" key={n.url || i}><h3>{n.url && /^https?:\/\//.test(n.url) ? <a href={n.url} target="_blank" rel="noopener noreferrer">{n.title}</a> : n.title}</h3><div className="news-meta"><span>{n.publisher || 'Publisher unavailable'}</span><span>{timestamp(n.published_at)}</span><span>VADER {number(n.sentiment_score, 3)} · {n.sentiment_label || 'Unavailable'}</span></div></article>)}</div></> : <EmptyState title="News unavailable" detail="No eligible provider headlines or sentiment data are available."/>}
             {!compact && <p className="chart-note">Lexicon sentiment describes headline language. Advanced NLP, filings and market-wide news are not currently available.</p>}
         </>}</QueryState>

@@ -23,6 +23,10 @@ test('deployed market, forecast and validation flow preserves research semantics
   await page.goto(`${preview}/`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   await expect(page.getByText('Nifty 50').first()).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByText('API connected')).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByText('388', { exact: true }).first()).toBeVisible({ timeout: 45_000 });
+  if (process.env.STOCKPRO_CAPTURE_QA) await page.waitForTimeout(12_000);
+  await expect(page.locator('main').getByText('Loading data...')).toHaveCount(0, { timeout: 45_000 });
   if (process.env.STOCKPRO_CAPTURE_QA) await page.screenshot({ path: 'test-results/live-dashboard.png', fullPage: true });
   await page.goto(`${preview}/markets`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Markets', exact: true })).toBeVisible();
@@ -34,6 +38,10 @@ test('deployed market, forecast and validation flow preserves research semantics
   await page.goto(`${preview}/validate`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByText(/FAILED/).first()).toBeVisible({ timeout: 45_000 });
   await expect(page.getByText(/Prospective/i).first()).toBeVisible();
+  await expect(page.getByText('API connected')).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByText('Forecast records')).toBeVisible({ timeout: 45_000 });
+  if (process.env.STOCKPRO_CAPTURE_QA) await page.waitForTimeout(3_000);
+  await expect(page.locator('main').getByText('Loading data...')).toHaveCount(0, { timeout: 45_000 });
   if (process.env.STOCKPRO_CAPTURE_QA) await page.screenshot({ path: 'test-results/live-validate.png', fullPage: true });
 });
 
