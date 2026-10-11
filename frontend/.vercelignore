@@ -1,0 +1,12 @@
+# Upload only source needed to build the Next.js frontend.
+/*
+!package.json
+!package-lock.json
+!next.config.ts
+!postcss.config.mjs
+!tsconfig.json
+!next-env.d.ts
+!src
+!public
+src/**/*.test.ts
+src/**/*.test.tsx
