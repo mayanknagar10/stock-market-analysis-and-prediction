@@ -56,7 +56,9 @@ frontend/out/
 frontend/dist/
 frontend/blob-report/
 frontend/design-review/
+frontend/AGENTS.md
 .stockpro-checkpoints/
+stockpro-evidence-mirror-*/
 
 # Local environment variants; checked-in examples remain visible
 .env.*

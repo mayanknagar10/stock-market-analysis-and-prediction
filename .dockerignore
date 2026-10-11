@@ -1,0 +1,15 @@
+.git
+.deps
+.venv
+venv
+frontend
+data
+.stockpro-checkpoints
+**/__pycache__
+**/*.pyc
+**/*.log
+.env
+.env.*
+!requirements-api.txt
+tests
+docs

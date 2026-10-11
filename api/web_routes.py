@@ -4,6 +4,7 @@ from typing import Literal
 from fastapi import APIRouter,Depends,Query,Request
 from application.services.analytics import valid_ticker
 from api.operations_routes import require_operator
+from api.hosted import require_public_analysis
 from application.web_schemas import *
 
 def web_router():
@@ -33,14 +34,14 @@ def web_router():
     def detail(prediction_id:str,request:Request,group:Literal['canonical','legacy','v5']='canonical'):return request.app.state.archived_forecasts.detail(prediction_id,group)
     @router.get('/research/forecasts/{prediction_id}/analogues',response_model=AnaloguesResponse)
     def analogues(prediction_id:str,request:Request,group:Literal['canonical','legacy']='canonical',count:int=Query(20,ge=1,le=50)):return request.app.state.archived_forecasts.analogues(prediction_id,group,count)
-    @router.post('/research/forecasts/{prediction_id}/scenario',response_model=ScenarioResponse,dependencies=[Depends(require_operator)])
+    @router.post('/research/forecasts/{prediction_id}/scenario',response_model=ScenarioResponse,dependencies=[Depends(require_public_analysis)])
     def scenario(prediction_id:str,body:ScenarioRequest,request:Request):return request.app.state.archived_forecasts.scenario(prediction_id,body)
-    @router.post('/analysis/portfolio',response_model=PortfolioResponse,dependencies=[Depends(require_operator)])
+    @router.post('/analysis/portfolio',response_model=PortfolioResponse,dependencies=[Depends(require_public_analysis)])
     def portfolio(body:PortfolioRequest,request:Request):return request.app.state.web_analytics.portfolio(body)
-    @router.post('/analysis/watchlist',response_model=WatchlistResponse,dependencies=[Depends(require_operator)])
+    @router.post('/analysis/watchlist',response_model=WatchlistResponse,dependencies=[Depends(require_public_analysis)])
     def watchlist(body:WatchlistRequest,request:Request):return request.app.state.web_analytics.watchlist(body)
-    @router.post('/analysis/compare',response_model=CompareResponse,dependencies=[Depends(require_operator)])
+    @router.post('/analysis/compare',response_model=CompareResponse,dependencies=[Depends(require_public_analysis)])
     def compare(body:CompareRequest,request:Request):return request.app.state.web_analytics.compare(body)
-    @router.post('/analysis/screen',response_model=ScreenResponse,dependencies=[Depends(require_operator)])
+    @router.post('/analysis/screen',response_model=ScreenResponse,dependencies=[Depends(require_public_analysis)])
     def screen(body:ScreenRequest,request:Request):return request.app.state.web_analytics.screen(body)
     return router

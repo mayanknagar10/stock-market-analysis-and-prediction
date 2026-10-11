@@ -2826,6 +2826,34 @@
         "title": "PortfolioResponse",
         "type": "object"
       },
+      "ReadyResponse": {
+        "properties": {
+          "evidence": {
+            "title": "Evidence",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "production_promotion": {
+            "default": "BLOCKED",
+            "title": "Production Promotion",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "model_version",
+          "evidence"
+        ],
+        "title": "ReadyResponse",
+        "type": "object"
+      },
       "RealizedOutcome": {
         "additionalProperties": false,
         "properties": {
@@ -5230,6 +5258,44 @@
         "tags": [
           "operator"
         ]
+      }
+    },
+    "/api/v1/ready": {
+      "get": {
+        "operationId": "readiness_api_v1_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadyResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Readiness"
       }
     },
     "/api/v1/research/forecasts": {

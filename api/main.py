@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import secrets
+from threading import BoundedSemaphore
 from time import perf_counter
 import uuid
 from fastapi import FastAPI,Query,Request
@@ -16,6 +17,7 @@ from application.schemas import HealthResponse,ModelResponse,ForecastResponse,Va
 from application.services.analytics import AnalyticsService,valid_ticker
 from application.services.prospective import ProspectiveService,ServiceError
 from core.forecasting.service import active_research
+from api.hosted import PublicRateLimit,ReadyResponse,hosted_mode,ready
 def create_app(prospective=None,analytics=None,web_analytics=None,archived_forecasts=None,historical_evidence=None,operator_jobs=None):
     prospective=prospective or ProspectiveService();analytics=analytics or AnalyticsService()
     app=FastAPI(title="StockPro Research Backend",version="1.0.0",
@@ -31,29 +33,58 @@ def create_app(prospective=None,analytics=None,web_analytics=None,archived_forec
     app.state.web_analytics=web_analytics or WebAnalytics(analytics)
     app.state.archived_forecasts=archived_forecasts or ArchivedForecasts(prospective)
     app.state.historical_evidence=historical_evidence or HistoricalEvidence()
-    app.state.operator_auth=OperatorAuth();app.state.operator_jobs=operator_jobs or OperatorJobs()
+    app.state.operator_auth=OperatorAuth()
+    app.state.operator_jobs=operator_jobs if operator_jobs is not None else None if hosted_mode() else OperatorJobs()
+    app.state.public_rate_limit=PublicRateLimit()
+    app.state.provider_slots=BoundedSemaphore(2)
     origins=[x.strip() for x in os.environ.get("STOCKPRO_CORS_ORIGINS","").split(",") if x.strip() and x.strip()!="*"]
     if origins:app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=["GET","POST","DELETE"],allow_headers=["Authorization","Content-Type"],allow_credentials=True)
     def failure(request,code,status):
         messages={"INVALID_TICKER":"Unsupported equity ticker.","PROVIDER_FAILURE":"Market provider is unavailable.",
             "DATA_UNAVAILABLE":"Required data are unavailable.","STALE_DATA":"Data freshness requirement failed.",
             "MODEL_UNAVAILABLE":"No eligible saved forecast is available.","SCHEMA_MISMATCH":"Stored data failed integrity checks.",
-            "INVALID_REQUEST":"Request parameters are invalid.","UNAUTHORIZED":"Authentication required.","INTERNAL_ERROR":"Service request failed."}
+            "INVALID_REQUEST":"Request parameters are invalid.","UNAUTHORIZED":"Authentication required.","INTERNAL_ERROR":"Service request failed.",
+            "REQUEST_TOO_LARGE":"The analysis request exceeds the allowed size.","RATE_LIMITED":"Too many requests; please retry shortly.",
+            "HOSTED_OPERATOR_DISABLED":"Operator actions are disabled on the public research service."}
         return JSONResponse(status_code=status,content={"error":{"code":code,"message":messages.get(code,"Requested research data are unavailable."),
             "request_id":getattr(request.state,"request_id",str(uuid.uuid4()))}})
     @app.middleware("http")
     async def instrumentation(request:Request,call_next):
         request.state.request_id=str(uuid.uuid4());start=perf_counter()
-        token=os.environ.get("STOCKPRO_API_TOKEN")
+        heavy=False;slot=False
+        if hosted_mode():
+            path=request.url.path
+            if path.startswith("/api/v1/operations/") or path=="/api/v1/system/performance":
+                return failure(request,"HOSTED_OPERATOR_DISABLED",403)
+            if path not in {"/api/v1/health","/api/v1/ready"} and ready(app.state.prospective).state!="READY":
+                return failure(request,"DATA_UNAVAILABLE",503)
+            if request.method=="POST" and (path.startswith("/api/v1/analysis/") or path.endswith("/scenario")):
+                body=bytearray()
+                async for chunk in request.stream():
+                    if len(body)+len(chunk)>16_384:
+                        return failure(request,"REQUEST_TOO_LARGE",413)
+                    body.extend(chunk)
+                request._body=bytes(body)
+            heavy=(path.startswith(("/api/v1/analysis/","/api/v1/markets/")) or path.endswith("/scenario")
+                   or (path.startswith("/api/v1/stocks/") and path!="/api/v1/stocks/search"
+                       and not path.endswith(("/forecast","/forecast/history","/forecast/explanation"))))
+            if heavy:
+                if not app.state.public_rate_limit.allow():return failure(request,"RATE_LIMITED",429)
+                slot=app.state.provider_slots.acquire(blocking=False)
+                if not slot:return failure(request,"RATE_LIMITED",429)
+        token=None if hosted_mode() else os.environ.get("STOCKPRO_API_TOKEN")
         operator_path=request.url.path.startswith(("/api/v1/operations/","/api/v1/analysis/")) or (request.method=="POST" and request.url.path.endswith("/scenario"))
         if token and request.url.path!="/api/v1/health" and not operator_path and request.method!="OPTIONS":
             header=request.headers.get("authorization","")
             supplied=header[7:] if header.startswith("Bearer ") else ""
             if not secrets.compare_digest(supplied,token):return failure(request,"UNAUTHORIZED",401)
-        try:response=await call_next(request)
-        except Exception:
-            logging.getLogger(__name__).exception("API failure request=%s",request.state.request_id)
-            response=failure(request,"INTERNAL_ERROR",500)
+        try:
+            try:response=await call_next(request)
+            except Exception:
+                logging.getLogger(__name__).exception("API failure request=%s",request.state.request_id)
+                response=failure(request,"INTERNAL_ERROR",500)
+        finally:
+            if slot:app.state.provider_slots.release()
         route=request.scope.get("route")
         analytics.telemetry.record("api."+getattr(route,"path","UNMATCHED"),perf_counter()-start)
         response.headers["X-Request-ID"]=request.state.request_id
@@ -66,6 +97,11 @@ def create_app(prospective=None,analytics=None,web_analytics=None,archived_forec
     async def http_error(request,error):return failure(request,"NOT_FOUND" if error.status_code==404 else "INVALID_REQUEST",error.status_code)
     @app.get("/api/v1/health",response_model=HealthResponse)
     def health():return HealthResponse(status="OK",timestamp=datetime.now(timezone.utc))
+    @app.get("/api/v1/ready",response_model=ReadyResponse,responses={503:{"model":ReadyResponse}})
+    def readiness(request:Request):
+        result=ready(request.app.state.prospective)
+        if result.state=="READY":return result
+        return JSONResponse(status_code=503,content=result.model_dump())
     def model():
         try:
             pointer=active_research()
@@ -73,7 +109,8 @@ def create_app(prospective=None,analytics=None,web_analytics=None,archived_forec
         except Exception:state="MODEL_UNAVAILABLE"
         return ModelResponse(model_version=MODEL,protocol_version=PROTOCOL,health=state,
             calibration_state="FROZEN_V5_ACCEPTANCE_UNCHANGED",training_lineage="HISTORICAL_AVAILABILITY_UNVERIFIED",
-            details={"confidence":"LOW","abstain":True,"final_gate":"FAILED","forecast_mode":"SAVED_RESEARCH_FORECASTS"})
+            details={"confidence":"LOW","abstain":True,"final_gate":"FAILED","forecast_mode":"SAVED_RESEARCH_FORECASTS",
+                     "public_analysis_enabled":hosted_mode()})
     @app.get("/api/v1/model/status",response_model=ModelResponse)
     def model_status():return model()
     @app.get("/api/v1/model/health",response_model=ModelResponse)
