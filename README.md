@@ -1,64 +1,92 @@
-# StockPro Analytics V5
+# StockPro Analytics
 
-StockPro is a Python/Streamlit equity research application with preserved technical, risk, portfolio, strategy, factor, screener and market tools. V5 adds direct 1/5/10/20-session forecasts, conditional distributions and an auditable validation workspace.
+StockPro is a research-first financial analytics and forecasting platform focused on transparent evidence, market context and multi-horizon forecasts. Its primary web application is Next.js with a Python/FastAPI backend. Streamlit remains an internal research console.
 
-**Release state: RESEARCH ONLY. The frozen performance gate failed. Production inference is disabled.** Historical availability/revision archives are absent, so reconstructed contextual inputs cannot be certified point-in-time. All research forecasts remain LOW confidence and abstain. The evidence does not support relying on this candidate for trading decisions.
+> **RESEARCH ONLY.** Production model promotion is **BLOCKED**. The frozen V5 candidate `research-20261008T190859` did not pass its final gate, and no validated statistical edge has been certified. Forecasts may have LOW confidence and abstain. Prospective validation is still accumulating; these outputs are not trading recommendations.
 
-## Start locally
+## Architecture
 
-Python 3.12 was used for verification. Create an isolated environment:
+`Browser → Next.js / React / TypeScript → FastAPI → Python analytics, research services and data providers → preserved models, ledgers and source snapshots`
 
-~~~powershell
+The frontend uses Tailwind CSS, TanStack Query, generated OpenAPI types, TradingView Lightweight Charts for price charts and Recharts for analytical views. TradingView provides chart rendering here; StockPro does **not** scrape TradingView market data. Python owns forecasting, technicals, factors, risk and validation calculations. The research stack includes XGBoost and LightGBM; normal API requests do not train models.
+
+The versioned API is under `/api/v1`. Its contract is in [OpenAPI](docs/api/openapi.json) and [API documentation](docs/API_CONTRACT.md). The Next.js app consumes that contract through one typed client. The Streamlit app remains available for internal research and administration.
+
+## Product areas
+
+| Area | Current scope |
+| --- | --- |
+| Dashboard and Markets | Latest available Indian/global reference sessions, watchlist context and research/collection health. Daily bars are not live quotes. |
+| Stock Research | Price history, technicals, available fundamentals, factors, risk and provider news. Missing provider data is shown as unavailable. |
+| Forecast | Saved 1-, 5-, 10- and 20-session research forecasts, uncertainty, model drivers where archived, conditional scenarios, historical analogues and immutable prediction history. |
+| Validate | Failed V5 gate, retrospective research and separate prospective predictions/outcomes with sample counts and abstention. |
+| Screener and Compare | Backend-calculated screening and stock comparisons; local operator access is required for protected calculations. |
+| Portfolio and Watchlist | Browser-local tracking inputs with protected backend valuation/risk calculations; no broker execution. |
+| Backtesting | Internal research blueprint and existing Python/Streamlit tools; a general authenticated web backtest job is not yet available. |
+| News / Events | Provider-supported news and event context when available; empty and unavailable states are explicit. |
+| Internal research/admin | Operator-only manual jobs and research status, separate from ordinary product navigation. |
+
+Main web routes include `/`, `/markets`, `/stocks/[ticker]`, `/forecast/[ticker]`, `/validate`, `/screener`, `/compare`, `/portfolio`, `/watchlist`, `/risk/[ticker]` and `/admin/*`. Stock factors and news live inside the stock workspace.
+
+## Forecast and evidence policy
+
+The frozen V5 research architecture predicts each horizon directly rather than compounding a one-session prediction. It combines return regression, direction estimates and quantile/uncertainty outputs where saved. Calibration status, out-of-distribution checks, data quality and abstention are exposed explicitly. An unverified probability is not presented as calibrated confidence or a BUY/SELL recommendation.
+
+Research uses temporal splits and leakage controls. The consumed V5 final period remains visible and cannot be reused for tuning. Historical reconstructed evaluation is labeled separately from genuinely prospective forecasts recorded before outcomes. Saved predictions are immutable; matured outcomes are attached as separate records. Promotion requires a future pre-registered gate and sufficient prospective evidence, not elapsed time alone.
+
+Market data currently come primarily from Yahoo Finance through `yfinance`; supported research/legacy paths also use Stooq as a best-effort historical fallback, SEC EDGAR filings, Kenneth French factor data and VADER-based sentiment on available headlines. Free providers can be delayed, incomplete or unavailable. Provider timestamps and data-health states govern what the product shows.
+
+## Local development
+
+Python 3.12 is the verified development version. From the repository root, create an environment and install backend and test dependencies:
+
+```sh
 python -m venv .venv
-.venv/Scripts/Activate.ps1
+# Activate .venv using your shell's activation command.
 python -m pip install -r requirements-dev.txt
+```
+
+Set `STOCKPRO_CORS_ORIGINS` to `http://127.0.0.1:3000` in the backend process environment, then start FastAPI:
+
+```sh
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8001
+```
+
+The API health endpoint is `http://127.0.0.1:8001/api/v1/health`; its interactive schema is at `http://127.0.0.1:8001/docs`. In a second process, start the web app:
+
+```sh
+cd frontend
+npm ci
+# Copy .env.example to .env.local and set NEXT_PUBLIC_API_BASE_URL.
+npm run dev
+```
+
+Open `http://127.0.0.1:3000`. The example URL targets the local backend; configure an actual hosted backend URL for deployment. The root [backend environment example](.env.example) lists optional settings, and [frontend/.env.example](frontend/.env.example) shows the public API URL. Example files are documentation; set backend variables in the process environment or your secret manager. Never commit actual credentials or private raw snapshots. Manual operator jobs are disabled by default and require the explicit local loopback configuration described in [scheduling](docs/SCHEDULING.md). Streamlit can be started separately with `python -m streamlit run app.py` for internal use.
+
+## Verification
+
+From the repository root:
+
+```sh
 python -m pytest -q
-python -m streamlit run app.py --global.developmentMode=false
-~~~
+python scripts/verify_automation_preservation.py
+```
 
-Open http://localhost:8501. The development session used an ignored .deps directory; it is not required by the application. See [deployment instructions](docs/V5_DEPLOYMENT.md) for explicit capture/training/outcome jobs and durable private storage.
+From `frontend/`:
 
-Default V5 feeds are free/public. Prediction does not require an external LLM or paid API key. Free feeds may be stale, incomplete or unavailable; critical source failures prevent a forecast. SEC requests require an actual owner-supplied STOCKPRO_SEC_USER_AGENT contact identity.
+```sh
+npm run typecheck
+npm run lint
+npm test
+npx playwright install chromium
+npm run test:e2e
+npm run build
+```
 
-## Navigation
+Playwright tests need a running local frontend. The fixture-based browser suite does not replace checks against a real FastAPI instance. The preservation command verifies frozen V5 and prospective artifacts without regenerating research. See [frontend/backend gaps](docs/FRONTEND_BACKEND_GAPS.md) for capabilities that remain unavailable.
 
-| Workspace | Contents |
-|---|---|
-| Dashboard | Market context, source status and the master task board |
-| Research | Overview, technical analysis, compare, screener, factors and insights |
-| Forecast | Selected-horizon return/price, 50%/80% ranges, calibration state, source/OOD warnings, SHAP associations, scenarios and analogues |
-| Validate | Development/final metrics, calibration, model cards, quarantines and immutable prediction history |
-| Risk & Portfolio | Risk analysis, portfolio and watchlist |
-| Markets | Market overview and global context |
+## Deployment status and limitations
 
-Existing analytics remain available. The assistant forecast uses the same V5 research service. Normal page loads never train models. V4 artifacts and diagnostic adapters are retained for comparison; the V5 multi-session path uses independent direct heads.
+The Next.js frontend is designed for a Vercel-compatible build; the Python API is an independently hosted service. **Neither has been deployed as part of this repository state.** Hosted authentication, persistent private backend storage and approved unattended scheduling are prerequisites before relying on remote collection. The current approved collection mode is local/manual and requires the local backend to be running. Provider latency can delay individual sections; some frontend/backend capability gaps remain; prospective evidence is insufficient for production.
 
-## Model and data architecture
-
-India and US equity families have separate XGBoost/LightGBM regression, direction and native quantile heads for each horizon. Returns are predicted directly, then converted to prices. Models use causal scale-free technical features plus development-tested context groups. Four disjoint purged blocks separate fitting, blend weights, calibration and development validation. Rejected probability calibrations are shown as raw scores.
-
-Sources flow through core/data, with dated immutable snapshots, provider/adjustment semantics and explicit health flags. Corrupt snapshots, incompatible schema/family, missing critical prices and unknown session bars fail closed. Independent observed session calendars are research proxies, not verified exchange calendars. Predictions and matured outcomes are append-only SQLite records with integrity hashes and complete source/model lineage.
-
-## Measured result
-
-Candidate: research-20261008T190859. Final test starts 2025-10-01 UTC and uses only outcomes matured by the original 2026-10-07 capture cutoff. The period was locked and consumed once; it must not be reused for tuning.
-
-| Frozen requirement | Observed | Required |
-|---|---:|---:|
-| MAE better than zero-return | 1/8 groups | 6/8 |
-| RMSE better than zero-return | 0/8 | 6/8 |
-| Brier below 0.25 | 2/8 | 6/8 |
-| 80% interval coverage between 70% and 90% | 7/8 | 6/8 |
-| Development-accepted calibrated heads | 3/8 | 8/8 |
-
-[Full V4 versus V5 report](reports/V4_VS_V5.md) includes matched recursive legacy origins, naive baselines, direction/calibration, sector/regime/year/stock breakdowns and auxiliary excess-return metrics. The shipped V4 checkpoint was trained on synthetic tickers and cannot establish real-market historical OOS accuracy.
-
-Verification: **122 automated tests passed**, with eight retained legacy UTC deprecation warnings. Tests cover temporal contracts, purging, snapshots/providers, models, probabilities/quantiles, native registry integrity, scenarios, immutable ledger/outcomes and existing/new page initialization. Browser visual/accessibility QA was unavailable and is not claimed as passed.
-
-## Status and limits
-
-[Master task board](docs/V5_TASK_BOARD.md) shows complete, deferred and blocked tasks. [Completion report](docs/V5_COMPLETION_REPORT.md) records the delivered scope and remaining work. [Architecture](docs/V5_ARCHITECTURE.md), [source inventory](docs/DATA_SOURCES.md) and [phase record](docs/V5_IMPLEMENTATION_STATUS.md) explain the contracts and evidence.
-
-The current research universe is RELIANCE.NS, TCS.NS, HDFCBANK.NS, AAPL, JPM and XOM, with limited sector mappings. Other tickers are not validated by this experiment and may fail required source/schema checks. Crypto/index/FX forecast families and 60-session forecasts are unsupported. News/NLP expansion remains performance gated; existing VADER is preserved, and event provider interfaces fail safely without claiming coverage. No historical production track record is fabricated.
-
-Preserve private snapshots, users and ledger on durable storage; they are excluded from Git. Do not promote this checkpoint or delete its failed/quarantined history. Future model work requires a new untouched holdout and stronger data lineage. No forecast guarantees profit or future price accuracy.
+StockPro is for research and education. It does not guarantee price accuracy or profitability and does not place trades.
