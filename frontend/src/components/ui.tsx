@@ -26,6 +26,7 @@ export function EmptyState({ title, detail, children }: {
 }) { return <div className="empty-state"><Info size={22}/><h3>{title}</h3><p>{detail}</p>{children}</div>; }
 const errorTitles: Record<string, string> = {
     BACKEND_UNAVAILABLE: 'Backend offline',
+    BACKEND_NOT_CONFIGURED: 'Backend offline',
     INVALID_TICKER: 'Invalid ticker',
     MODEL_UNAVAILABLE: 'Forecast unavailable',
     STALE_DATA: 'Market data is stale',

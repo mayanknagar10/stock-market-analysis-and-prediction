@@ -2,6 +2,8 @@ import {test,expect} from '@playwright/test';
 import {mockResearchApi} from './api-fixtures';
 import {mkdir} from 'node:fs/promises';
 test('internal backtest blueprint requires local operator and never runs a strategy',async({page})=>{
+ const hydrationErrors:string[]=[];
+ page.on('pageerror', error=>{if(error.message.includes('Hydration failed'))hydrationErrors.push(error.message);});
  await mockResearchApi(page,true);await mkdir('test-results/visual',{recursive:true});
  for(const width of [1440,390]){
   await page.setViewportSize({width,height:1000});await page.goto('/admin/research-tools');
@@ -11,4 +13,5 @@ test('internal backtest blueprint requires local operator and never runs a strat
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   await page.screenshot({path:'test-results/visual/backtesting-'+width+'.png'});
  }
+ expect(hydrationErrors).toEqual([]);
 });

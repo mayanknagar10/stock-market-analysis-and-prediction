@@ -7,6 +7,13 @@ describe('guest watchlist validation', () => { it('accepts empty guest state wit
 describe('structured API failures', () => {
     const previous = process.env.NEXT_PUBLIC_API_BASE_URL;
     afterEach(() => { vi.unstubAllGlobals(); process.env.NEXT_PUBLIC_API_BASE_URL = previous; });
+    it('reports an unconfigured preview backend without making a network request', async () => {
+        delete process.env.NEXT_PUBLIC_API_BASE_URL;
+        const fetcher = vi.fn();
+        vi.stubGlobal('fetch', fetcher);
+        await expect(api.health()).rejects.toMatchObject({ code: 'BACKEND_NOT_CONFIGURED', status: 0 });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
     it('retains the backend code and status for an invalid ticker', async () => {
         process.env.NEXT_PUBLIC_API_BASE_URL = 'http://127.0.0.1:8001';
         vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 'INVALID_TICKER', message: 'Unsupported equity ticker.', request_id: 'request-1' } }), { status: 422, headers: { 'content-type': 'application/json' } })));

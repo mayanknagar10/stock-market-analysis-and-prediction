@@ -2,9 +2,15 @@ import createClient from 'openapi-fetch';
 import type { paths, components } from './generated/api';
 export type DTO<K extends keyof components['schemas']> = components['schemas'][K];
 export type Group = 'canonical' | 'legacy';
+export class ApiRequestError extends Error {
+    constructor(message: string, public readonly code: string, public readonly status: number, public readonly requestId?: string) {
+        super(message);
+        this.name = 'ApiRequestError';
+    }
+}
 export function normalizeBaseUrl(value: string | undefined): string {
     if (!value?.trim())
-        throw new Error('API configuration missing. Set NEXT_PUBLIC_API_BASE_URL to the running backend URL.');
+        throw new ApiRequestError('API configuration missing. Set NEXT_PUBLIC_API_BASE_URL to connect a backend; market data and forecasts are unavailable in this preview.', 'BACKEND_NOT_CONFIGURED', 0);
     const url = new URL(value);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash)
         throw new Error('API configuration is invalid. Use an HTTP(S) backend root URL.');
@@ -24,12 +30,6 @@ const client = createClient<paths>({ credentials: 'include', fetch: async (reque
 let operatorBearer = '';
 export function setOperatorBearer(value: string) { operatorBearer = value; }
 const auth = () => operatorBearer ? { Authorization: 'Bearer ' + operatorBearer } : {};
-export class ApiRequestError extends Error {
-    constructor(message: string, public readonly code: string, public readonly status: number, public readonly requestId?: string) {
-        super(message);
-        this.name = 'ApiRequestError';
-    }
-}
 function failure(error: unknown, status: number): ApiRequestError {
     const body = error && typeof error === 'object' && 'error' in error ? error.error : null;
     const detail = body && typeof body === 'object' ? body : null;
