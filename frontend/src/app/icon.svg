@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="StockPro">
+  <rect width="64" height="64" rx="10" fill="#151b22"/>
+  <path d="M10 46h44" stroke="#303b48" stroke-width="2"/>
+  <text x="32" y="41" text-anchor="middle" fill="#e3e9ef" font-family="Arial,sans-serif" font-size="29" font-weight="700" letter-spacing="-2">SP</text>
+  <rect x="10" y="48" width="44" height="3" rx="1.5" fill="#8bb8ec"/>
+</svg>

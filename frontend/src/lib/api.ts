@@ -16,8 +16,20 @@ export function normalizeBaseUrl(value: string | undefined): string {
         throw new Error('API configuration is invalid. Use an HTTP(S) backend root URL.');
     return url.toString().replace(/\/$/, '').replace(/\/api\/v1$/, '');
 }
+const previewApiKey = 'stockpro.previewApiBaseUrl';
+export function getPreviewApiBaseUrl(): string | null {
+    if (typeof window === 'undefined') return null;
+    try { return window.localStorage.getItem(previewApiKey); } catch { return null; }
+}
+export function setPreviewApiBaseUrl(value: string | null): void {
+    if (typeof window === 'undefined') throw new Error('Browser configuration is unavailable.');
+    if (value === null) { window.localStorage.removeItem(previewApiKey); return; }
+    const base = normalizeBaseUrl(value);
+    if (!base.startsWith('https://')) throw new Error('Use an HTTPS tunnel URL.');
+    window.localStorage.setItem(previewApiKey, base);
+}
 const client = createClient<paths>({ credentials: 'include', fetch: async (request) => {
-        const base = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL);
+        const base = normalizeBaseUrl(getPreviewApiBaseUrl() || process.env.NEXT_PUBLIC_API_BASE_URL);
         const url = new URL(request.url);
         return fetch(base + url.pathname + url.search, {
             method: request.method,

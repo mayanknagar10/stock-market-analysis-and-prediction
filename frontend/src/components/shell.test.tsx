@@ -4,8 +4,9 @@ import { StrictMode } from 'react';
 import { Shell } from './shell';
 vi.mock('next/navigation', () => ({ usePathname: () => '/stocks/TCS.NS', useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('./search', () => ({ GlobalSearch: () => <input aria-label="Search companies or tickers"/> }));
-vi.mock('@/lib/query', () => ({ useData: (key: string[]) => ({ data: key[0] === 'health' ? { status: 'ok' } : { model_version: 'V5' } }) }));
-beforeEach(() => { localStorage.clear(); delete document.documentElement.dataset.theme; HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); }; HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); }; });
+const connection = vi.hoisted(() => ({ offline: false }));
+vi.mock('@/lib/query', () => ({ useData: (key: string[]) => ({ data: key[0] === 'health' && !connection.offline ? { status: 'ok' } : undefined, error: key[0] === 'health' && connection.offline ? new Error('Offline') : null, refetch: vi.fn() }) }));
+beforeEach(() => { connection.offline = false; localStorage.clear(); delete document.documentElement.dataset.theme; HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); }; HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); }; });
 describe('responsive research shell', () => { it('opens and closes accessible mobile navigation', () => { render(<Shell><p>Workspace content</p></Shell>); fireEvent.click(screen.getByRole('button', { name: 'Open navigation' })); const dialog = screen.getByRole('dialog', { name: 'Navigation' }); expect(within(dialog).getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument(); fireEvent.click(within(dialog).getByRole('button', { name: 'Close navigation' })); expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); }, 10000); it('keeps ticker context in navigation and persists theme preference', () => { render(<Shell><p>Workspace content</p></Shell>); expect(screen.getByRole('link', { name: 'Forecast' })).toHaveAttribute('href', '/forecast/TCS.NS'); fireEvent.click(screen.getByRole('button', { name: 'Use light theme' })); expect(document.documentElement).toHaveAttribute('data-theme', 'light'); expect(localStorage.getItem('stockpro.theme')).toBe('light'); }); });
 
 describe('persisted theme startup', () => {
@@ -29,4 +30,11 @@ describe('persisted theme startup', () => {
         expect(localStorage.getItem('stockpro.theme')).toBe('dark');
         expect(screen.getByRole('button', { name: 'Use light theme' })).toBeInTheDocument();
     });
+});
+
+it('shows one page-level notice when the API is offline', () => {
+    connection.offline = true;
+    render(<Shell><p>Workspace content</p></Shell>);
+    expect(screen.getByText('Market data is unavailable while the local backend is disconnected.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry connection' })).toBeInTheDocument();
 });

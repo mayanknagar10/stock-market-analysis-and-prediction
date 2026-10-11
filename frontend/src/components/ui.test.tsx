@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { ResearchBadge, ApiError, EmptyState, Skeleton, ObjectTable, DataHealth } from './ui';
+import { ResearchBadge, ApiError, EmptyState, Skeleton, ObjectTable, DataHealth, QueryState } from './ui';
 import { ApiRequestError } from '@/lib/api';
 describe('research presentation', () => {
     it('states research-only abstention without a trading recommendation', () => { render(<ResearchBadge />); expect(screen.getByText(/No validated statistical edge/)).toBeInTheDocument(); expect(document.body.textContent).not.toMatch(/STRONG BUY|SELL|BUY/); });
@@ -19,6 +19,12 @@ describe('research presentation', () => {
         expect(screen.getByText('Market data and forecasts are unavailable because this preview has no connected backend.')).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
         expect(document.body.textContent).not.toContain('NEXT_PUBLIC_API_BASE_URL');
+    });
+    it('keeps repeated offline section states quiet beneath the page notice', () => {
+        render(<QueryState pending={false} error={new ApiRequestError('The backend is unreachable.', 'BACKEND_UNAVAILABLE', 0)} retry={() => {}}><p>Loaded data</p></QueryState>);
+        expect(screen.getByText('Unavailable while the backend is offline.')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Retry section' })).toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
     it('distinguishes loading and empty results', () => { const { rerender } = render(<Skeleton />); expect(screen.getByRole('status')).toHaveTextContent('Loading'); rerender(<EmptyState title="No saved forecasts" detail="Canonical records are empty."/>); expect(screen.getByText('Canonical records are empty.')).toBeInTheDocument(); });
     it('labels null and nested report values honestly', () => { render(<ObjectTable value={{ beta: null, subset: { count: 3 } }}/>); expect(screen.getByText('Unavailable')).toBeInTheDocument(); expect(screen.getByText('3')).toBeInTheDocument(); });

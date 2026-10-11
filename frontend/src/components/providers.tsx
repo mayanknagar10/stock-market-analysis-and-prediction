@@ -19,8 +19,11 @@ export function Providers({ children }: {
     const [pending, setPending] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const initialSessionRequest = useRef<ReturnType<typeof api.session> | null>(null);
-    useEffect(() => { let mounted = true; initialSessionRequest.current ||= api.session(); void initialSessionRequest.current.then(value => { if (mounted)
-        setSession(value); }).catch(() => { }); return () => { mounted = false; }; }, []);
+    useEffect(() => { let mounted = true; void client.fetchQuery({ queryKey: ['model'], queryFn: () => api.model(), staleTime: 300000 })
+        .then(model => { if (model.details?.public_analysis_enabled) return;
+            initialSessionRequest.current ||= api.session();
+            return initialSessionRequest.current.then(value => { if (mounted) setSession(value); });
+        }).catch(() => { }); return () => { mounted = false; }; }, [client]);
     async function connect(token?: string) { setPending(true); setError(null); try {
         if (token !== undefined)
             setOperatorBearer(token);

@@ -45,8 +45,11 @@ export function QueryState({ pending, error, retry, children }: {
     retry?: () => void;
     children: ReactNode;
 }) { if (pending)
-    return <Skeleton />; if (error)
-    return <ApiError error={error} retry={retry}/>; return <>{children}</>; }
+    return <Skeleton />; if (error) {
+        if (error instanceof ApiRequestError && ['BACKEND_UNAVAILABLE', 'BACKEND_NOT_CONFIGURED'].includes(error.code))
+            return <div className="section-unavailable"><span>Unavailable while the backend is offline.</span>{retry && error.code !== 'BACKEND_NOT_CONFIGURED' && <button onClick={retry}><RefreshCw size={13}/>Retry section</button>}</div>;
+        return <ApiError error={error} retry={retry}/>;
+    } return <>{children}</>; }
 export function Notice({ children, tone = 'warning' }: {
     children: ReactNode;
     tone?: 'warning' | 'danger' | 'neutral';

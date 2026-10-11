@@ -1,12 +1,21 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { api, normalizeBaseUrl } from './api';
+import { api, normalizeBaseUrl, setPreviewApiBaseUrl } from './api';
 import { validPositions } from './guest';
 describe('API configuration', () => { it('accepts roots and API prefixes consistently', () => { expect(normalizeBaseUrl('https://backend.example/api/v1/')).toBe('https://backend.example'); expect(normalizeBaseUrl('https://backend.example')).toBe('https://backend.example'); }); it('fails meaningfully without production configuration', () => { expect(() => normalizeBaseUrl(undefined)).toThrow('API configuration missing'); }); it('rejects URL credentials and unsupported protocols', () => { expect(() => normalizeBaseUrl('https://secret:token@backend.example')).toThrow(); expect(() => normalizeBaseUrl('file:///secret')).toThrow(); }); });
 describe('guest watchlist validation', () => { it('accepts empty guest state without sample holdings', () => expect(validPositions([])).toBe(true)); it('accepts positive actual user inputs', () => expect(validPositions([{ ticker: 'RELIANCE.NS', quantity: 2, average_buy: 100, target: null, stop: null }])).toBe(true)); it('rejects duplicates, nonfinite and negative inputs', () => { const p = { ticker: 'AAPL', quantity: 1, average_buy: 100 }; expect(validPositions([p, p])).toBe(false); expect(validPositions([{ ...p, quantity: Infinity }])).toBe(false); expect(validPositions([{ ...p, stop: -2 }])).toBe(false); }); });
 
 describe('structured API failures', () => {
     const previous = process.env.NEXT_PUBLIC_API_BASE_URL;
-    afterEach(() => { vi.unstubAllGlobals(); process.env.NEXT_PUBLIC_API_BASE_URL = previous; });
+    afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); process.env.NEXT_PUBLIC_API_BASE_URL = previous; });
+    it('uses a browser-local HTTPS tunnel override without rebuilding the preview', async () => {
+        process.env.NEXT_PUBLIC_API_BASE_URL = 'https://old-tunnel.trycloudflare.com';
+        setPreviewApiBaseUrl('https://new-tunnel.trycloudflare.com');
+        const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ status: 'OK' }), { status: 200, headers: { 'content-type': 'application/json' } }));
+        vi.stubGlobal('fetch', fetcher);
+        await api.health();
+        expect(fetcher.mock.calls[0][0]).toBe('https://new-tunnel.trycloudflare.com/api/v1/health');
+        expect(() => setPreviewApiBaseUrl('http://insecure.example')).toThrow('HTTPS');
+    });
     it('reports an unconfigured preview backend without making a network request', async () => {
         delete process.env.NEXT_PUBLIC_API_BASE_URL;
         const fetcher = vi.fn();
