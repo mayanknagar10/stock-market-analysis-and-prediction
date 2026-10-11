@@ -23,3 +23,7 @@ scripts/*schedule*.ps1 -text
 scripts/export_openapi.py -text
 scripts/measure_backend.py -text
 scripts/verify_automation_preservation.py -text
+# Keep frozen narrative/baseline evidence byte-identical across Windows checkouts.
+docs/V5_*.md -text
+reports/baseline/** -text
+reports/V4_VS_V5.md -text
