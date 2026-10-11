@@ -19,7 +19,7 @@ it('shows saved prediction origin, input cutoff, and origin price timestamp sepa
     render(<ForecastOrigin forecast={forecast} group="legacy" currency="INR"/>);
     expect(screen.getByText(/Prediction origin.*9 Oct 2026.*UTC/)).toBeInTheDocument();
     expect(screen.getByText(/Input cutoff.*8 Oct 2026.*UTC/)).toBeInTheDocument();
-    expect(screen.getByText(/Origin price timestamp.*7 Oct 2026.*UTC/)).toBeInTheDocument();
+    expect(screen.getByText(/Origin price: completed daily session 2026-10-08.*no intraday quote time/)).toBeInTheDocument();
     expect(screen.getByText(/100\.00/)).toBeInTheDocument();
 });
 

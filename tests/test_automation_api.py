@@ -46,6 +46,18 @@ def test_forecast_abstention_and_schema(tmp_path):
     assert "ForecastResponse" in schema["components"]["schemas"]
     assert not any("train" in p for p in schema["paths"])
 
+def test_forecast_withholds_probability_when_calibration_is_unverified(tmp_path, monkeypatch):
+    client, ticker, service = setup(tmp_path)
+    rows = service.rows()
+    for row in rows:
+        row["p_positive_calibrated"] = .7
+        row["calibration_state"] = "UNVERIFIED"
+        row["price_assumption"] = "Total-return-equivalent implied price; future splits/dividends are not known"
+    monkeypatch.setattr(service, "rows", lambda group="canonical": rows)
+    response = client.get(f"/api/v1/stocks/{ticker}/forecast").json()
+    assert all(item["probability"] is None for item in response["horizons"])
+    assert all(item["price_assumption"].startswith("Total-return-equivalent") for item in response["horizons"])
+
 def test_validation_counts_only_forward_matured_and_structured_errors(tmp_path):
     client,ticker,service=setup(tmp_path)
     response=client.get("/api/v1/validation/prospective").json()

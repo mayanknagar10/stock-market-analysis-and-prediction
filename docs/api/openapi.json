@@ -1856,6 +1856,17 @@
             "title": "Prediction Id",
             "type": "string"
           },
+          "price_assumption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Assumption"
+          },
           "probability": {
             "anyOf": [
               {

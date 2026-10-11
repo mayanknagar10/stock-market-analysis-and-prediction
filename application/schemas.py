@@ -24,6 +24,7 @@ class HorizonForecast(Contract):
     predicted_price:float
     quantile_log_returns:list[float]
     quantile_prices:list[float]
+    price_assumption:str|None=None
     probability:float|None=None
     raw_probability:float|None=None
     calibration_state:str

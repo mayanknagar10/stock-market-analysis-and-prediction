@@ -1450,6 +1450,8 @@ export interface components {
             predicted_return: number;
             /** Prediction Id */
             prediction_id: string;
+            /** Price Assumption */
+            price_assumption?: string | null;
             /** Probability */
             probability?: number | null;
             /** Provenance References */

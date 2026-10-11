@@ -73,9 +73,10 @@ class ProspectiveService:
             if not r["abstain"] or r["confidence"]!="LOW":raise ServiceError("SCHEMA_MISMATCH")
             horizons.append(HorizonForecast(prediction_id=r["prediction_id"],horizon=r["horizon"],
                 predicted_log_return=r["central_log_return"],predicted_return=float(np.expm1(r["central_log_return"])),
-                predicted_price=r["central_price"],quantile_log_returns=r["quantiles"],
+                predicted_price=r["central_price"],quantile_log_returns=r["quantiles"],price_assumption=r.get("price_assumption"),
                 quantile_prices=[float(r["current_price"]*np.exp(v)) for v in r["quantiles"]],
-                probability=r.get("p_positive_calibrated"),raw_probability=r.get("raw_p_positive",r["p_positive"]),
+                probability=r.get("p_positive_calibrated") if r.get("calibration_state")=="VALIDATED" else None,
+                raw_probability=r.get("raw_p_positive",r["p_positive"]),
                 calibration_state=r.get("calibration_state","UNVERIFIED"),abstention_reasons=r.get("trust_reasons",["RESEARCH_ONLY"]),
                 ood_score=r.get("ood_score"),ood_status="UNKNOWN" if r.get("ood_score") is None else "OUT_OF_DOMAIN" if r["ood_score"]>1 else "IN_DOMAIN",
                 feature_vector_hash=r.get("feature_vector_hash"),regime=r["regime"],
