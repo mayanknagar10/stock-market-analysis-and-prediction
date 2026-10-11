@@ -1,0 +1,30 @@
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import type { DTO } from '@/lib/api';
+import { ForecastOrigin, HorizonCard, HistoricalAnalogues } from './forecast';
+import { ForecastHistoryTable } from './history';
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
+const horizon: DTO<'HorizonForecast'> = { prediction_id: 'saved-1', horizon: 5, predicted_log_return: .02, predicted_return: .0202, predicted_price: 102, quantile_log_returns: [-.1, -.05, 0, .05, .1], quantile_prices: [90, 95, 100, 105, 110], probability: null, raw_probability: .91, calibration_state: 'UNVERIFIED', abstention_reasons: ['No validated statistical edge'], regime: 'unknown', data_quality_status: 'ELIGIBLE', training_cutoff: '2025-01-01T00:00:00Z', feature_schema: 'frozen', provenance_references: [], confidence: 'LOW', abstain: true, ood_status: 'UNKNOWN', recommendation_allowed: false };
+const record: DTO<'HistoricalForecast'> = { model_version: 'V5', protocol_version: 'legacy-manual-v1', prediction_id: 'saved-1', ticker: 'RELIANCE.NS', forecast_as_of: '2026-10-08T00:00:00Z', information_cutoff: '2026-10-07T00:00:00Z', price_timestamp: '2026-10-07T00:00:00Z', generated_at: '2026-10-08T12:00:00Z', origin_session: '2026-10-08', origin_group: 'legacy', horizon: 5, current_price: 100, central_log_return: .02, central_price: 102, quantiles: [], p_positive_calibrated: null, raw_p_positive: .91, calibration_state: 'UNVERIFIED', regime: 'unknown', ood_score: null, training_cutoff: '2025-01-01T00:00:00Z', feature_schema_hash: 'frozen', provenance_references: [], confidence: 'LOW', abstain: true, trust_reasons: [], evaluation_sealed: false, outcome: null, outcome_state: 'pending', production_promotion: 'BLOCKED', recommendation_allowed: false, research_state: 'RESEARCH_ONLY' };
+describe('saved research outputs', () => { it('never promotes raw score to calibrated probability or recommendation', () => { render(<HorizonCard forecast={horizon} currency="INR"/>); expect(screen.getByText('Unavailable')).toBeInTheDocument(); expect(screen.getByText('LOW · Abstain')).toBeInTheDocument(); expect(document.body.textContent).not.toMatch(/BUY|SELL|91.00%/); }); it('hides a numeric saved probability when calibration is unverified', () => { render(<HorizonCard forecast={{ ...horizon, probability: .52 }} currency="INR"/>); expect(screen.queryByText('52.00%')).not.toBeInTheDocument(); expect(screen.getByText(/calibration unverified/i)).toBeInTheDocument(); }); it('shows a probability only when the backend marks calibration validated', () => { render(<HorizonCard forecast={{ ...horizon, probability: .52, calibration_state: 'VALIDATED' }} currency="INR"/>); expect(screen.getByText('52.00%')).toBeInTheDocument(); }); it('keeps generated time distinct from information cutoff and pending outcome', () => { render(<ForecastHistoryTable items={[record]}/>); expect(screen.getByText('Generated at')).toBeInTheDocument(); expect(screen.getByText('Information cutoff')).toBeInTheDocument(); expect(screen.getByText('Pending / unavailable')).toBeInTheDocument(); }); it('hides an archived numeric probability without verified calibration', () => { render(<ForecastHistoryTable items={[{ ...record, p_positive_calibrated: .54, calibration_state: null }]}/>); expect(screen.queryByText('54.00%')).not.toBeInTheDocument(); expect(screen.getByText('RELIANCE.NS · 5s').closest('tr')?.querySelectorAll('td')[5]).toHaveTextContent('Unavailable'); }); it('does not leak sealed outcomes', () => { render(<ForecastHistoryTable items={[{ ...record, evaluation_sealed: true, outcome_state: 'sealed' }]}/>); expect(screen.getAllByText('Sealed')).toHaveLength(3); expect(screen.queryByText('Pending / unavailable')).not.toBeInTheDocument(); }); it('shows realized returns separately from immutable expected price', () => { render(<ForecastHistoryTable items={[{ ...record, outcome_state: 'matured', outcome: { status: 'matured', actual_return: .1, actual_log_return: .095, actual_future_price: 110, absolute_error: .075, squared_error: null, direction_correct: true, interval_80_hit: true, interval_50_hit: false, benchmark_return: null, sector_return: null, alpha_market: null, alpha_sector: null, maturity_timestamp: null, resolved_at: null, return_convention: 'adjusted', timestamp_correction: null } }]}/>); expect(screen.getByText('10.00%')).toBeInTheDocument(); expect(screen.getByText('102.00')).toBeInTheDocument(); }); });
+
+it('shows saved prediction origin, input cutoff, and origin price timestamp separately', () => {
+    const forecast = {
+        ticker: 'RELIANCE.NS', model_version: 'V5', protocol_version: 'legacy-manual-v1', current_price: 100,
+        price_timestamp: '2026-10-07T18:30:00Z', prediction_origin: '2026-10-09T09:23:52Z',
+        information_cutoff: '2026-10-08T12:00:00Z', origin_session: '2026-10-08', origin_group: 'legacy',
+        horizons: [horizon], research_state: 'RESEARCH_ONLY' as const, production_promotion: 'BLOCKED' as const,
+        recommendation_allowed: false as const, price_timestamp_kind: 'DAILY_ORIGIN_SESSION_LABEL',
+    };
+    render(<ForecastOrigin forecast={forecast} group="legacy" currency="INR"/>);
+    expect(screen.getByText(/Prediction origin.*9 Oct 2026.*UTC/)).toBeInTheDocument();
+    expect(screen.getByText(/Input cutoff.*8 Oct 2026.*UTC/)).toBeInTheDocument();
+    expect(screen.getByText(/Origin price timestamp.*7 Oct 2026.*UTC/)).toBeInTheDocument();
+    expect(screen.getByText(/100\.00/)).toBeInTheDocument();
+});
+
+it('marks a zero-neighbour analogue result as unavailable instead of showing an empty distribution', () => {
+    render(<HistoricalAnalogues data={{ prediction_id: 'saved-1', n: 0, status: 'INSUFFICIENT', limitation: 'No matured comparable states.', research_state: 'RESEARCH_ONLY', production_promotion: 'BLOCKED', recommendation_allowed: false, distribution: [] }}/>);
+    expect(screen.getByText('No matured analogues available')).toBeInTheDocument();
+    expect(screen.queryByText('Historical return distribution')).not.toBeInTheDocument();
+});
