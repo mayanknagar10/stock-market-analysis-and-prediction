@@ -16,14 +16,24 @@ from application.schemas import HealthResponse,ModelResponse,ForecastResponse,Va
 from application.services.analytics import AnalyticsService,valid_ticker
 from application.services.prospective import ProspectiveService,ServiceError
 from core.forecasting.service import active_research
-def create_app(prospective=None,analytics=None):
+def create_app(prospective=None,analytics=None,web_analytics=None,archived_forecasts=None,historical_evidence=None,operator_jobs=None):
     prospective=prospective or ProspectiveService();analytics=analytics or AnalyticsService()
     app=FastAPI(title="StockPro Research Backend",version="1.0.0",
         description="Research only; no training, promotion or trade endpoints.",
         responses={422:{"model":ErrorResponse},503:{"model":ErrorResponse}})
     app.state.prospective=prospective;app.state.analytics=analytics
-    origins=[x.strip() for x in os.environ.get("STOCKPRO_CORS_ORIGINS","").split(",") if x.strip()]
-    if origins:app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=["GET"],allow_headers=["Authorization","Content-Type"])
+    from application.services.web_analytics import WebAnalytics
+    from application.services.archived_forecast import ArchivedForecasts
+    from application.services.historical_evidence import HistoricalEvidence
+    from application.services.operator_jobs import OperatorAuth,OperatorJobs
+    from api.web_routes import web_router
+    from api.operations_routes import operations_router
+    app.state.web_analytics=web_analytics or WebAnalytics(analytics)
+    app.state.archived_forecasts=archived_forecasts or ArchivedForecasts(prospective)
+    app.state.historical_evidence=historical_evidence or HistoricalEvidence()
+    app.state.operator_auth=OperatorAuth();app.state.operator_jobs=operator_jobs or OperatorJobs()
+    origins=[x.strip() for x in os.environ.get("STOCKPRO_CORS_ORIGINS","").split(",") if x.strip() and x.strip()!="*"]
+    if origins:app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=["GET","POST","DELETE"],allow_headers=["Authorization","Content-Type"],allow_credentials=True)
     def failure(request,code,status):
         messages={"INVALID_TICKER":"Unsupported equity ticker.","PROVIDER_FAILURE":"Market provider is unavailable.",
             "DATA_UNAVAILABLE":"Required data are unavailable.","STALE_DATA":"Data freshness requirement failed.",
@@ -35,7 +45,8 @@ def create_app(prospective=None,analytics=None):
     async def instrumentation(request:Request,call_next):
         request.state.request_id=str(uuid.uuid4());start=perf_counter()
         token=os.environ.get("STOCKPRO_API_TOKEN")
-        if token and request.url.path!="/api/v1/health":
+        operator_path=request.url.path.startswith(("/api/v1/operations/","/api/v1/analysis/")) or (request.method=="POST" and request.url.path.endswith("/scenario"))
+        if token and request.url.path!="/api/v1/health" and not operator_path and request.method!="OPTIONS":
             header=request.headers.get("authorization","")
             supplied=header[7:] if header.startswith("Bearer ") else ""
             if not secrets.compare_digest(supplied,token):return failure(request,"UNAUTHORIZED",401)
@@ -87,7 +98,7 @@ def create_app(prospective=None,analytics=None):
     @app.get("/api/v1/stocks/{ticker}/forecast/history",response_model=ForecastHistoryResponse)
     def forecast_history(ticker:str,group:str=Query("canonical",pattern="^(canonical|legacy)$"),offset:int=Query(0,ge=0),limit:int=Query(100,ge=1,le=1000)):
         ticker=valid_ticker(ticker);rows=[r for r in prospective.rows(group) if r["ticker"]==ticker]
-        keys=("prediction_id","ticker","forecast_as_of","information_cutoff","origin_session","horizon","current_price","central_log_return","central_price","quantiles",
+        keys=("prediction_id","ticker","forecast_as_of","generated_at","information_cutoff","origin_session","horizon","current_price","central_log_return","central_price","quantiles",
             "p_positive_calibrated","raw_p_positive","calibration_state","regime","ood_score","model_version","protocol_version","training_cutoff","feature_schema_hash",
             "confidence","abstain","trust_reasons","recommendation_allowed","evaluation_sealed")
         items=[{k:r.get(k,False if k=="recommendation_allowed" else None) for k in keys} for r in rows]
@@ -126,5 +137,6 @@ def create_app(prospective=None,analytics=None):
     def performance():
         items=[{"operation":k,**v} for k,v in analytics.telemetry.summary().items()]
         return Page(items=items,total=len(items))
+    app.include_router(web_router());app.include_router(operations_router())
     return app
 app=create_app()

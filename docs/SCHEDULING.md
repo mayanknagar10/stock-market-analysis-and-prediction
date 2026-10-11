@@ -33,10 +33,19 @@ It refuses to replace an existing named task. Inspect:
 The runner sets working directory and optional .deps. The PC must be awake and the user signed in; registration does not establish always-on operation. No password is stored. Unattended service-principal hosting is a separate decision. To explicitly stop:
     Disable-ScheduledTask -TaskName StockPro-Prospective-Research-v1
 
-## GitHub Actions
-A self-hosted runner with persistent private storage can run the same commands. Use concurrency controls, secrets and pinned dependencies. Ephemeral hosted-runner filesystems cannot be the durable ledger. Never upload private raw snapshots as public artifacts.
+## Cloud collection — deferred by user choice
 
-Scheduled Actions may be delayed or dropped; late execution must still fail the canonical window. It is an optional trigger, not the preferred narrow-window clock. [GitHub schedule limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule). No workflow is activated here.
+The approved web-platform mode uses the existing local Python backend and durable local files. No GitHub access, workflow draft, upload, secret configuration, push or activation is authorized. No cloud scheduler or paid service has been enabled. A hosted runner's temporary disk would lose the snapshots and ledger between runs; clicking a manual cloud trigger does not remove that persistence requirement. Cloud independence remains deferred until a separately approved durable-storage/scheduler plan exists. No service is promised to remain free forever.
+
+## Protected manual frontend operations
+
+The new Admin / Research Status page submits authenticated operations to the same local Python backend. It invokes the existing capture/finalize/resolver/verification commands asynchronously; financial or collection logic is not duplicated in React. The backend and PC must remain available. Opening an ordinary page never generates forecasts. Capture/finalize require an explicit origin and retain the canonical windows above; a late click cannot backdate data. Non-session origins return an auditable skip.
+
+Local operator provisioning requires STOCKPRO_ENABLE_LOCAL_OPERATOR=1, STOCKPRO_ENV=development and an exact configured STOCKPRO_CORS_ORIGINS entry. Bind the API to loopback and use one worker for memory-only operator sessions. Outside this local mode a separate STOCKPRO_OPERATOR_TOKEN is required; never place it in NEXT_PUBLIC variables or browser storage. Operator records are private, append-only files under data/web_platform/jobs.
+
+## Window-free development launcher
+
+StockPro Background.pyw is a user-started local development helper. It verifies that its parent/probe have no Windows console and uses CREATE_NO_WINDOW with shell=False for a fixed allowlist of checks and development services. It does not run collection, outcome, training or GitHub tasks. The nested application provider/operator workers use the same Windows no-console flag. Private gateway state/logs stay under ignored data/web_platform/background and are not web API data. This helper does not replace the existing production research CLI or local scheduler.
 
 ## Recovery
 Read /api/v1/collection/status for immutable batches, member failures and freshness. Exceptions remain in private logs; public responses use sanitized codes. Verify hashes before reuse. Back up the complete data directory while idle, or use SQLite online backup plus preserved snapshot files. Unknown calendar years/unconfirmed special hours fail closed until separately versioned official registrations. Scheduling cannot repair provider outages or insufficient evidence.

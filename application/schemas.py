@@ -143,10 +143,11 @@ class HistoricalForecast(ResearchState):
     prediction_id:str
     ticker:str
     forecast_as_of:AwareDatetime
+    generated_at:AwareDatetime|None=None
     information_cutoff:AwareDatetime
     price_timestamp:AwareDatetime
     origin_session:str
-    origin_group:Literal["canonical","legacy"]
+    origin_group:Literal["canonical","legacy","v5"]
     horizon:Literal[1,5,10,20]
     current_price:float
     central_log_return:float
