@@ -13,6 +13,13 @@ describe('research presentation', () => {
         rerender(<ApiError error={new ApiRequestError('No saved model result.', 'MODEL_UNAVAILABLE', 404)}/>);
         expect(screen.getByText('Forecast unavailable')).toBeInTheDocument();
     });
+    it('explains an unconfigured preview without exposing deployment settings or a futile retry', () => {
+        render(<ApiError error={new ApiRequestError('API configuration missing. Set NEXT_PUBLIC_API_BASE_URL.', 'BACKEND_NOT_CONFIGURED', 0)} retry={() => { }}/>);
+        expect(screen.getByText('Backend offline')).toBeInTheDocument();
+        expect(screen.getByText('Market data and forecasts are unavailable because this preview has no connected backend.')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+        expect(document.body.textContent).not.toContain('NEXT_PUBLIC_API_BASE_URL');
+    });
     it('distinguishes loading and empty results', () => { const { rerender } = render(<Skeleton />); expect(screen.getByRole('status')).toHaveTextContent('Loading'); rerender(<EmptyState title="No saved forecasts" detail="Canonical records are empty."/>); expect(screen.getByText('Canonical records are empty.')).toBeInTheDocument(); });
     it('labels null and nested report values honestly', () => { render(<ObjectTable value={{ beta: null, subset: { count: 3 } }}/>); expect(screen.getByText('Unavailable')).toBeInTheDocument(); expect(screen.getByText('3')).toBeInTheDocument(); });
     it('explains a completed session bar without exposing a raw provider code', () => { render(<DataHealth state="SESSION_BAR_NOT_LIVE_QUOTE"/>); expect(screen.getByText('Completed session · not live')).toBeInTheDocument(); expect(document.body.textContent).not.toContain('SESSION_BAR_NOT_LIVE_QUOTE'); });

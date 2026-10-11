@@ -36,7 +36,8 @@ const errorTitles: Record<string, string> = {
 export function ApiError({ error, retry }: {
     error: unknown;
     retry?: () => void;
-}) { return <div role="alert" className="notice danger"><AlertTriangle size={18}/><div><strong>{error instanceof ApiRequestError ? errorTitles[error.code] || 'Data unavailable' : 'Data unavailable'}</strong><p>{error instanceof Error ? error.message : 'The request could not be completed.'}</p>{retry && <button onClick={retry}><RefreshCw size={14}/>Retry</button>}</div></div>; }
+}) { const unconfigured = error instanceof ApiRequestError && error.code === 'BACKEND_NOT_CONFIGURED';
+    return <div role="alert" className="notice danger"><AlertTriangle size={18}/><div><strong>{error instanceof ApiRequestError ? errorTitles[error.code] || 'Data unavailable' : 'Data unavailable'}</strong><p>{unconfigured ? 'Market data and forecasts are unavailable because this preview has no connected backend.' : error instanceof Error ? error.message : 'The request could not be completed.'}</p>{retry && !unconfigured && <button onClick={retry}><RefreshCw size={14}/>Retry</button>}</div></div>; }
 export function Skeleton() { return <div role="status" className="skeleton"><span>Loading data…</span><div /><div /><div /></div>; }
 export function QueryState({ pending, error, retry, children }: {
     pending: boolean;
