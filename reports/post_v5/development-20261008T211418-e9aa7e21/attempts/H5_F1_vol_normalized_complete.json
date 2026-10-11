@@ -1,0 +1,1 @@
+{"horizon": 5, "fold": 1, "model": "vol_normalized", "train_n": 63393, "test_n": 5889, "train_dates": 680, "test_dates": 62, "status": "complete", "feature_count": 139, "train_metrics": null, "validation_metrics": {"n": 5889, "mae": 0.0697849346631496, "rmse": 0.087353318275462, "direction_accuracy": 0.44727457972491086, "ic": 0.059679176941642584}, "target": "vol_normalized"}

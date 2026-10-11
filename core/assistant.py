@@ -177,26 +177,20 @@ def _handle_risk(ticker: str, df: pd.DataFrame, currency_sym: str = "$", **kwarg
 
 
 def _handle_forecast(ticker: str, df: pd.DataFrame, currency_sym: str = "$", **kwargs) -> str:
-    from core.models import forecast_future
-    if df.empty or len(df) < 80:
-        return f"Not enough price history for {ticker} to generate a forecast."
+    from core.data.runtime import market_snapshot
+    from core.forecasting.service import load_research_model, load_reference_snapshots, research_forecast
+    from core.data.providers import equity_family
     try:
-        result = forecast_future(df, horizon=10, n_paths=20)
-    except Exception as e:
-        return f"I couldn't generate a forecast for {ticker} right now ({e})."
-    fc = result["forecast"]
-    last_p = float(df["Close"].iloc[-1])
-    f_end = float(fc["Forecast"].iloc[-1])
-    chg = (f_end / last_p - 1) * 100
-    lo = float(fc["Lower_80"].iloc[-1])
-    hi = float(fc["Upper_80"].iloc[-1])
-    direction = "higher" if chg >= 0 else "lower"
-    mode_note = "using the universal ML model" if result["mode"] == "universal" else "using a quick per-ticker model"
-    return (f"The 10-day forecast for {ticker} ({mode_note}) projects "
-           f"{currency_sym}{f_end:,.2f}, {abs(chg):.1f}% {direction} than today's "
-           f"{currency_sym}{last_p:,.2f}. The 80% confidence range is "
-           f"{currency_sym}{lo:,.2f} to {currency_sym}{hi:,.2f}. "
-           f"This is a statistical projection, not a guarantee.")
+        family=equity_family(ticker)
+        references,_=load_reference_snapshots()
+        result=research_forecast(market_snapshot(ticker),{10:load_research_model(family,10)},references)
+        forecast=result['forecasts'][0]['forecast']
+        return (f"The research-only 10-session estimate for {ticker} is {forecast['central_return']*100:+.1f}%, "
+                f"implying {currency_sym}{forecast['central_price']:,.2f} under the stated total-return price assumption. "
+                f"The 80% interval is {currency_sym}{forecast['quantile_prices'][0]:,.2f}–{currency_sym}{forecast['quantile_prices'][4]:,.2f}. "
+                f"{forecast['trust']['status']}. Historical point-in-time certification and production promotion remain blocked.")
+    except Exception as exc:
+        return f"Research forecast unavailable for {ticker}: {exc}. No fallback model was substituted."
 
 
 def _handle_sentiment(ticker: str, news_items: Optional[List[Dict]] = None, **kwargs) -> str:

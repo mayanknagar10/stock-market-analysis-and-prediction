@@ -1,0 +1,20 @@
+{
+  "protocol_version": "v5-validation-1",
+  "final_test_start": "2025-10-01",
+  "horizons": [
+    1,
+    5,
+    10,
+    20
+  ],
+  "minimum_train_sessions": 252,
+  "validation_sessions": 63,
+  "seed": 42,
+  "family_separation": [
+    "india_equity",
+    "us_equity"
+  ],
+  "final_test_policy": "Sealed until feature/head/calibration/ensemble/policy decisions are frozen; consume once in phase 12",
+  "price_policy": "Adjusted close labels; raw close display; retrospective provider revisions explicitly flagged",
+  "current_universe_policy": "Survivorship limitations must be reported"
+}

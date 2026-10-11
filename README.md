@@ -1,175 +1,92 @@
-# StockPro Analytics 📈
-### Professional Stock Market Analysis Platform
+# StockPro Analytics
 
-Bloomberg Terminal-inspired platform — 8 pages, 25+ indicators, ensemble ML forecasting,
-full risk suite, NSE + US markets. Pure Streamlit, zero external AI APIs.
+StockPro is a research-first financial analytics and forecasting platform focused on transparent evidence, market context and multi-horizon forecasts. Its primary web application is Next.js with a Python/FastAPI backend. Streamlit remains an internal research console.
 
----
+> **RESEARCH ONLY.** Production model promotion is **BLOCKED**. The frozen V5 candidate `research-20261008T190859` did not pass its final gate, and no validated statistical edge has been certified. Forecasts may have LOW confidence and abstain. Prospective validation is still accumulating; these outputs are not trading recommendations.
 
-## 🚀 Quick Start
+## Architecture
 
-```bash
-unzip stockpro_analytics_v4.zip && cd stockpro
-bash run.sh          # Linux/macOS
-run.bat              # Windows
-```
-Opens at **http://localhost:8501**
+`Browser → Next.js / React / TypeScript → FastAPI → Python analytics, research services and data providers → preserved models, ledgers and source snapshots`
 
----
+The frontend uses Tailwind CSS, TanStack Query, generated OpenAPI types, TradingView Lightweight Charts for price charts and Recharts for analytical views. TradingView provides chart rendering here; StockPro does **not** scrape TradingView market data. Python owns forecasting, technicals, factors, risk and validation calculations. The research stack includes XGBoost and LightGBM; normal API requests do not train models.
 
-## ✨ Pages
+The versioned API is under `/api/v1`. Its contract is in [OpenAPI](docs/api/openapi.json) and [API documentation](docs/API_CONTRACT.md). The Next.js app consumes that contract through one typed client. The Streamlit app remains available for internal research and administration.
 
-| Page | Features |
-|---|---|
-| **📊 Overview** | Price, KPIs, candlestick, 8-indicator signal badge, fundamentals, news |
-| **📈 Technical Analysis** | 25+ indicators, RSI/MACD/BB/ADX/Stochastic, pivots (Classic + Fibonacci) |
-| **🔮 Price Prediction** | Universal pre-trained checkpoint (XGBoost+LightGBM), instant inference on any ticker, GBM cone CI |
-| **⚠️ Risk Analysis** | VaR/CVaR (3 methods), Monte Carlo GBM, CAPM, drawdown, monthly heatmap, Q-Q plot |
-| **💼 Portfolio Tracker** | Multi-stock P&L, correlation matrix, risk/return scatter, allocation donut |
-| **🔍 Screener** | NSE Nifty 50 + US S&P 500, P/E / Beta / RSI / signal filters, CSV export |
-| **⚖️ Compare** | Side-by-side price, spread, indicators, risk table (green = winner), drawdown overlay |
-| **🌍 Market Overview** | Global indices strip, NSE/US top movers, sector heatmaps, VIX |
-| **⭐ Watchlist** | Add positions with targets & stop-loss, live P&L, alerts, sparklines |
-| **📊 Strategy Backtester** | Vectorized backtesting (vectorbt) — MA crossover, RSI reversion, MACD, Bollinger, Donchian — full metrics + trade log |
-| **🧮 Factor Analysis** | Fama-French factor exposures (free public data) + quant factor screening (Value/Momentum/Quality/Low-Vol) |
-| **🤖 Insights** | News sentiment (offline NLP), SEC filing sentiment, rule-based Q&A assistant, personalized recommendations |
+## Product areas
 
----
+| Area | Current scope |
+| --- | --- |
+| Dashboard and Markets | Latest available Indian/global reference sessions, watchlist context and research/collection health. Daily bars are not live quotes. |
+| Stock Research | Price history, technicals, available fundamentals, factors, risk and provider news. Missing provider data is shown as unavailable. |
+| Forecast | Saved 1-, 5-, 10- and 20-session research forecasts, uncertainty, model drivers where archived, conditional scenarios, historical analogues and immutable prediction history. |
+| Validate | Failed V5 gate, retrospective research and separate prospective predictions/outcomes with sample counts and abstention. |
+| Screener and Compare | Backend-calculated screening and stock comparisons; local operator access is required for protected calculations. |
+| Portfolio and Watchlist | Browser-local tracking inputs with protected backend valuation/risk calculations; no broker execution. |
+| Backtesting | Internal research blueprint and existing Python/Streamlit tools; a general authenticated web backtest job is not yet available. |
+| News / Events | Provider-supported news and event context when available; empty and unavailable states are explicit. |
+| Internal research/admin | Operator-only manual jobs and research status, separate from ordinary product navigation. |
 
-## 🧠 Mid-Term Features (Phase 3)
+Main web routes include `/`, `/markets`, `/stocks/[ticker]`, `/forecast/[ticker]`, `/validate`, `/screener`, `/compare`, `/portfolio`, `/watchlist`, `/risk/[ticker]` and `/admin/*`. Stock factors and news live inside the stock workspace.
 
-All built with **zero external accounts, zero API keys** — same philosophy as every prior phase.
+## Forecast and evidence policy
 
-**Strategy Backtester** — `core/strategy_backtest.py`, powered by `vectorbt`. Six built-in strategies (MA Crossover, RSI Mean Reversion, MACD Signal Cross, Bollinger Band Bounce, Donchian Breakout, Buy & Hold benchmark), each with tunable parameters and a brute-force grid-search optimizer. Reports CAGR, Sharpe, Sortino, Calmar, max drawdown, win rate, profit factor, and a full downloadable trade log — with realistic fees and slippage applied per trade.
+The frozen V5 research architecture predicts each horizon directly rather than compounding a one-session prediction. It combines return regression, direction estimates and quantile/uncertainty outputs where saved. Calibration status, out-of-distribution checks, data quality and abstention are exposed explicitly. An unverified probability is not presented as calibrated confidence or a BUY/SELL recommendation.
 
-**Factor Analysis** — `core/factor_models.py`. Two tools:
-- *Factor exposures*: regresses a stock's monthly returns against Fama-French factors (Market, Size, Value, Profitability, Investment) using free public data from Kenneth French's Dartmouth data library (via `pandas_datareader`, no key needed). Reports annualised alpha, factor betas, t-stats, and R². Verified against synthetic data with known true betas — the regression recovers them within a few percentage points.
-- *Quant factor screening*: ranks a universe of stocks by Value (inverse P/E), Momentum (12-1 month return), Quality (ROE + margins), and Low-Volatility — the standard building blocks of quantitative equity investing — using data already fetched elsewhere in the app.
+Research uses temporal splits and leakage controls. The consumed V5 final period remains visible and cannot be reused for tuning. Historical reconstructed evaluation is labeled separately from genuinely prospective forecasts recorded before outcomes. Saved predictions are immutable; matured outcomes are attached as separate records. Promotion requires a future pre-registered gate and sufficient prospective evidence, not elapsed time alone.
 
-**Insights** — sentiment + alternative data + assistant, three features in one page:
-- *News sentiment*: `core/sentiment.py` uses VADER (lexicon-based, fully offline — no API, no rate limit) with a finance-specific vocabulary extension (upgrade/downgrade/beat/miss/etc.) layered on top of the general-purpose base dictionary.
-- *SEC filing sentiment*: same VADER engine applied to EDGAR filing excerpts (US tickers only — NSE/BSE file with SEBI, not the SEC).
-- *Rule-based assistant*: `core/assistant.py` — explicitly **not** an LLM. Pattern-matches question intent (price, RSI, MACD, signal, risk, forecast, sentiment) and answers using the exact same computations the rest of the app already trusts, so there's zero hallucination risk. Trades off open-ended flexibility for that guarantee. The `INTENT_HANDLERS` structure is designed to map directly onto LLM function-calling/tool-use patterns if you add a real LLM API key later.
+Market data currently come primarily from Yahoo Finance through `yfinance`; supported research/legacy paths also use Stooq as a best-effort historical fallback, SEC EDGAR filings, Kenneth French factor data and VADER-based sentiment on available headlines. Free providers can be delayed, incomplete or unavailable. Provider timestamps and data-health states govern what the product shows.
 
-**Personalization** — `core/personalization.py` extends the local auth system (`data/users.json`) with per-user view history. Logged-in users get sector-based recommendations ("you often view IT stocks — here are others you haven't seen") computed from their own behavior, no collaborative filtering or external ML service required.
+## Local development
 
-**What's intentionally NOT built** (from the original mid-term roadmap): REST/GraphQL API server, broker integrations (Zerodha/IBKR), Twitter/Reddit sentiment (need developer accounts), and microservices/autoscaling infrastructure. These genuinely require either a paid account, a separate backend service, or an infrastructure decision that doesn't fit inside a Streamlit app's architecture — building a fake version would be misleading rather than useful.
+Python 3.12 is the verified development version. From the repository root, create an environment and install backend and test dependencies:
 
----
-
-## 🔮 How Prediction Works — Universal Checkpoint Architecture
-
-**The old approach (and its problems):** Training a fresh model from scratch on
-every page load, fitted to only ~250–1500 rows of ONE stock's history. This
-was slow (20–90s per request) and prone to overfitting — a model with 50+
-features has far too little single-stock data to learn real patterns from.
-
-**The new approach:** Train **one model, once**, on a pooled cross-section of
-~40 diverse companies (different sectors, different price scales). Every
-page load then just **loads that checkpoint** (instant) and runs inference
-on whichever ticker you ask about — including tickers the model has never
-seen before.
-
-This works because every feature is **scale-free**:
-- RSI, Stochastic, Williams %R, MFI, CCI — already bounded oscillators
-- MACD — normalised by price (`MACD / Close`, not raw price units)
-- Moving averages — expressed as **distance from price** (`Close/SMA - 1`),
-  never as a raw price level
-- Volatility — `ATR / Close`, annualised % — never raw dollar/rupee ATR
-- OBV — rate-of-change %, never the raw cumulative level
-
-A model trained this way sees **identical features** for a ₹10 stock and a
-₹10,000 stock following the same relative price dynamics — verified in
-testing: 56/56 features bit-for-bit identical across a 1000× price
-difference. That's what makes one checkpoint genuinely apply to any company.
-
-**Mechanics:**
-1. Universal model predicts tomorrow's expected **log return** from 56
-   scale-free features
-2. Multi-day forecast = compound forward: `Price_t = Price_0 × exp(t × r)`
-3. **Confidence interval** = GBM volatility cone computed from *this specific
-   ticker's own* historical volatility: `P₀ × exp(±1.28σ√t)` — width grows
-   as √t, consistent with random-walk theory
-4. **Walk-forward evaluation** — with the checkpoint loaded, this is pure
-   inference across rolling windows (no retraining), so backtesting is also
-   near-instant
-
-**Training the checkpoint:**
-```bash
-python scripts/train_universal_model.py
-```
-or use the **🔧 Train / Retrain Universal Model** panel directly in the
-Price Prediction page. Takes ~2–5 minutes, requires real internet access to
-Yahoo Finance. See `models/README.md` for details and how to make it
-persist across Streamlit Cloud redeploys.
-
-**Fallback mode:** If no checkpoint has been trained yet, the app
-automatically falls back to a small, fast single-ticker model so it never
-crashes — clearly labeled in the UI as fallback mode, since (like the old
-approach) it's more overfitting-prone on small datasets.
-
----
-
-## 🌏 Ticker Formats
-
-| Market | Format | Example |
-|---|---|---|
-| US Stocks | Plain | `AAPL`, `MSFT`, `NVDA` |
-| NSE India | +`.NS` | `RELIANCE.NS`, `TCS.NS` |
-| BSE India | +`.BO` | `RELIANCE.BO` |
-| Nifty 50 | Index | `^NSEI` |
-| Bank Nifty | Index | `^NSEBANK` |
-| Sensex | Index | `^BSESN` |
-| S&P 500 | Index | `^GSPC` |
-| Crypto | +`-USD` | `BTC-USD` |
-
----
-
-## 📦 Dependencies
-
-```
-streamlit  yfinance  pandas  numpy  plotly
-scikit-learn  xgboost  lightgbm  scipy  statsmodels  matplotlib
+```sh
+python -m venv .venv
+# Activate .venv using your shell's activation command.
+python -m pip install -r requirements-dev.txt
 ```
 
-All dependencies are lightweight — no TensorFlow/PyTorch required. The
-prediction engine runs entirely on XGBoost + LightGBM, which handle
-tabular, scale-free technical features extremely well and deploy fast on
-Streamlit Cloud's free tier without memory concerns. `matplotlib` is needed
-only for the colour-graded risk tables (`pandas.Styler.background_gradient`)
-on the Portfolio and Watchlist pages.
+Set `STOCKPRO_CORS_ORIGINS` to `http://127.0.0.1:3000` in the backend process environment, then start FastAPI:
 
----
+```sh
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8001
+```
 
-## ⚙️ GitHub → Streamlit Cloud (auto-deploy)
+The API health endpoint is `http://127.0.0.1:8001/api/v1/health`; its interactive schema is at `http://127.0.0.1:8001/docs`. In a second process, start the web app:
 
-1. Push this folder to a GitHub repo
-2. Go to **share.streamlit.io** → New app → select repo → `app.py`
-3. Every `git push` auto-redeploys in ~30–60 seconds
+```sh
+cd frontend
+npm ci
+# Copy .env.example to .env.local and set NEXT_PUBLIC_API_BASE_URL.
+npm run dev
+```
 
-To edit directly in GitHub: click any file → ✏️ pencil icon → commit → done.
+Open `http://127.0.0.1:3000`. The example URL targets the local backend; configure an actual hosted backend URL for deployment. The root [backend environment example](.env.example) lists optional settings, and [frontend/.env.example](frontend/.env.example) shows the public API URL. Example files are documentation; set backend variables in the process environment or your secret manager. Never commit actual credentials or private raw snapshots. Manual operator jobs are disabled by default and require the explicit local loopback configuration described in [scheduling](docs/SCHEDULING.md). Streamlit can be started separately with `python -m streamlit run app.py` for internal use.
 
-**First-time setup:** the `models/` folder ships empty (see `models/README.md`).
-Train the universal prediction checkpoint once via the **🔧 Train Universal
-Model** panel on the Price Prediction page, then commit the generated
-`models/*.json` / `*.txt` files so it persists across redeploys. Until
-trained, prediction still works via an automatic per-ticker fallback —
-just slower and less accurate.
+## Verification
 
----
+From the repository root:
 
-## 🐛 Troubleshooting
+```sh
+python -m pytest -q
+python scripts/verify_automation_preservation.py
+```
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `ModuleNotFoundError: matplotlib` | Risk tables use `pandas.Styler.background_gradient`, which needs matplotlib | Already in `requirements.txt` — redeploy after pulling latest |
-| `TypeError: got multiple values for keyword argument 'xaxis'` (or `'margin'`, `'yaxis'`) | A chart passed the same Plotly layout key twice | Already fixed — all charts now use the `safe_layout()` helper in `utils/charts.py`, which deep-merges instead of colliding |
-| Prediction page shows "⚠️ Fallback" badge | No universal checkpoint trained yet | Train it once via the in-app panel or `scripts/train_universal_model.py` |
-| Training fails with a connection error | Sandbox/CI environment has no internet access to Yahoo Finance | Run training on Streamlit Cloud or your local machine instead |
+From `frontend/`:
 
----
+```sh
+npm run typecheck
+npm run lint
+npm test
+npx playwright install chromium
+npm run test:e2e
+npm run build
+```
 
-## ⚠️ Disclaimer
+Playwright tests need a running local frontend. The fixture-based browser suite does not replace checks against a real FastAPI instance. The preservation command verifies frozen V5 and prospective artifacts without regenerating research. See [frontend/backend gaps](docs/FRONTEND_BACKEND_GAPS.md) for capabilities that remain unavailable.
 
-For informational purposes only. Not financial advice.
-Data via Yahoo Finance — may be delayed or inaccurate.
+## Deployment status and limitations
+
+The Next.js frontend is designed for a Vercel-compatible build; the Python API is an independently hosted service. **Neither has been deployed as part of this repository state.** Hosted authentication, persistent private backend storage and approved unattended scheduling are prerequisites before relying on remote collection. The current approved collection mode is local/manual and requires the local backend to be running. Provider latency can delay individual sections; some frontend/backend capability gaps remain; prospective evidence is insufficient for production.
+
+StockPro is for research and education. It does not guarantee price accuracy or profitability and does not place trades.

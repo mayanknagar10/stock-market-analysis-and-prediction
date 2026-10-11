@@ -1,56 +1,21 @@
-# models/
+# Model artifacts
 
-This folder is intentionally **empty until you train the universal model**.
+The repository contains preserved V4 artifacts and versioned V5 research checkpoints. It is not an empty model directory.
 
-## Why it's empty
+## V5 research registry
 
-This repo does not ship a pre-trained checkpoint because training requires
-fetching real historical data from Yahoo Finance, which needs genuine
-internet access (not available in every build/CI environment). You train
-it once, yourself, then it works for every ticker forever after.
+v5/ACTIVE_RESEARCH.json points to research-20261008T190859, with separate India/US equity bundles for 1/5/10/20 sessions. Each bundle contains native XGBoost JSON, LightGBM text, schema/scaler/metadata and checksummed auxiliary artifacts. Loading verifies the complete expected file set, family, horizon, schema and data cutoffs. Existing directories are never overwritten. Ordinary forecast requests never train.
 
-## How to train
+**The frozen final performance gate failed. Production inference is disabled.** All current forecasts remain LOW and abstain. Historical input availability/revision vintages and exchange calendars are unverified. These are research artifacts, not evidence of reliable investment decisions or support for every ticker.
 
-**Option A — In the app (easiest):**
-Go to the **🔮 Price Prediction** page → expand **🔧 Train / Retrain
-Universal Model** → click **🚀 Train Now**. Takes ~2–5 minutes.
+v5/QUARANTINE.json identifies rejected candidates; earlier artifacts and development reports are retained. Do not delete failed versions or point the active registry at a quarantined/incomplete bundle. The current experiment covers six equities and limited current sector mappings. Crypto/index/FX families and 60-session horizons are unsupported.
 
-**Option B — Command line:**
-```bash
-python scripts/train_universal_model.py
-```
-Optional flags:
-```bash
-python scripts/train_universal_model.py --universe AAPL,MSFT,TCS.NS,RELIANCE.NS --period 5y
-```
+Training is an explicit job, scripts/train_v5.py, using private captured stock/reference manifests. Further modeling requires a separately registered untouched future holdout; the released final period has already been consumed. See [deployment guide](../docs/V5_DEPLOYMENT.md) and [comparison](../reports/V4_VS_V5.md).
 
-## What gets created here
+## Original V4 freeze
 
-| File | Contents |
-|---|---|
-| `universal_xgb.json` | Trained XGBoost booster |
-| `universal_lgb.txt` | Trained LightGBM booster |
-| `universal_scaler.json` | Feature scaling parameters (RobustScaler) |
-| `universal_meta.json` | Training metadata: universe, row counts, test accuracy, per-ticker breakdown |
+universal_xgb.json, universal_lgb.txt, universal_scaler.json and universal_meta.json are the preserved original checkpoint. Its metadata lists synthetic SYN_0–SYN_14 training assets. Reported synthetic metrics cannot establish real-market historical OOS accuracy. The diagnostic adapter explicitly normalizes the LightGBM text in memory to handle its original Windows line endings; original files remain unchanged.
 
-## Making it permanent
+Do not overwrite these files with the legacy training script when reproducing the V4 freeze. V5 inference uses direct horizon heads and never silently falls back to the universal model. [Original diagnostic](../reports/baseline/V4_BASELINE.md) and [freeze hashes](../reports/baseline/V4_FREEZE.json) document the baseline.
 
-Streamlit Cloud's filesystem is **ephemeral** — if you train via the in-app
-button, the checkpoint is lost on the next redeploy/restart. To keep it:
-
-```bash
-git add models/
-git commit -m "Train universal prediction model"
-git push
-```
-
-Once committed, every deploy loads the same checkpoint instantly — no
-retraining needed, and it works on **any ticker**, not just the ones it was
-trained on (see `core/indicators.build_ml_features` — every feature is a
-ratio or bounded oscillator, never a raw price level, which is what makes
-this generalise across companies of any price scale).
-
-## Retraining later
-
-Re-run either option above whenever you want to refresh the model on more
-recent data. The new checkpoint simply overwrites these files.
+Frozen source/model/config/result files use -text .gitattributes to preserve their exact hashed bytes across Git checkouts. Store private users, snapshots and prediction ledger on durable private storage; they do not belong in this model directory or Git.

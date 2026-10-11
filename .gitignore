@@ -7,3 +7,56 @@ __pycache__/
 .streamlit/secrets.toml
 *.log
 data/cache/
+
+# Local development dependencies and evaluation data
+.deps/
+.venv/
+.pytest_cache/
+data/snapshots/
+data/evaluations/
+data/v5/
+
+# Private mutable user/runtime data
+data/users.json
+reports/screenshots/
+
+# Post-V5 private prospective inputs and shadow ledgers
+data/research/
+.superpowers/
+
+# Private canonical automation ledger, snapshots and operational logs
+data/prospective_automation/
+
+# Web platform dependencies, local operations and private configuration
+.npm-cache/
+frontend/node_modules/
+frontend/.next/
+frontend/.cache/
+frontend/test-results/
+frontend/playwright-report/
+data/web_platform/
+frontend/.env*
+!frontend/.env.example
+
+# Reproducible checks and machine-local editor/build state
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage/
+env/
+.vscode/
+.idea/
+Thumbs.db
+*.tsbuildinfo
+frontend/out/
+frontend/dist/
+frontend/blob-report/
+frontend/design-review/
+.stockpro-checkpoints/
+
+# Local environment variants; checked-in examples remain visible
+.env.*
+!.env.example
+!frontend/.env.example

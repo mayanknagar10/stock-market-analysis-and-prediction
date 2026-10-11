@@ -1,0 +1,10 @@
+{
+  "run_id": "ae5fc336d61fe32ad0baf048bfb9ba42df7ace4e6fd428444e23b7905755a10e",
+  "study_id": "prospective-india-20261008-v1",
+  "resolved_at": "2026-10-09T08:48:01.622203+00:00",
+  "matured": 0,
+  "pending": 1,
+  "failures": {
+    "d73246c9-87d1-4da1-998a-10f9b7588ff9": "Incomplete, non-finite or non-traded equity outcome endpoint; keep pending without shifting maturity"
+  }
+}

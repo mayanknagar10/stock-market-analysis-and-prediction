@@ -1,0 +1,14 @@
+{
+  "model_version": "research-20261008T190859",
+  "models": {
+    "india_equity_1": "models/v5/research-20261008T190859/india_equity/1",
+    "india_equity_5": "models/v5/research-20261008T190859/india_equity/5",
+    "india_equity_10": "models/v5/research-20261008T190859/india_equity/10",
+    "india_equity_20": "models/v5/research-20261008T190859/india_equity/20",
+    "us_equity_1": "models/v5/research-20261008T190859/us_equity/1",
+    "us_equity_5": "models/v5/research-20261008T190859/us_equity/5",
+    "us_equity_10": "models/v5/research-20261008T190859/us_equity/10",
+    "us_equity_20": "models/v5/research-20261008T190859/us_equity/20"
+  },
+  "report": "reports\\validation\\research-20261008T190859"
+}

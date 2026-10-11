@@ -1,0 +1,1 @@
+{"horizon": 5, "fold": 3, "model": "sector_heldout", "train_n": 70387, "test_n": 61, "train_dates": 804, "test_dates": 61, "status": "complete", "feature_count": 139, "train_metrics": null, "validation_metrics": {"n": 61, "mae": 0.03893193319201681, "rmse": 0.04527729220804895, "direction_accuracy": 0.5409836065573771, "ic": -0.45965097831835}, "target": "cumulative_log"}

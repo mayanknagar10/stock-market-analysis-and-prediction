@@ -6,8 +6,8 @@ import numpy as np
 from typing import Optional, Dict
 
 T = dict(
-    bg="#0D1117", card="#161B22", grid="#21262D", text="#C9D1D9",
-    dim="#8B949E", green="#3FB950", green2="#26A641", red="#F85149",
+    bg="#0B1220", card="#121D30", grid="#2B3A50", text="#E6EDF5",
+    dim="#AAB8CA", green="#3FB950", green2="#26A641", red="#F85149",
     blue="#58A6FF", amber="#E3B341", purple="#BC8CFF", orange="#FFA657",
 )
 COLORS = [T["green"],T["blue"],T["amber"],T["purple"],T["orange"],
@@ -15,12 +15,12 @@ COLORS = [T["green"],T["blue"],T["amber"],T["purple"],T["orange"],
 
 BASE = dict(
     template="plotly_dark", plot_bgcolor=T["bg"], paper_bgcolor=T["bg"],
-    font=dict(family="IBM Plex Mono, monospace", color=T["text"], size=11),
+    font=dict(family="system-ui, Segoe UI, sans-serif", color=T["text"], size=11),
     margin=dict(l=12,r=12,t=40,b=12),
     legend=dict(bgcolor="rgba(0,0,0,0)",font_size=10,bordercolor=T["grid"],borderwidth=1),
     xaxis=dict(gridcolor=T["grid"],zeroline=False,showspikes=True,spikecolor=T["dim"]),
     yaxis=dict(gridcolor=T["grid"],zeroline=False,showspikes=True,spikecolor=T["dim"]),
-    hoverlabel=dict(bgcolor=T["card"],font_size=12,font_family="IBM Plex Mono, monospace"),
+    hoverlabel=dict(bgcolor=T["card"],font_size=12,font_family="system-ui, Segoe UI, sans-serif"),
 )
 
 def _apply(fig, title="", height=500):

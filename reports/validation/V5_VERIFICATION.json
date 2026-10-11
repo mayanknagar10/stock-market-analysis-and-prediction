@@ -1,0 +1,39 @@
+{
+  "verified_at": "2026-10-08T19:43:27.740583+00:00",
+  "model_version": "research-20261008T190859",
+  "scope": "research_only",
+  "recorded_full_regression": {
+    "recorded_at": "2026-10-08T19:37:26.728Z",
+    "command": "python -m pytest -q",
+    "exit_code": 0,
+    "passed": 122,
+    "warnings": 8,
+    "elapsed_seconds": 33.54,
+    "output_summary": "122 passed, 8 warnings in 33.54s",
+    "environment": "Windows; Python 3.12; isolated .deps dependencies"
+  },
+  "compileall": {
+    "result": "PASS",
+    "command": "python -m compileall -q core pages utils scripts app.py"
+  },
+  "streamlit_health": {
+    "port": 8515,
+    "result": "ok",
+    "checked_at": "2026-10-08T19:43:27.740583+00:00"
+  },
+  "functional_pages": {
+    "app.py": "PASS",
+    "pages/forecast.py": "PASS",
+    "pages/validate.py": "PASS"
+  },
+  "browser_visual_accessibility_qa": "NOT DONE: browser runtime returned no available browser",
+  "frozen_files_verified": 252,
+  "staged_frozen_blobs_verified": 252,
+  "documentation_links": "PASS",
+  "v5_final_row_count": 5844,
+  "comparison_sha256": "1ae1356bdb6335e0dda9e68d726257dcfc97bb0a6829c2259ed218f658e91617",
+  "predictions_sha256": "a40d3e1f98648c25cad926166a040052811e74035d90fe7a397763aeed58cfeb",
+  "research_metric_gate_passed": false,
+  "production_promotion": "BLOCKED",
+  "abstention_rate": 1.0
+}

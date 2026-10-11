@@ -1,0 +1,106 @@
+{
+  "diagnosis_id": "calibration-diagnostic-608674e74d464894af978965fa7b12b7",
+  "created_at": "2026-10-09T09:08:06.816529+00:00",
+  "model_version": "research-20261008T190859",
+  "rows": [
+    {
+      "family": "india_equity",
+      "horizon": 1,
+      "n_fit": 2196,
+      "raw_fit_roc_auc": 0.8571992945326279,
+      "issued_fit_roc_auc": 0.8571992945326279,
+      "raw_fit_brier": 0.20305873651324322,
+      "issued_fit_brier": 0.20305873651324322,
+      "released_calibration_accepted": false,
+      "platt_coefficient": null,
+      "ranking_inverted_by_released_calibration": false
+    },
+    {
+      "family": "india_equity",
+      "horizon": 5,
+      "n_fit": 2172,
+      "raw_fit_roc_auc": 0.8880940428380186,
+      "issued_fit_roc_auc": 0.8880940428380186,
+      "raw_fit_brier": 0.16814115528420018,
+      "issued_fit_brier": 0.1720965885554558,
+      "released_calibration_accepted": true,
+      "platt_coefficient": 0.931020194533042,
+      "ranking_inverted_by_released_calibration": false
+    },
+    {
+      "family": "india_equity",
+      "horizon": 10,
+      "n_fit": 2142,
+      "raw_fit_roc_auc": 0.9240824305954567,
+      "issued_fit_roc_auc": 0.9240824305954567,
+      "raw_fit_brier": 0.13662067661468502,
+      "issued_fit_brier": 0.13662067661468502,
+      "released_calibration_accepted": false,
+      "platt_coefficient": null,
+      "ranking_inverted_by_released_calibration": false
+    },
+    {
+      "family": "india_equity",
+      "horizon": 20,
+      "n_fit": 2082,
+      "raw_fit_roc_auc": 0.9372311300501845,
+      "issued_fit_roc_auc": 0.06276886994981556,
+      "raw_fit_brier": 0.12392834016358976,
+      "issued_fit_brier": 0.3382495930122824,
+      "released_calibration_accepted": true,
+      "platt_coefficient": -0.2430001098118948,
+      "ranking_inverted_by_released_calibration": true
+    },
+    {
+      "family": "us_equity",
+      "horizon": 1,
+      "n_fit": 2235,
+      "raw_fit_roc_auc": 0.8490231519971954,
+      "issued_fit_roc_auc": 0.15097684800280456,
+      "raw_fit_brier": 0.20947242775981098,
+      "issued_fit_brier": 0.27461805212671714,
+      "released_calibration_accepted": true,
+      "platt_coefficient": -0.5162891349418794,
+      "ranking_inverted_by_released_calibration": true
+    },
+    {
+      "family": "us_equity",
+      "horizon": 5,
+      "n_fit": 2211,
+      "raw_fit_roc_auc": 0.8947003421813229,
+      "issued_fit_roc_auc": 0.8947003421813229,
+      "raw_fit_brier": 0.17561258586421863,
+      "issued_fit_brier": 0.17561258586421863,
+      "released_calibration_accepted": false,
+      "platt_coefficient": null,
+      "ranking_inverted_by_released_calibration": false
+    },
+    {
+      "family": "us_equity",
+      "horizon": 10,
+      "n_fit": 2181,
+      "raw_fit_roc_auc": 0.9223510127418333,
+      "issued_fit_roc_auc": 0.9223510127418333,
+      "raw_fit_brier": 0.15292523993649645,
+      "issued_fit_brier": 0.15292523993649645,
+      "released_calibration_accepted": false,
+      "platt_coefficient": null,
+      "ranking_inverted_by_released_calibration": false
+    },
+    {
+      "family": "us_equity",
+      "horizon": 20,
+      "n_fit": 2121,
+      "raw_fit_roc_auc": 0.945744817937484,
+      "issued_fit_roc_auc": 0.945744817937484,
+      "raw_fit_brier": 0.1309742940028031,
+      "issued_fit_brier": 0.1309742940028031,
+      "released_calibration_accepted": false,
+      "platt_coefficient": null,
+      "ranking_inverted_by_released_calibration": false
+    }
+  ],
+  "new_fit_or_calibration": false,
+  "final_period_read": false,
+  "interpretation": "These are in-sample base-row diagnostics under released later-development weights/calibration. Negative Platt slope reverses ranking; it may reflect unstable calibration-period ranking and is not proof of a causal mechanism. No calibrator, probability or threshold is changed."
+}

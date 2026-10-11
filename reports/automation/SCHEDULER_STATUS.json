@@ -1,0 +1,11 @@
+{
+    "task_name":  "StockPro-Prospective-Research-v1",
+    "state":  "Ready",
+    "enabled":  true,
+    "interval":  "PT5M",
+    "last_result":  0,
+    "last_run_utc":  "2026-10-09T12:11:21.0000000Z",
+    "next_run_utc":  "2026-10-09T12:16:20.0000000Z",
+    "requires_awake_logged_in_user":  true,
+    "disallow_on_battery":  false
+}

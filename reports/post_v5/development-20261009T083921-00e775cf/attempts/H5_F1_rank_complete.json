@@ -1,0 +1,1 @@
+{"horizon": 5, "fold": 1, "model": "rank", "train_n": 59718, "test_n": 5629, "train_dates": 680, "test_dates": 62, "status": "complete", "feature_count": 139, "train_metrics": null, "validation_metrics": {"n": 5629, "mae": 0.250042007207357, "rmse": 0.28912759113623454, "direction_accuracy": 1.0, "ic": -0.00036535621243548517}, "target": "rank"}

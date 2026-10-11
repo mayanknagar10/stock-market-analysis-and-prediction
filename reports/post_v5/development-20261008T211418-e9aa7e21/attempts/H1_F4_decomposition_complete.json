@@ -1,0 +1,1 @@
+{"horizon": 1, "fold": 4, "model": "decomposition", "train_n": 79550, "test_n": 6051, "train_dates": 869, "test_dates": 63, "status": "complete", "feature_count": 139, "train_metrics": null, "validation_metrics": {"n": 5421, "mae": 0.010345041438084472, "rmse": 0.014653116418931293, "direction_accuracy": 0.5216749677181332, "ic": 0.07231676664067058}, "target": "cumulative_log"}

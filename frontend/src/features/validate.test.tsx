@@ -1,0 +1,6 @@
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Validate } from './validate';
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
+vi.mock('@/lib/query', () => ({ useData: (key: string[]) => key[0] === 'model' ? { data: { model_version: 'V5', health: 'FROZEN', calibration_state: 'UNVERIFIED' }, isPending: false, error: null } : { data: undefined, isPending: false, error: new Error('Saved report unavailable'), refetch: vi.fn() } }));
+describe('failed validation is not hidden by unavailable data', () => { it('foregrounds the failed gate and degraded report states', () => { render(<Validate />); expect(screen.getByText('V5 final gate: FAILED · Production promotion BLOCKED')).toBeInTheDocument(); expect(screen.getAllByText('Saved report unavailable')).toHaveLength(2); expect(screen.getByText('Frozen')).toBeInTheDocument(); expect(screen.getByText('PRODUCTION')).toBeInTheDocument(); expect(screen.getByRole('link', { name: 'Canonical prospective' })).toHaveAttribute('href', '/validate?group=canonical'); expect(screen.getByRole('link', { name: 'Preserved legacy / manual' })).toHaveAttribute('href', '/validate?group=legacy'); }); });

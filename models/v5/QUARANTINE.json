@@ -1,0 +1,16 @@
+{
+  "versions": [
+    {
+      "model_version": "research-20261007T170953",
+      "reason": "Blending/calibration row reuse; original report retained",
+      "state": "QUARANTINED",
+      "scope": "research_only"
+    },
+    {
+      "model_version": "research-20261007T173345",
+      "reason": "Superseded by explicit placeholder-bar quarantine and independent positive-volume session handling; original report retained",
+      "state": "QUARANTINED",
+      "scope": "research_only"
+    }
+  ]
+}

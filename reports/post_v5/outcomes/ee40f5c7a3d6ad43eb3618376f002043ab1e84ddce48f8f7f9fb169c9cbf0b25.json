@@ -1,0 +1,10 @@
+{
+  "run_id": "3afd2133763e323777a0dbcfe3321799ece03ae439b83549435a41e7937f99b2",
+  "study_id": "prospective-india-20261008-v1",
+  "resolved_at": "2026-10-09T08:45:58.311077+00:00",
+  "matured": 0,
+  "pending": 0,
+  "failures": {
+    "ff19aedd-7616-4ded-999f-7e177437d33e": "Benchmark maturity endpoints unavailable; keep outcome pending"
+  }
+}

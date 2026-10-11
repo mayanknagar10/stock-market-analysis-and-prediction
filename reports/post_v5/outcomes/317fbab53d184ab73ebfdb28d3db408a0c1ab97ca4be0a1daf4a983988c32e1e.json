@@ -1,0 +1,10 @@
+{
+  "run_id": "09838de9b44ab4dafd4e73a38a759e10ee9e9712e3309f473f2e763286808bdf",
+  "study_id": "prospective-india-20261008-v1",
+  "resolved_at": "2026-10-09T10:02:52.701139+00:00",
+  "matured": 0,
+  "pending": 1,
+  "failures": {
+    "caaeb8c8-01c8-4e0b-90de-6f76c4c94470": "Incomplete or unusable adjusted outcome endpoints; keep pending for a later captured vintage"
+  }
+}

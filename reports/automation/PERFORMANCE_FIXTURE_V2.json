@@ -1,0 +1,100 @@
+{
+  "measured_at": "2026-10-09T11:41:14.702746+00:00",
+  "provider_mode": "SYNTHETIC_PROVIDER_FIXTURE",
+  "api_status_codes": {
+    "/stocks/ABB.NS/overview": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "/stocks/ABB.NS/history": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "/stocks/ABB.NS/technicals": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "/stocks/ABB.NS/forecast?group=legacy": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "/validation/summary": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "/markets/overview": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ]
+  },
+  "timings": {
+    "provider.history": {
+      "n": 3,
+      "median_ms": 17.68160000210628,
+      "p95_ms": 20.746189972851425
+    },
+    "api./api/v1/stocks/{ticker}/overview": {
+      "n": 5,
+      "median_ms": 3.3574000117368996,
+      "p95_ms": 22.793219995219257
+    },
+    "api./api/v1/stocks/{ticker}/history": {
+      "n": 5,
+      "median_ms": 71.81799999671057,
+      "p95_ms": 177.69816000945863
+    },
+    "api./api/v1/stocks/{ticker}/technicals": {
+      "n": 5,
+      "median_ms": 88.32109998911619,
+      "p95_ms": 167.32567999279124
+    },
+    "api./api/v1/stocks/{ticker}/forecast": {
+      "n": 5,
+      "median_ms": 285.82180000375956,
+      "p95_ms": 320.4253200208768
+    },
+    "api./api/v1/validation/summary": {
+      "n": 5,
+      "median_ms": 2.6680000009946525,
+      "p95_ms": 3.2878999831154943
+    },
+    "api./api/v1/markets/overview": {
+      "n": 5,
+      "median_ms": 3.6115999682806432,
+      "p95_ms": 27.929880004376166
+    }
+  },
+  "native_frozen_inference_replay": {
+    "n": 20,
+    "median_ms": 24.625649995869026,
+    "p95_ms": 41.65505496202971,
+    "central_return_parity": true,
+    "origin_group": "legacy-manual-v1",
+    "model_parameters_changed": false
+  },
+  "limits": [
+    "Five requests per route; includes cold startup and warm cache.",
+    "Legacy saved retrieval measured because no on-time canonical origin has occurred.",
+    "Native replay is a correctness/latency check, not new research evaluation.",
+    "No public HTTP route performs inference/training.",
+    "Latency is not a capacity or provider reliability claim."
+  ]
+}

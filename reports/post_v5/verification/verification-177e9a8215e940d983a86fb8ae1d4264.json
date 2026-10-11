@@ -1,0 +1,1215 @@
+{
+  "verification_id": "verification-177e9a8215e940d983a86fb8ae1d4264",
+  "verified_at": "2026-10-09T09:51:32.614045+00:00",
+  "study_id": "prospective-india-20261008-v1",
+  "run_id": "14cb34861247c6639469cbdc7d9cd921c2184812d226a9a3ebc06923a9b7883b",
+  "preservation": {
+    "verified_files": 1052,
+    "commit": "26c09e0",
+    "model_version": "research-20261008T190859"
+  },
+  "n_fixed_members": 100,
+  "n_captured_sources": 119,
+  "n_captured_equities": 100,
+  "latest_missing_equity_sources": 0,
+  "prospective_shadow_predictions": 388,
+  "prospective_matured_outcomes": 0,
+  "input_archive_hashes_and_retrieval_bounds": "PASS",
+  "universe_source_hash": "PASS",
+  "ledger_lineage": "PASS",
+  "historical_training_point_in_time_certified": false,
+  "production_promotion": "BLOCKED",
+  "source_quality": [
+    {
+      "source": "ABB.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.119283+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "32846e44e27ead3ce7f5f375f188e6c3fc0e9781aef0ea4a11f90ffc5721a896",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ADANIENSOL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:10.940657+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "baed5bdd4671c26d8a4c2e5d2506305b35d19b25404aa00a11a29c6024d0420b",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ADANIENT.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.079679+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "60cef4509ed380e30a2e93026b695653d0ab75a1194d0e0b24f6aebbc8642d5f",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ADANIGREEN.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.268446+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "96b4b375ac64a11b3701d5b06bbd1331e18a150a80c64fd950184d67998b762c",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ADANIPORTS.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.446305+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "19ef3e0d038369447e9079a8b338653864b3a265fba19e992e98432fd8ac67e8",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ADANIPOWER.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.507860+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "075f4274daab93d59a267ce2e316de6ea4abd62b793f802830b23aa254890a11",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "AMBUJACEM.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.612917+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "cde610fca004d530059c60b0bb33fb1b09ddb9bb0f9c18b58215b2d045f6bd6c",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "APOLLOHOSP.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.878917+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "128b325f1e6298b6ad450f1e10fd12d668ffafa4fb6643f36c7fcd2b5ebaff72",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ASIANPAINT.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.785138+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "da550ca29b83cf011a38dea297fdecef2dd472bc6f57fb762ebd7af51bc9e35d",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "AXISBANK.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:11.975338+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "347aaf1c58b6aa1fe7cc267d3f6c5b35476905f1df61cd8770124222db16914e",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BAJAJ-AUTO.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:12.077461+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "6b3ec9b87d5e3309f3361ef220f90450e72f9028e62196a7f0388dab327b77d8",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BAJAJFINSV.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:12.394296+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "f4821642c4080b286766bef18ed1c9bbef569a54ae953c769dcb19d895f5594b",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BAJAJHLDNG.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:12.246253+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "26a1c8b9eefd49e399500eb74da4b18067841f54627fd058773df977f3012be4",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BAJFINANCE.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:12.472185+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "35b0974fe381ba10a1a87d8fe920b17a7c260e0932612ea4ebe5e1f7deb7731a",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BANKBARODA.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:12.576978+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "c90034749846ec6691e5147ff185001db4669abd0d90fea9662feadc99bdd7e2",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BEL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:12.850439+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "18c28f489f6bda92bcfb9541e84dda695a35b58e2ba4d705744eddae933be69b",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BHARTIARTL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:12.691532+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8e636455abc07732f7f1b69a93eebcc46be27e4aa81c549f9c035da010e3a89e",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BOSCHLTD.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:13.010919+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "69c97308dcd96cfd59a191d9f5d96089c4375fc1750cad82c0a56a348a69a7b3",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BPCL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:13.155368+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8e6a2ead03fc714ba0422bf44f113d19bf351edf5f96c95dc350f14658fa6b63",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BRITANNIA.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:13.307808+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "7d131d3ccd82a58cf83ee31fd83a4bc2fc57f30b50f8c8d68547499bba6ae170",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "BSE.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:13.361368+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "f14e3c11b273d2eab2f260e285834f348a74dbc7109aa241a49b07c8196402a0",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "CANBK.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:13.485740+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "849991ed8f242de9318f94c264c4f9d57c2decbda38ff54f92571582a75e13e6",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "CGPOWER.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:13.662544+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "57934dd26e4fdf81aa13b4f389a328d1441106c58de891adc69d635fac980c90",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "CHOLAFIN.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:13.788815+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "0cdef972431c2653ecbfc012e88badb066f73a1dcce75550447bd0cbc9bb8b4e",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "CIPLA.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:13.864973+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "af29056e7256a18f726fdd22f0e9680373399ffb036fb70c86b7eec767b95e7d",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "COALINDIA.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:14.014231+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "d9e070e0b0a5724c1c3f016d4387684c9a551df512fbeb39ac9a24650a523aea",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "CUMMINSIND.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:14.175995+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "e9f1b3794fe4b72cf28fae82ca165ac4792d8d22883a12a7173dfa2bfa4fb06e",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "DIVISLAB.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:14.201597+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "5acfb3cd15fa545a79a794d240dbe351319cf057bf94359535bda34e53a5625d",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "DLF.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:14.694080+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "1c32b1f632f4bbd445555988b030792bfacab2f041ffa82db89fa3d63c961bcb",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "DMART.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:14.603571+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "18f4c005641cb0e2da6fdc7edf23d1128f689a7500a30bedffcdd6829cfafaef",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "DRREDDY.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:14.500121+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "445c34a8ce628c81086d7138771b544a4d3eb6cf097285973a31e36874c46b52",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "EICHERMOT.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:14.877048+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8f6cb297981a97d2f62db6036c07ded2c2260d5b78d7dab0894367c01a994d57",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ENRIN.NS",
+      "rows": 325,
+      "retrieved_at": "2026-10-09T09:05:14.808694+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "79503e3b97d59824513a81ad6fc7fa8b9add367ebdc26aa84a1c83bcc83aed43",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ETERNAL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:14.971266+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "9a0047af0152b4f26f4b297740f8a40d664756f8964c9c0dab955970a1b74814",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "GAIL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:15.108914+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "cc069cdfd6e2bcdbb1c1352b0cd818a9c08171683f36aeddb035288683f371f5",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "GODREJCP.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:15.217901+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "3261f225a04af2d1dcf7954babba3a9f3516b4566a47842db652a499cb225ef0",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "GRASIM.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:15.329112+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "b80fb6f03a24aa16d5c4b5e8b17af60b5ca40578a40c6ab7facae89990de4b93",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HAL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:15.475577+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "a8493963e76fe21e0855f59376a218e68af5b22dd371e70c5e1d79fe046e99ea",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HCLTECH.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:15.598856+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "d37b6ad2f1c97255d76b4c60f34a8ba05cc66d469e1e5cc5225573b194b55cd1",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HDFCAMC.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:15.691434+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "dd49253cbb7ad038f8ae883b51eff5af1c94d5a327f85cf3bbfd2f4e85553ed6",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HDFCBANK.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:15.832877+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "0052b43c6cfa8e5bc32280675d097652606315e5ab7d14df37c4b660c93d097a",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HDFCLIFE.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:15.955208+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "c0a9bd3ddaa1e31e4c53709dee22e2ba6b4d05002328abb8e95553e4ee132ad5",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HINDALCO.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.066082+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "51d7d17bbd4a886bedd49d2bd5d44218a7ab85977dad79e2082e326e3a840017",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HINDUNILVR.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.156825+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8f55770edcdc8451db00675b62e8f02c4e60e21d190df5f9326fae5087a47cb6",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HINDZINC.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.253673+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "9969a26143ad3d3c0e6a6331575286fa44b06ef66cc866c10be8fed5c9ed98f3",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "HYUNDAI.NS",
+      "rows": 488,
+      "retrieved_at": "2026-10-09T09:05:16.345764+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "75d70a407483f7dc981311fb6d7bedb92e24117b8e6ab18a372c6ad924475cdf",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ICICIBANK.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.405353+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "9d6abf5343e813a673084a50f31d7e7ec8a1f5b7138d6b3f1e92b0a94ffa65af",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "IDEA.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.626478+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "ca158964f12b2e4bd31ab6e2e21f743799c2c56ef33df186a8e52e9697dbb009",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "INDIGO.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.540190+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8d8b5559b49555f682ae2322e0120e8136ef8e12cfe9c4349f9f60d204cdda57",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "INFY.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.710679+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "65354cd7e22409b6d71d415baf8139b73595156c2096fe313cd9de2e188c9dc7",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "IOC.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.838407+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "3cd3c8317f988ad393d60c06740aa7d310cdd25fa0cfe1899fefcf3db3af470c",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "IRFC.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:16.977440+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "b9240d161d97fbcbf22996ad282b51cc282df7d79ee6579d0a19d0600069a8c7",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ITC.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:17.184357+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8e718607c1810813d33b106ba8f1035980f9ecfb2986fe65d9505865ed075e45",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "JINDALSTEL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:17.248683+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "29fc70d0db3db33ec9441b1583b414281122a9734f00d7a001ef12d9119a8dba",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "JIOFIN.NS",
+      "rows": 775,
+      "retrieved_at": "2026-10-09T09:05:17.343732+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "16e25363aaebf15a3b173525c964741d1c2791e80044276ef881b3d98dc3568b",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "JSWSTEEL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:17.495927+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "0ebce2b969d8c231a767cb322479b9df8a153b503c2b7e89538cd3adcf67ab40",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "KOTAKBANK.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:17.606861+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "ead44723ed3535d5b6e87536a3802989a31f56db0b671158736c51349b7ab7de",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "LT.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:17.698242+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "410972c5506192d9ccd74b903b956ee760e8cca2597baed055a002362641ccfc",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "LTM.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:17.799453+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "7a584f7dec6eb7e48d6b65ef54007b4d82c828bfe54d0842e892c6e085717fab",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "M&M.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:17.900193+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "727d4c9a679abc9e081bf01b8ab9ac48d6bc1e4daa0add163d1c3889a21780e0",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "MARUTI.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.008758+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "dbdaeded649f45eced69bd567616ea04156b67dd01f52c595bbfd259bd457c8f",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "MAXHEALTH.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.112162+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8d4e976eeacbc2f029a2665bad38ab46381b74e80f98a153dc00c31aaa3b718d",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "MAZDOCK.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.239785+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8591c59ac4c5712053f8bbf4784bc6d8630195bcf3f28bfefa372981d4c9b238",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "MOTHERSON.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.368083+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "e839c9a14e13c25b5949420a1e082ddc0807dccd608d419bc850eaaa3f4fab3c",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "MUTHOOTFIN.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.472513+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8f322848e0328f56d501741c0394fe284a94b63a477ea7853203ef86cd3d8f86",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "NESTLEIND.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.595919+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "e4397d8bd33a9e7c21e3d3efabbc12b05d13928a71f3ba2a196722f5f0261817",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "NTPC.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.703818+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "5ad8d835770f7b5f21c068a00aaf2b850dbf31ed289d86f463c684546d9c9c36",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ONGC.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.849671+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "a946bd8bf19cf0be6b67e583a10ea8755cb847b02798f91bf2381e810ca143e3",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "PFC.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:18.952423+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "6e47bd46cfbb891a1d24e0c3ec9a26a734ab8cf0e398545eab175c2ecde36f74",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "PIDILITIND.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.107770+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "7cbba418f58eabe6f6f77552c045c68ace110243a9750198988c0e4dd26c92ee",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "PNB.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.168466+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "ec2530932515fc58d00b829aa9f3efec27fc8d39f202b7978b30da6de4e76bd5",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "POLYCAB.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.272727+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "185112c2f8a7f5d2d4f650af9e1af7caf440929841bad3c56851d7dbf794633d",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "POWERGRID.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.394790+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8e97b774f831d009b3dd3d40cc17a680b0c61c151a3ed66d90355acf7fd29ed8",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "POWERINDIA.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.490306+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "6a09c5d27ee04eae23921d0d94e5ee7402ed7cedd1107047a03a11c047cc1f68",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "RELIANCE.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.589425+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "cefaaf228fe670908454181afeee30d8d0f653cb6833770cc69477145dbb9b3f",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "SBILIFE.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.691514+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8b0de28b8b874757c6f18a52f696f184e1a72f0b36bc087860fc0646cb26f75b",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "SBIN.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.789401+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8b84b000ee63032695a08f52b1ea8ce2bef90660062d68ae4d9f1b9d3bcf0cc3",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "SHRIRAMFIN.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:19.902032+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "99a102b962b1c8aa29a6b06d684f005fe1914790c866fdafafb10d9afba3b7f8",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "SIEMENS.NS",
+      "rows": 1235,
+      "retrieved_at": "2026-10-09T09:05:20.007545+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "44f724e591480ecc21f2fb9fdbee27643ac00faf702380f8060026c27ba8a2c9",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "SOLARINDS.NS",
+      "rows": 1235,
+      "retrieved_at": "2026-10-09T09:05:20.116630+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "354d4000d83fdc705ae492f3a840e51bc18438ae7ae815df62d6b18d135c8c06",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "SUNPHARMA.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:20.230759+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "5bfc7b606ca6e93b40a9427777fbfe262f31d333d299fa4ec9e04a223f08e9d2",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TATACAP.NS",
+      "rows": 246,
+      "retrieved_at": "2026-10-09T09:05:20.325548+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "e31ab47f10126fae15bb98caf1d44642d41504edf6f6fb27dc5d6584305e9645",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TATACONSUM.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:20.382049+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "4bca38285f3b10d8428833cfdc39aa4cd0afa5dcc9759f13ccee732929cb18a9",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TATAPOWER.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:20.487727+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "b7fa11dd0004e03a47954b21567df9a2666d0a72872bdb86dcbc00610e2b03a0",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TATASTEEL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:20.605853+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "1e71207f9e21ed829b10e48a22678d78e04cdef813188fd19fae6a4dee364e8a",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TCS.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:20.816003+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "f8af7f6e9c63f9453a7f2403634b2564a5f690cb8e7efa01ed68a0e17d385888",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TECHM.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:20.925368+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "2a225f27f3512fe77d420d50c69f16e70daa020e29026ad5f2ebd73e9077c525",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TITAN.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:21.042676+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "c3047f69a6cdbaf5b899ca451c4104abbcedaa9613fe9766ee0328af7292642f",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TMCV.NS",
+      "rows": 226,
+      "retrieved_at": "2026-10-09T09:05:21.051911+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "f55e1502b0d63ebe5c1ae173c6387be8adaf920773e8d627c5696dbddac5bc18",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TMPV.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:21.491850+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "4eec141e0943a74706579c14c656cc032ce04581c6bc9e2db58935e20619a9f9",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TORNTPHARM.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:21.584067+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "ceccc5e28c3bc76c000eda04dea9b4064b8dfcbf2346a8c9248f862955eb62b2",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TRENT.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:21.415228+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "a906927450c103357dea3895076cc40d51076da039879e4bdcbda1a3152cc1b1",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "TVSMOTOR.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:21.750769+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "93dd5119150b8f59aaf4bd6b97677d4caa606eb308b9125eabb3c2f63276120f",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ULTRACEMCO.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:21.849141+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "659ed8b055807d26460299e6a42404e7b88ea6804be50a5cb60a3206fa64cd0a",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "UNIONBANK.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:21.932027+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "ae5a83f591f382dcff5f81d4cb55a7ee6d1aae83689560d00c37102ca2d8d94e",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "VAML.NS",
+      "rows": 82,
+      "retrieved_at": "2026-10-09T09:05:22.023408+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "99bf02f8a6caf8ede24c65be529758b015e414471d1fa136f68c1140f5296b42",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "VBL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:22.463483+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "485d9ffb9e53661b06c64962f07439328b953541b9a7a51909a25c2f602c808b",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "VEDL.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:22.362021+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "9cf75710ddc905e55665b43fca9f5b6ba7dff95c67a8c3ec7b070dfe2bc55d76",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "WIPRO.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:22.290672+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "e2e11eccff5e2988af2ffff67ae9bcc4df87c6f7b5fe9ceee312749e967f83b2",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "ZYDUSLIFE.NS",
+      "rows": 1236,
+      "retrieved_at": "2026-10-09T09:05:22.863534+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "c3b46f2b0f520d33b5675443f36b11d2f2568bf192ecefd394345eb2cec77697",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "brent",
+      "rows": 1258,
+      "retrieved_at": "2026-10-09T09:05:24.043880+00:00",
+      "observation_timestamp": "2026-10-09T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "8f698b52ba5e2008ccabd9cbf3c7082ff0a80cc49d02fc19eb548b16dd970228",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "dxy",
+      "rows": 1257,
+      "retrieved_at": "2026-10-09T09:05:24.199123+00:00",
+      "observation_timestamp": "2026-10-09T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "7f8a0125f520ec5001758cdcce624799c3132012d68f3381267a2c61901749b9",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "gold",
+      "rows": 1258,
+      "retrieved_at": "2026-10-09T09:05:24.359157+00:00",
+      "observation_timestamp": "2026-10-09T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "d31908d0d73db8f622b8f23cd5801ea46c33d2b77c451195a0421839ef3a9799",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "hang_seng",
+      "rows": 1228,
+      "retrieved_at": "2026-10-09T09:05:24.633957+00:00",
+      "observation_timestamp": "2026-10-08T16:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "0e5322905a9e244e0f05975b3fe8b5f11807b6de55be0f14443c1fb7e86fc775",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "india_vix",
+      "rows": 1229,
+      "retrieved_at": "2026-10-09T09:05:23.806061+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "be01b0c510f790a846bb2b5a04b446b7d647da61fdb2962eb440491d21df362e",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "market_india",
+      "rows": 1235,
+      "retrieved_at": "2026-10-09T09:05:22.790811+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "4d2762b0e8015ef1200a02766446ac445203ae6902d500bbec3aaebc72561f8a",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "market_us",
+      "rows": 1254,
+      "retrieved_at": "2026-10-09T09:05:22.694817+00:00",
+      "observation_timestamp": "2026-10-08T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "d8da50f961f3ddf23a8ffafe95329454fe30b69464f435eb85d1cb76613b7c32",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "nasdaq",
+      "rows": 1254,
+      "retrieved_at": "2026-10-09T09:05:23.612475+00:00",
+      "observation_timestamp": "2026-10-08T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "9338720098da6515bb79f43cbbf9e665276312d91a6bd585127af04297e8b55b",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "nikkei",
+      "rows": 1222,
+      "retrieved_at": "2026-10-09T09:05:24.553024+00:00",
+      "observation_timestamp": "2026-10-08T15:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "2aa09fcf6baf500e89b429976862a73474a3ece16c6d90c98fd01835fe5cc9f9",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "sector_india_Bank",
+      "rows": 1234,
+      "retrieved_at": "2026-10-09T09:05:23.167209+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "b09bfba4523d61cb7efcacca46f8e8f9df777575c86db4ed6d828b08728b5010",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "sector_india_Energy",
+      "rows": 1,
+      "retrieved_at": "2026-10-09T09:05:22.971713+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "a84bd2384ba2bcd2a72f2e934ce6290b781a06a509d373ac3bbb15e3f658ab58",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "sector_india_IT",
+      "rows": 1234,
+      "retrieved_at": "2026-10-09T09:05:23.058679+00:00",
+      "observation_timestamp": "2026-10-08T18:30:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "af5a6b826c6dd4acf5c78fd10cb7d9c35db5cca68a9867258f4a8fe3e4b2e492",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "sector_us_Energy",
+      "rows": 1254,
+      "retrieved_at": "2026-10-09T09:05:23.519018+00:00",
+      "observation_timestamp": "2026-10-08T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "2865597caa0d3bd1461b07bfeb6b5315f1c39b71610bd071a05b1d4bea518203",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "sector_us_Financials",
+      "rows": 1254,
+      "retrieved_at": "2026-10-09T09:05:23.418134+00:00",
+      "observation_timestamp": "2026-10-08T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "1ea302b337c9ced437bbf1bdb30f78749f07194db41dde306a18645fc61d62eb",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "sector_us_Technology",
+      "rows": 1254,
+      "retrieved_at": "2026-10-09T09:05:23.264581+00:00",
+      "observation_timestamp": "2026-10-08T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "f63236939e820d71863161c8e61e929c07fd22c66b836a57d39697f9b604e596",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "us_yield",
+      "rows": 1255,
+      "retrieved_at": "2026-10-09T09:05:24.463684+00:00",
+      "observation_timestamp": "2026-10-08T05:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "2172ad5705140673b59b4a8128397cbd168d5f0a4ac45e5499e247372682f604",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "usd_inr",
+      "rows": 1300,
+      "retrieved_at": "2026-10-09T09:05:23.906541+00:00",
+      "observation_timestamp": "2026-10-08T23:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "f420131f1ddd709b1e7dadc0e5b8233f5f19c6efbca62a944bb1c667a73e709f",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "vix",
+      "rows": 1257,
+      "retrieved_at": "2026-10-09T09:05:23.751771+00:00",
+      "observation_timestamp": "2026-10-09T05:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "5001e942e7e072cbb5310d2ee5ea5e30e2fd9edb4b1a59b7005288f71c03eaee",
+      "historical_availability_verified": false
+    },
+    {
+      "source": "wti",
+      "rows": 1257,
+      "retrieved_at": "2026-10-09T09:05:24.197039+00:00",
+      "observation_timestamp": "2026-10-09T04:00:00+00:00",
+      "latest_missing_critical_values": false,
+      "any_missing_rows": 0,
+      "snapshot_id": "0740d9f4819995bc081369526a6862e5308d301039a55fab6f136bbc421b7274",
+      "historical_availability_verified": false
+    }
+  ],
+  "new_final_candidate_trained": false
+}

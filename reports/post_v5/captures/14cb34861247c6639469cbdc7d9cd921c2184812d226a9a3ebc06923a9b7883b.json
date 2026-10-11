@@ -1,0 +1,13 @@
+{
+  "run_id": "14cb34861247c6639469cbdc7d9cd921c2184812d226a9a3ebc06923a9b7883b",
+  "study_id": "prospective-india-20261008-v1",
+  "captured_at": "2026-10-09T09:05:24.731316+00:00",
+  "n_members": 100,
+  "captured_equities": 100,
+  "captured_references": 19,
+  "failures": {},
+  "input_archive_verified_at_capture": true,
+  "historical_point_in_time_certified": false,
+  "ledger_predictions": 0,
+  "prospective_matured_outcomes": 0
+}
